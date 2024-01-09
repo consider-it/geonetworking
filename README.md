@@ -6,7 +6,7 @@ Supports `#[no_std]`.
 The `geonetworking` library decodes and encodes GeoNetworking packets according to EN 302 636-4-1 v1.3.1
 
 ### Installation
-Add `geonetworking = { git = "https://github.com/consider-it/V2X-Geonetworking" }` to the `[dependencies]` section of your project's `Cargo.toml` manifest. The default features include data validation functionalities and JSON serialization with `serde`. If you do not wish to include JSON functionalities in your build, declare the dependency as follows: `geonetworking = { git = "https://github.com/consider-it/V2X-Geonetworking", default-features = false }`. The `"validation"` features requires the standard library as well as an openssl installation of major version 3.
+Add `geonetworking = "0.1"` to the `[dependencies]` section of your project's `Cargo.toml` manifest. The default features include data validation functionalities and JSON serialization with `serde`. If you do not wish to include validation and JSON functionalities in your build, declare the dependency as follows: `geonetworking = { version = "0.1", default-features = false }`. The `"validation"` features requires the standard library as well as an openssl installation of major version 3.
 
 #### Decoding
 `geonetworking` provides a `Decode` trait that is implemented by the GeoNetworking `Packet` (containing all headers and payload), the subheaders `BasicHeader` `CommonHeader` `Ieee1609Dot2Data` (a.k.a. Secured Header) as well as the extended headers:
