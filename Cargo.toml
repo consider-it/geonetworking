@@ -8,6 +8,9 @@ license = "MIT"
 categories = ["no-std", "encoding"]
 description = "Tools for encoding and decoding a geonetworking header according to EN 302 636-4-1 v1.3.1"
 readme = "./README.md"
+repository = "https://github.com/consider-it/geonetworking"
+homepage = "https://github.com/consider-it/geonetworking"
+documentation = "https://docs.rs/geonetworking"
 
 [features]
 default = ["json", "validate"]
