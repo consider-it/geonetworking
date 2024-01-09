@@ -1,0 +1,40 @@
+[package]
+name = "geonetworking"
+version = "0.1.0"
+edition = "2021"
+authors = ["Kevin Westphal<westphal@consider-it.de>"]
+keywords = ["its", "v2x", "etsi", "geonetworking"]
+license = "MIT"
+categories = ["no-std", "encoding"]
+description = "Tools for encoding and decoding a geonetworking header according to EN 302 636-4-1 v1.3.1"
+readme = "./README.md"
+
+[features]
+default = ["json", "validate"]
+json = ["serde_json", "serde", "bytes/serde"]
+validate = ["ecdsa", "openssl", "openssl-sys", "p256", "p384", "sha2", "sm2", "sm3"]
+
+[dependencies]
+bitvec = { version = "1.0", default-features = false, features = ["alloc"] }
+bytes = { version = "1.5", default-features = false }
+nom = { version = "7.1", default-features = false, features = ["alloc"] }
+nom-bitvec = { package = "bitvec-nom2", version = "0.2.0" }
+num = { version = "0.4", default-features = false }
+num-traits = { version = "0.2", default-features = false }
+# "json" feature dependencies
+serde = { version = "1.0", default-features = false, features = [
+    "derive",
+], optional = true }
+serde_json = { version = "1.0", default-features = false, features = [
+    "alloc",
+], optional = true }
+# "validate" feature dependencies
+ecdsa = { version = "0.16.9", default-features = false, features = ["verifying"], optional = true }
+openssl-sys = { version = "0.9", optional = true }
+openssl = { version = "0.10", optional = true }
+p256 = { version = "0.13.2", default-features = false, features = ["ecdsa"], optional = true }
+p384 = { version = "0.13.0", default-features = false, features = ["ecdsa"], optional = true }
+sha2 = { version = "0.10.8", default-features = false, optional = true }
+sm2 = { version = "0.13.3", default-features = false, features = ["dsa"], optional = true }
+sm3 = { version = "0.4.2", default-features = false, optional = true }
+
