@@ -1,5 +1,5 @@
 # `geonetworking`
-Rust tools for encoding and decoding GeoNetworking packets according to EN 302 636-4-1 v1.3.1
+Rust tools for encoding and decoding GeoNetworking packets according to EN 302 636-4-1 v1.3.1.
 Supports `#[no_std]`.
 
 ## Usage
