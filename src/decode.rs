@@ -104,20 +104,20 @@ decode!(LSReply);
 decode!(Certificate<'s>);
 decode!(ToBeSignedData<'s>);
 
-#[cfg(feature = "json")]
 /// Helper struct for decoding unsecured GeoNetworking headers from JSON.
 /// This crate focuses on zero-copy decoding from binary packets,
 /// therefore, JSON deserialization features are limited to a
 /// subset of GeoNetworking types.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct UnsecuredHeader {
     pub basic: BasicHeader,
     pub common: CommonHeader,
     pub extended: Option<ExtendedHeader>,
 }
 
-#[cfg(feature = "json")]
 impl UnsecuredHeader {
+    #[cfg(feature = "json")]
     /// Tries to deserialize an unsecured GeoNetworking header
     /// from JSON.
     /// ### Usage
@@ -142,7 +142,7 @@ impl UnsecuredHeader {
                 extended: self.extended,
                 payload,
             }),
-            false => Err(EncodeError::Json(alloc::format!(
+            false => Err(EncodeError::Common(alloc::format!(
                 "Payload length {} does not match `payload_length` field {} in Common Header",
                 payload.len(),
                 self.common.payload_length
