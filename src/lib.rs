@@ -20,7 +20,6 @@ pub(crate) mod util;
 #[cfg(feature = "validate")]
 mod validate;
 
-#[cfg(feature = "json")]
 pub use decode::UnsecuredHeader;
 pub use decode::{Decode, DecodeError, Decoded};
 pub use encode::{Encode, EncodeError, Encoder};

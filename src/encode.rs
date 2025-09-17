@@ -12,6 +12,7 @@ use super::*;
 #[derive(Debug)]
 pub enum EncodeError {
     Unsupported(alloc::string::String),
+    Common(alloc::string::String),
     #[cfg(feature = "json")]
     Json(alloc::string::String),
 }
@@ -20,6 +21,7 @@ impl EncodeError {
     pub fn message(&self) -> &str {
         match self {
             Self::Unsupported(message) => message,
+            Self::Common(message) => message,
             #[cfg(feature = "json")]
             Self::Json(message) => message,
         }
