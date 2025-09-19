@@ -2,7 +2,7 @@
 name = "geonetworking"
 version = "0.2.0"
 edition = "2021"
-authors = ["Kevin Westphal<westphal@consider-it.de>"]
+authors = ["Kevin Westphal<westphal@consider-it.de>", "consider it GmbH"]
 keywords = ["its", "v2x", "etsi", "geonetworking"]
 license = "MIT"
 categories = ["no-std", "encoding"]
