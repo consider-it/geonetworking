@@ -11,6 +11,7 @@ use {
     core::fmt::Debug,
 };
 
+use arbitrary_int::u4;
 use bitvec::prelude::*;
 use bytes::Bytes;
 
@@ -81,16 +82,6 @@ impl<const SIZE: usize> Serialize for Bits<SIZE> {
     }
 }
 
-#[macro_export]
-macro_rules! bits {
-    ($val:expr; $len:expr) => {
-        Bits(bitvec::vec::BitVec::<u8, bitvec::prelude::Msb0>::repeat($val != 0, $len))
-    };
-    ($($val:expr),* $(,)?) => {
-        Bits(bitvec::prelude::bits![u8, bitvec::prelude::Msb0; $($val),*].to_bitvec())
-    };
-}
-
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum Packet<'input> {
@@ -156,18 +147,20 @@ impl<'p> Packet<'p> {
     }
 }
 
+// ------- ETSI EN 302 636-4-1 Data: Manual message definitions -------
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Address {
     /// This bit allows distinguishing between manually configured network address (clause 10.2.1.3.3) (update)
     /// and the initial GeoNetworking address (clause 10.2.1.3.2). M is set to 1 if the address is manually configured otherwise it equals 0.
-    pub manually_configured: bool,
+    pub manually_configured: bool, // 1 bit
     /// ITS Station type
-    pub station_type: StationType,
+    pub station_type: StationType, // 5 bits
     /// Reserved
-    pub reserved: Bits<10>,
+    pub reserved: arbitrary_int::u10, // 10 bits
     /// Represents the `LL_ADDR`
-    pub address: [u8; 6],
+    pub address: [u8; 6], // 48 bits (6 byte)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -244,20 +237,21 @@ pub struct ShortPositionVector {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+// 4 byte in total
 pub struct BasicHeader {
     /// Identifies the version of the GeoNetworking protocol
-    pub version: u8,
+    pub version: u8, // 4 bits
     /// Identifies the type of header immediately following the GeoNetworking Basic Header
-    pub next_header: NextAfterBasic,
+    pub next_header: NextAfterBasic, // 4 bits (but only 2 LSB are used)
     /// Reserved. Set to 0
-    pub reserved: Bits<8>,
+    pub reserved: u8, // 8 bits
     /// Lifetime field. Indicates the maximum tolerable time a packet may be buffered until it reaches its destination
     /// Bit 0 to Bit 5: LT sub-field Multiplier
     /// Bit 6 to Bit 7: LT sub-field Base
-    pub lifetime: Lifetime,
+    pub lifetime: Lifetime, // 8 bits
     /// Decremented by 1 by each GeoAdhoc router that forwards the packet
     /// The packet shall not be forwarded if RHL is decremented to zero
-    pub remaining_hop_limit: u8,
+    pub remaining_hop_limit: u8, // 8 bits
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -304,24 +298,25 @@ impl Lifetime {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+// 8 bytes in total
 pub struct CommonHeader {
     /// Identifies the type of header immediately following the GeoNetworking headers
-    pub next_header: NextAfterCommon,
+    pub next_header: NextAfterCommon, // 4 bits
     /// Reserved. Set to 0
-    pub reserved_1: Bits<4>,
+    pub reserved_1: u4, // 4 bits
     /// Identifies the type and sub-type of the GeoNetworking header
-    pub header_type_and_subtype: HeaderType,
+    pub header_type_and_subtype: HeaderType, // 8 bits
     /// Traffic class that represents Facility-layer requirements on packet transport
-    pub traffic_class: TrafficClass,
+    pub traffic_class: TrafficClass, // 8 bits
     /// Bit 0: Indicates whether the ITS-S is mobile or stationary (GN protocol constant itsGnIsMobile)
     /// Bit 1 to Bit 7: Reserve, set to 0
-    pub flags: Bits<8>,
+    pub flags: [bool; 8], // 8 bits
     /// Length of the GeoNetworking payload, i.e. the rest of the packet following the whole GeoNetworking header in octets, for example BTP + CAM
-    pub payload_length: u16,
-    ///  The Maximum hop limit is not decremented by a GeoAdhoc router that forwards the packet
-    pub maximum_hop_limit: u8,
+    pub payload_length: u16, // 16 bits
+    /// The Maximum hop limit is not decremented by a GeoAdhoc router that forwards the packet
+    pub maximum_hop_limit: u8, // 8 bits
     /// Reserved. Set to 0
-    pub reserved_2: Bits<8>,
+    pub reserved_2: u8, // 8 bits
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -478,7 +473,7 @@ pub struct LSRequest {
     /// Sequence number field. Indicates the index of the sent LS Request packet (clause 8.3) and used to detect duplicate GeoNetworking packets
     pub sequence_number: u16,
     /// Reserved. Set to 0
-    pub reserved: Bits<16>,
+    pub reserved: u16,
     /// Long Position Vector containing the reference position of the source
     pub source_position_vector: LongPositionVector,
     /// The `GN_ADDR` address for the GeoAdhoc router entity for which the location is being requested
@@ -491,12 +486,16 @@ pub struct LSReply {
     /// Sequence number field. Indicates the index of the sent LS Reply packet (clause 8.3) and used to detect duplicate GeoNetworking packets
     pub sequence_number: u16,
     /// Reserved. Set to 0
-    pub reserved: Bits<16>,
+    pub reserved: u16,
     /// Long Position Vector containing the reference position of the source, which represents the Request `GN_ADDR` in the corresponding LS Request
     pub source_position_vector: LongPositionVector,
     /// Short Position Vector containing the position of the destination
     pub destination_position_vector: ShortPositionVector,
 }
+
+// =====================================================
+// ETSI TS 103 097/ IEEE 1609.2
+// =====================================================
 
 /// only for backwards compatibility
 pub type Aes128CcmCiphertext<'input> = One28BitCcmCiphertext<'input>;
@@ -806,9 +805,37 @@ pub enum EncryptedDataEncryptionKey<'input> {
 /// end-entity certificate may contain an appPermissions field. If enroll is
 /// indicated, the end-entity certificate may contain a certRequestPermissions
 /// field.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// ASN.1 Definition: `BIT STRING {app (0), enrol (1) } (SIZE (8)) (ALL EXCEPT {})`
+#[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct EndEntityType(pub Bits<8>);
+pub struct EndEntityType(pub BitString<8>);
+
+impl From<Vec<bool>> for EndEntityType {
+    fn from(value: Vec<bool>) -> Self {
+        Self(value.into())
+    }
+}
+
+impl From<[bool; 8]> for EndEntityType {
+    fn from(value: [bool; 8]) -> Self {
+        Self(value.into())
+    }
+}
+
+impl EndEntityType {
+    // bit 0
+    #[must_use]
+    pub fn has_app(&self) -> bool {
+        self.0 .0[0]
+    }
+
+    // bit 1
+    #[must_use]
+    pub fn has_enrol(&self) -> bool {
+        self.0 .0[1]
+    }
+}
 
 /// Profile of the `CertificateBase` structure providing all the fields necessary for an explicit certificate, and no others
 pub type ExplicitCertificate<'input> = CertificateBase<'input>;
@@ -1703,7 +1730,9 @@ pub struct ToBeSignedCertificate<'input> {
     /// consistency checks on received certificate responses. No functionality
     /// associated with communications between peer SDEEs is defined associated
     /// with this field.
-    pub flags: Option<Bits<8>>,
+    ///
+    /// ASN.1 Definition: BIT STRING {usesCubk (0)} (SIZE (8)) OPTIONAL,
+    pub flags: Option<BitString<8>>,
 
     /// indicates additional permissions that may be applied to application activities that the certificate holder is carrying out
     #[cfg_attr(feature = "serde", serde(borrow))]
@@ -3082,16 +3111,6 @@ pub struct ThreeDLocation {
     pub elevation: Elevation,
 }
 
-//**************************************************************************
-//                             Time Structures
-//**************************************************************************
-
-/// The number of (TAI) seconds since 00:00:00 UTC, 1 January, 2004
-pub type Time32 = Uint32;
-
-/// Estimate of the number of (TAI) microseconds since 00:00:00 UTC, 1 January, 2004
-pub type Time64 = Uint64;
-
 /// is used to define validity regions for use in certificates
 ///
 /// The latitude and longitude fields contain the latitude and
@@ -3109,16 +3128,37 @@ pub struct TwoDLocation {
     pub longitude: Longitude,
 }
 
+//**************************************************************************
+//                             Time Structures
+//**************************************************************************
+
+/// The number of (TAI) seconds since 00:00:00 UTC, 1 January, 2004
+pub type Time32 = Uint32;
+
+/// Estimate of the number of (TAI) microseconds since 00:00:00 UTC, 1 January, 2004
+pub type Time64 = Uint64;
+
+/// gives the validity period of a certificate
+///
+/// The start of the validity period is given by start and the end is given by
+/// start + duration.
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct ValidityPeriod {
+    pub start: Time32,
+    pub duration: Duration,
+}
+
+//**************************************************************************
+//                               Integer Types
+//**************************************************************************
+
 /// This atomic type is used in the definition of other data structures
 ///
 /// It is for non-negative integers up to 65,535, i.e., (hex)ff ff.
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Uint16(pub u16);
-
-//**************************************************************************
-//                               Integer Types
-//**************************************************************************
 
 /// This atomic type is used in the definition of other data structures
 ///
@@ -3195,16 +3235,59 @@ pub struct UnknownLatitude(pub NinetyDegreeInt);
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct UnknownLongitude(pub OneEightyDegreeInt);
 
-/// gives the validity period of a certificate
-///
-/// The start of the validity period is given by start and the end is given by
-/// start + duration.
+//**************************************************************************
+//                              Bit Field Types
+//**************************************************************************
+
+/// Fixed size, non-extensible BIT STRING
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct ValidityPeriod {
-    pub start: Time32,
-    pub duration: Duration,
+pub struct BitString<const SIZE: usize>(pub [bool; SIZE]);
+
+impl<const SIZE: usize> Default for BitString<SIZE> {
+    fn default() -> Self {
+        Self([false; SIZE])
+    }
 }
+
+#[cfg(feature = "serde")]
+impl<const SIZE: usize> Serialize for BitString<SIZE> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeTuple;
+        let mut seq = serializer.serialize_tuple(self.0.len())?;
+        for elem in &self.0 {
+            use serde::ser::SerializeTuple;
+
+            seq.serialize_element(elem)?;
+        }
+        seq.end()
+    }
+}
+
+impl<const SIZE: usize> From<Vec<bool>> for BitString<SIZE> {
+    fn from(value: Vec<bool>) -> Self {
+        let mut res = Self::default();
+        let input_size = value.len();
+
+        for (idx, item) in value.iter().enumerate().take(SIZE.min(input_size)) {
+            res.0[idx] = *item;
+        }
+
+        res
+    }
+}
+
+impl<const SIZE: usize> From<[bool; SIZE]> for BitString<SIZE> {
+    fn from(value: [bool; SIZE]) -> Self {
+        Self(value)
+    }
+}
+
+//**************************************************************************
+//                                  Tests
+//**************************************************************************
 
 #[cfg(test)]
 mod tests {

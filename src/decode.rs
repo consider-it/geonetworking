@@ -1,5 +1,6 @@
 extern crate alloc;
 
+use arbitrary_int::u10;
 use bitvec::prelude::*;
 use nom::{
     bytes::streaming::take,
@@ -18,7 +19,7 @@ use crate::{
     *,
 };
 
-type DecodeIn<'input> = BSlice<'input, u8, Msb0>;
+type DecodeIn<'input> = BSlice<'input, u8, Msb0>; // MSB first
 
 /// Returns the value of a decoding attempt
 #[derive(Debug, PartialEq)]
@@ -63,7 +64,7 @@ pub trait Decode<'s>: Sized + Debug + PartialEq {
     ///     decoded: BasicHeader {
     ///         version: 1,
     ///         next_header: NextAfterBasic::SecuredPacket,
-    ///         reserved: crate::bits!(0;8),
+    ///         reserved: 0x00,
     ///         lifetime: Lifetime(21),
     ///         remaining_hop_limit: 1
     ///     }
@@ -125,7 +126,7 @@ impl UnsecuredHeader {
     /// ### Usage
     /// ```
     /// # use geonetworking::*;
-    /// let json_header = r#"{"basic":{"version":1,"next_header":"CommonHeader","reserved":[false,false,false,false,false,false,false,false],"lifetime":80,"remaining_hop_limit":1},"secured":null,"common":{"next_header":"BTPB","reserved_1":[false,false,false,false],"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":8,"maximum_hop_limit":1,"reserved_2":[false,false,false,false,false,false,false,false]},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":[false,true,false,false,false,false,false,true,true,false],"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}}}"#;
+    /// let json_header = r#"{"basic":{"version":1,"next_header":"CommonHeader","reserved":[false,false,false,false,false,false,false,false],"lifetime":80,"remaining_hop_limit":1},"secured":null,"common":{"next_header":"BTPB","reserved_1":[false,false,false,false],"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":8,"maximum_hop_limit":1,"reserved_2":[false,false,false,false,false,false,false,false]},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":262,"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}}}"#;
     /// let payload: &'static [u8] = &[0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03];
     /// let unsecured_header = UnsecuredHeader::from_json(json_header).unwrap();
     /// let unsecured_packet: Packet = unsecured_header.with_payload(payload);
@@ -414,6 +415,77 @@ impl<'s, const SIZE: usize> InternalDecode<'s> for [u8; SIZE] {
     }
 }
 
+impl<'s> InternalDecode<'s> for u10 {
+    fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
+    where
+        Self: Sized,
+    {
+        map_res(read_as_uint::<u16>(10), |val| {
+            Ok::<arbitrary_int::UInt<u16, 10>, ()>(Self::from_u16(val))
+        })(input)
+    }
+
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (remaining, instance) = Self::decode_bitwise(input.bitwise()).map_err(cast_nom_err)?;
+        Ok((
+            &input[(input.len() - Integer::div_ceil(&remaining.len(), &8usize))..],
+            instance,
+        ))
+    }
+}
+
+impl<'s> InternalDecode<'s> for u4 {
+    fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
+    where
+        Self: Sized,
+    {
+        map_res(read_as_uint::<u8>(4), |val| {
+            Ok::<arbitrary_int::UInt<u8, 4>, ()>(Self::from_u8(val))
+        })(input)
+    }
+
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (remaining, instance) = Self::decode_bitwise(input.bitwise()).map_err(cast_nom_err)?;
+        Ok((
+            &input[(input.len() - Integer::div_ceil(&remaining.len(), &8usize))..],
+            instance,
+        ))
+    }
+}
+
+impl<'s> InternalDecode<'s> for [bool; 8] {
+    fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
+    where
+        Self: Sized,
+    {
+        map_res(read_as_uint::<u8>(8), |val| {
+            let mut bitvec = [false; 8];
+            for (i, item) in bitvec.iter_mut().enumerate().take(7) {
+                *item = (val << i & 0x80) > 0;
+            }
+
+            Ok::<[bool; 8], ()>(bitvec)
+        })(input)
+    }
+
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (remaining, instance) = Self::decode_bitwise(input.bitwise()).map_err(cast_nom_err)?;
+        Ok((
+            &input[(input.len() - Integer::div_ceil(&remaining.len(), &8usize))..],
+            instance,
+        ))
+    }
+}
+
 impl<'s> InternalDecode<'s> for Address {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
@@ -422,7 +494,7 @@ impl<'s> InternalDecode<'s> for Address {
         into(tuple((
             bool::decode_bitwise,
             StationType::decode_bitwise,
-            Bits::<10>::decode_bitwise,
+            u10::decode_bitwise,
             <[u8; 6]>::decode_bitwise,
         )))(input)
     }
@@ -439,8 +511,8 @@ impl<'s> InternalDecode<'s> for Address {
     }
 }
 
-impl From<(bool, StationType, Bits<10>, [u8; 6])> for Address {
-    fn from(value: (bool, StationType, Bits<10>, [u8; 6])) -> Self {
+impl From<(bool, StationType, u10, [u8; 6])> for Address {
+    fn from(value: (bool, StationType, u10, [u8; 6])) -> Self {
         Self {
             manually_configured: value.0,
             station_type: value.1,
@@ -495,7 +567,7 @@ impl<'s> InternalDecode<'s> for BasicHeader {
         into(tuple((
             read_as_uint(4),
             NextAfterBasic::decode_bitwise,
-            Bits::<8>::decode_bitwise,
+            read_as_uint(8),
             Lifetime::decode_bitwise,
             read_as_uint(8),
         )))(input)
@@ -513,8 +585,8 @@ impl<'s> InternalDecode<'s> for BasicHeader {
     }
 }
 
-impl From<(u8, NextAfterBasic, Bits<8>, Lifetime, u8)> for BasicHeader {
-    fn from(value: (u8, NextAfterBasic, Bits<8>, Lifetime, u8)) -> Self {
+impl From<(u8, NextAfterBasic, u8, Lifetime, u8)> for BasicHeader {
+    fn from(value: (u8, NextAfterBasic, u8, Lifetime, u8)) -> Self {
         Self {
             version: value.0,
             next_header: value.1,
@@ -794,13 +866,13 @@ impl<'s> InternalDecode<'s> for CommonHeader {
     {
         into(tuple((
             NextAfterCommon::decode_bitwise,
-            Bits::<4>::decode_bitwise,
+            u4::decode_bitwise,
             HeaderType::decode_bitwise,
             TrafficClass::decode_bitwise,
-            Bits::<8>::decode_bitwise,
+            <[bool; 8]>::decode_bitwise,
             read_as_uint(16),
             read_as_uint(8),
-            Bits::<8>::decode_bitwise,
+            read_as_uint(8),
         )))(input)
     }
 
@@ -819,25 +891,25 @@ impl<'s> InternalDecode<'s> for CommonHeader {
 impl
     From<(
         NextAfterCommon,
-        Bits<4>,
+        u4,
         HeaderType,
         TrafficClass,
-        Bits<8>,
+        [bool; 8],
         u16,
         u8,
-        Bits<8>,
+        u8,
     )> for CommonHeader
 {
     fn from(
         value: (
             NextAfterCommon,
-            Bits<4>,
+            u4,
             HeaderType,
             TrafficClass,
-            Bits<8>,
+            [bool; 8],
             u16,
             u8,
-            Bits<8>,
+            u8,
         ),
     ) -> Self {
         Self {
@@ -1060,7 +1132,7 @@ impl<'s> InternalDecode<'s> for LSRequest {
     {
         into(tuple((
             read_as_uint(16),
-            Bits::<16>::decode_bitwise,
+            read_as_uint(16),
             LongPositionVector::decode_bitwise,
             Address::decode_bitwise,
         )))(input)
@@ -1078,8 +1150,8 @@ impl<'s> InternalDecode<'s> for LSRequest {
     }
 }
 
-impl From<(u16, Bits<16>, LongPositionVector, Address)> for LSRequest {
-    fn from(value: (u16, Bits<16>, LongPositionVector, Address)) -> Self {
+impl From<(u16, u16, LongPositionVector, Address)> for LSRequest {
+    fn from(value: (u16, u16, LongPositionVector, Address)) -> Self {
         Self {
             sequence_number: value.0,
             reserved: value.1,
@@ -1096,7 +1168,7 @@ impl<'s> InternalDecode<'s> for LSReply {
     {
         into(tuple((
             read_as_uint(16),
-            Bits::<16>::decode_bitwise,
+            read_as_uint(16),
             LongPositionVector::decode_bitwise,
             ShortPositionVector::decode_bitwise,
         )))(input)
@@ -1114,8 +1186,8 @@ impl<'s> InternalDecode<'s> for LSReply {
     }
 }
 
-impl From<(u16, Bits<16>, LongPositionVector, ShortPositionVector)> for LSReply {
-    fn from(value: (u16, Bits<16>, LongPositionVector, ShortPositionVector)) -> Self {
+impl From<(u16, u16, LongPositionVector, ShortPositionVector)> for LSReply {
+    fn from(value: (u16, u16, LongPositionVector, ShortPositionVector)) -> Self {
         Self {
             sequence_number: value.0,
             reserved: value.1,
@@ -1221,7 +1293,7 @@ impl<'s> InternalDecode<'s> for Packet<'s> {
 }
 
 // =====================================================
-// Ieee1609Dot2
+// ETSI TS 103 097/ IEEE 1609.2
 // =====================================================
 
 struct Slice<'i>(&'i [u8]);
@@ -1343,6 +1415,7 @@ fn decode_bytewise_enumerated<E: TryFrom<i128>>(input: &[u8]) -> IResult<&[u8], 
     }
 }
 
+// TODO: deprecated, replace with decode_bytewise_bitstring_vec
 fn decode_bytewise_bitstring(
     min: Option<usize>,
     max: Option<usize>,
@@ -1374,6 +1447,75 @@ fn decode_bytewise_bitstring(
             }
             Ok((input, bitstring))
         }
+    }
+}
+
+// ASN.1 OER "bitstring" values
+// ASN.1 OER "extension addition presence bitmap", if used without constraints or as extensible
+fn decode_bytewise_bitstring_vec(
+    min: Option<usize>,
+    max: Option<usize>,
+    extensible: bool,
+    input: &[u8],
+) -> IResult<&[u8], Vec<bool>> {
+    match (min, max, extensible) {
+        (Some(min), Some(max), false) if min == max => {
+            let (input, bytes) = take(Integer::div_ceil(&max, &8usize))(input)?;
+
+            let mut bitstring = vec![];
+            for byte in bytes {
+                for i in (0..8).rev() {
+                    bitstring.push((byte >> i & 0x01) > 0);
+                }
+            }
+
+            let to_pop = 8 - max % 8;
+            if to_pop != 8 {
+                (0..to_pop).for_each(|_| {
+                    bitstring.pop();
+                });
+            }
+            Ok((input, bitstring))
+        }
+        _ => {
+            // length includes second (unused_bits) byte and subsequent bytes
+            let (input, length) = decode_bytewise_length(input)?;
+
+            // Note: using integer encoding is not 100% correct, but leads to same result in this case
+            let (input, unused_bits) =
+                decode_bytewise_integer::<usize>(Some(0), Some(8), false, input)?;
+            if unused_bits > 7 {
+                return Err(nom::Err::Error(DecodeError::ParserError(
+                    format!("Extension addition presence bitmap contains invalid unused bits indication: {unused_bits}"),
+            )));
+            }
+
+            let (input, bytes) = take(length - 1)(input)?;
+
+            let mut bitstring = vec![];
+            for byte in bytes {
+                for i in (0..8).rev() {
+                    bitstring.push((byte >> i & 0x01) > 0);
+                }
+            }
+
+            // remove padding bits
+            (0..unused_bits).for_each(|_| {
+                bitstring.pop();
+            });
+
+            Ok((input, bitstring))
+        }
+    }
+}
+
+impl<'s, const SIZE: usize> InternalDecode<'s> for BitString<SIZE> {
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (rem, bitvec) = decode_bytewise_bitstring_vec(Some(SIZE), Some(SIZE), false, input)?;
+        Ok((rem, Self::from(bitvec)))
     }
 }
 
@@ -2367,12 +2509,15 @@ impl<'s> InternalDecode<'s> for SignedDataPayload<'s> {
             (input, None)
         };
         let (input, omitted) = if extended {
-            let (input, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
+            let (input, bitmap) = decode_bytewise_bitstring_vec(Some(0), None, false, input)?;
+
             let (mut input, omitted) = if bitmap.get(0).is_some_and(|bit| *bit) {
                 decode_bytewise_open_type(|i| Ok((i, Some(()))), input)?
             } else {
                 (input, None)
             };
+
+            // consume unknown extensions
             for bit in bitmap.get(1..).unwrap_or_default() {
                 if *bit {
                     input = decode_bytewise_octetstring(Some(0), None, false, input)?.0;
@@ -2457,16 +2602,22 @@ impl<'s> InternalDecode<'s> for MissingCrlIdentifier<'s> {
     {
         let (input, extended) = decode_bytewise_is_extended(input)?;
         let (input, craca_id) = HashedId3::decode_bytewise(input)?;
-        let (mut input, crl_series) = CrlSeries::decode_bytewise(input)?;
-        if extended {
-            let (i, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
-            input = i;
-            for bit in bitmap.get(1..).unwrap_or_default() {
-                if *bit {
+        let (input, crl_series) = CrlSeries::decode_bytewise(input)?;
+        let input = if extended {
+            let (mut input, bitmap) = decode_bytewise_bitstring_vec(Some(0), None, false, input)?;
+
+            // consume unknown extensions
+            for bit in bitmap {
+                if bit {
                     input = decode_bytewise_octetstring(Some(0), None, false, input)?.0;
                 }
             }
-        }
+
+            input
+        } else {
+            input
+        };
+
         Ok((
             input,
             Self {
@@ -2522,7 +2673,8 @@ impl<'s> InternalDecode<'s> for HeaderInfo<'s> {
             pdu_functional_type,
             contributed_extensions,
         ) = if extended {
-            let (input, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
+            let (input, bitmap) = decode_bytewise_bitstring_vec(Some(0), None, false, input)?;
+
             let (input, inline_p2pcd_request) = if bitmap.get(0).is_some_and(|bit| *bit) {
                 decode_bytewise_open_type(SequenceOfHashedId3::decode_bytewise, input)
                     .map(|(rem, req)| (rem, Some(req)))?
@@ -2547,11 +2699,14 @@ impl<'s> InternalDecode<'s> for HeaderInfo<'s> {
             } else {
                 (input, None)
             };
+
+            // consume unknown extensions
             for bit in bitmap.get(4..).unwrap_or_default() {
                 if *bit {
                     input = decode_bytewise_octetstring(Some(0), None, false, input)?.0;
                 }
             }
+
             (
                 input,
                 inline_p2pcd_request,
@@ -2810,13 +2965,11 @@ impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
         let (input, verify_key_indicator) = VerificationKeyIndicator::decode_bytewise(input)?;
         let (input, flags, app_extensions, cert_issue_extensions, cert_request_extension) =
             if extended {
-                let (input, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
+                let (input, bitmap) = decode_bytewise_bitstring_vec(Some(0), None, false, input)?;
+
                 let (input, flags) = if bitmap.get(0).is_some_and(|bit| *bit) {
-                    decode_bytewise_open_type(
-                        |i| decode_bytewise_bitstring(Some(8), Some(8), false, i),
-                        input,
-                    )
-                    .map(|(rem, flags)| (rem, Some(Bits::<8>(flags))))?
+                    decode_bytewise_open_type(BitString::<8>::decode_bytewise, input)
+                        .map(|(rem, flags)| (rem, Some(flags)))?
                 } else {
                     (input, None)
                 };
@@ -2842,11 +2995,14 @@ impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
                 } else {
                     (input, None)
                 };
+
+                // consume unknown extensions
                 for bit in bitmap.get(4..).unwrap_or_default() {
                     if *bit {
                         input = decode_bytewise_octetstring(Some(0), None, false, input)?.0;
                     }
                 }
+
                 (
                     input,
                     flags,
@@ -3056,7 +3212,10 @@ impl<'s> InternalDecode<'s> for PsidGroupPermissions<'s> {
         let (input, ee_type) = if bitmap[2] {
             EndEntityType::decode_bytewise(input)?
         } else {
-            (input, EndEntityType(crate::bits![1, 0, 0, 0, 0, 0, 0, 0]))
+            (
+                input,
+                EndEntityType::from([true, false, false, false, false, false, false, false]),
+            )
         };
         Ok((
             input,
@@ -3075,8 +3234,8 @@ impl<'s> InternalDecode<'s> for EndEntityType {
     where
         Self: Sized,
     {
-        let (input, bitstring) = decode_bytewise_bitstring(Some(8), Some(8), false, input)?;
-        Ok((input, Self(Bits(bitstring))))
+        let (input, bitstring) = decode_bytewise_bitstring_vec(Some(8), Some(8), false, input)?;
+        Ok((input, bitstring.into()))
     }
 }
 
@@ -3162,6 +3321,35 @@ mod tests {
     }
 
     #[test]
+    fn decodes_oer_bitstring() {
+        let ref_val = vec![true];
+        let oer_input = &[0x80];
+        let (_, decoded) =
+            decode_bytewise_bitstring_vec(Some(1), Some(1), false, oer_input).unwrap();
+        assert_eq!(ref_val, decoded);
+
+        let ref_val = vec![false, true, false, false, false, false, true, false];
+        let oer_input = &[0x42];
+        let (_, decoded) =
+            decode_bytewise_bitstring_vec(Some(8), Some(8), false, oer_input).unwrap();
+        assert_eq!(ref_val, decoded);
+        let (_, decoded) = BitString::<8>::decode_bytewise(oer_input).unwrap();
+        assert_eq!(ref_val, decoded.0);
+
+        let ref_val = vec![false, true];
+        let oer_input = &[2, 6, 0x42];
+        let (_, decoded) = decode_bytewise_bitstring_vec(None, None, true, oer_input).unwrap();
+        assert_eq!(ref_val, decoded);
+
+        let ref_val = vec![
+            true, false, false, false, false, false, false, false, false, true,
+        ];
+        let oer_input = &[3, 6, 0x80, 0x40];
+        let (_, decoded) = decode_bytewise_bitstring_vec(None, None, true, oer_input).unwrap();
+        assert_eq!(ref_val, decoded);
+    }
+
+    #[test]
     fn decodes_basic_header() {
         let data: &'static [u8] = &[
             0x12, 0x00, 0x15, 0x01, 0x03, 0x81, 0x00, 0x40, 0x03, 0x80, 0x82, 0x02, 0x7c, 0x20,
@@ -3177,7 +3365,7 @@ mod tests {
                 decoded: BasicHeader {
                     version: 1,
                     next_header: NextAfterBasic::SecuredPacket,
-                    reserved: crate::bits!(0;8),
+                    reserved: 0x00,
                     lifetime: Lifetime(21),
                     remaining_hop_limit: 1
                 }
@@ -3389,5 +3577,94 @@ mod tests {
                 }))
             }
         );
+    }
+
+    #[test]
+    // test to ensure proper encoding of BIT STRING data
+    fn round_trip_to_be_signed_certificate() {
+        let ref_bytes = &[
+            0xb0, 0x83, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x81, 0xd9, 0x85, 0x86, 0x00, 0x01,
+            0xe0, 0x01, 0x07, 0x80, 0x01, 0x24, 0x81, 0x04, 0x03, 0x01, 0xff, 0xfc, 0x80, 0x01,
+            0x25, 0x81, 0x05, 0x04, 0x01, 0xff, 0xff, 0xff, 0x80, 0x01, 0x8c, 0x81, 0x05, 0x04,
+            0x02, 0xff, 0xff, 0xe0, 0x00, 0x01, 0x8d, 0x80, 0x02, 0x02, 0x7e, 0x81, 0x02, 0x01,
+            0x01, 0x80, 0x02, 0x02, 0x7f, 0x81, 0x02, 0x01, 0x01, 0x00, 0x02, 0x03, 0xff, 0x80,
+            0x80, 0x82, 0x13, 0x43, 0x08, 0xc4, 0x32, 0x4d, 0x5f, 0x47, 0xfc, 0xbe, 0x66, 0x5f,
+            0xb5, 0x5b, 0x40, 0x98, 0xb3, 0x8b, 0x9c, 0xaa, 0x48, 0x4b, 0xd4, 0x47, 0x4c, 0x6c,
+            0x52, 0x16, 0x00, 0xa7, 0x50, 0x8c,
+            0x02, // extension addition presence bitmap: length determinant
+            0x04, // extension addition presence bitmap: how many unused bits -> 4
+            0x80, // extension addition presence bitmap: bitmap -> ext. 1 present, 2-4 not present
+            0x02, // open type encoding: length
+            0x80, // BIT STRING: 0b1000.0000
+            0x00, // TODO ???
+        ];
+
+        let data = ToBeSignedCertificate {
+            id: CertificateId::None(()),
+            craca_id: HashedId3(&[0, 0, 0]),
+            crl_series: Uint16(0),
+            validity_period: ValidityPeriod {
+                start: Uint32(612_489_605),
+                duration: Duration::Years(Uint16(1)),
+            },
+            region: None,
+            assurance_level: Some(SubjectAssurance(&[224])),
+            app_permissions: Some(SequenceOfPsidSsp(vec![
+                PsidSsp {
+                    psid: Psid(36),
+                    ssp: Some(ServiceSpecificPermissions::BitmapSsp(BitmapSsp(&[
+                        1, 255, 252,
+                    ]))),
+                },
+                PsidSsp {
+                    psid: Psid(37),
+                    ssp: Some(ServiceSpecificPermissions::BitmapSsp(BitmapSsp(&[
+                        1, 255, 255, 255,
+                    ]))),
+                },
+                PsidSsp {
+                    psid: Psid(140),
+                    ssp: Some(ServiceSpecificPermissions::BitmapSsp(BitmapSsp(&[
+                        2, 255, 255, 224,
+                    ]))),
+                },
+                PsidSsp {
+                    psid: Psid(141),
+                    ssp: None,
+                },
+                PsidSsp {
+                    psid: Psid(638),
+                    ssp: Some(ServiceSpecificPermissions::BitmapSsp(BitmapSsp(&[1]))),
+                },
+                PsidSsp {
+                    psid: Psid(639),
+                    ssp: Some(ServiceSpecificPermissions::BitmapSsp(BitmapSsp(&[1]))),
+                },
+                PsidSsp {
+                    psid: Psid(1023),
+                    ssp: None,
+                },
+            ])),
+            cert_issue_permissions: None,
+            cert_request_permissions: None,
+            can_request_rollover: None,
+            encryption_key: None,
+            verify_key_indicator: VerificationKeyIndicator::VerificationKey(
+                PublicVerificationKey::EcdsaNistP256(EccP256CurvePoint::CompressedY0(&[
+                    19, 67, 8, 196, 50, 77, 95, 71, 252, 190, 102, 95, 181, 91, 64, 152, 179, 139,
+                    156, 170, 72, 75, 212, 71, 76, 108, 82, 22, 0, 167, 80, 140,
+                ])),
+            ),
+            flags: Some(vec![true, false, false, false, false, false, false, false].into()),
+            app_extensions: None,
+            cert_issue_extensions: None,
+            cert_request_extension: None,
+        };
+
+        let decoded = ToBeSignedCertificate::decode_bytewise(ref_bytes).unwrap();
+        pretty_assertions::assert_eq!(data, decoded.1);
+
+        let bytes = data.encode_to_vec().unwrap();
+        assert_eq!(*ref_bytes, *bytes);
     }
 }

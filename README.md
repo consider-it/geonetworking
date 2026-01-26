@@ -46,15 +46,13 @@ let packet = Packet::Unsecured {
     basic: BasicHeader {
         version: 1,
         next_header: NextAfterBasic::CommonHeader,
-        // The bits! macro accepts a comma-separated list of 1s and 0s (see below)
-        // or a value (1 or 0) and a length value (usize), separated by a semicolon
-        reserved: bits![0; 8],
+        reserved: 0x00,
         lifetime: Lifetime(80),
         remaining_hop_limit: 1,
     },
     common: CommonHeader {
         next_header: NextAfterCommon::BTPB,
-        reserved_1: bits![0, 0, 0, 0],
+        reserved_1: arbitrary_int::u4::from_u8(0x00),
         header_type_and_subtype: HeaderType::TopologicallyScopedBroadcast(
             BroadcastType::SingleHop,
         ),
@@ -63,17 +61,17 @@ let packet = Packet::Unsecured {
             channel_offload: false,
             traffic_class_id: 2,
         },
-        flags: bits![0, 0, 0, 0, 0, 0, 0, 0],
+        flags: [false; 8],
         payload_length: 1,
         maximum_hop_limit: 1,
-        reserved_2: bits![0, 0, 0, 0, 0, 0, 0, 0],
+        reserved_2: 0x00,
     },
     extended: Some(ExtendedHeader::SHB(SingleHopBroadcast {
         source_position_vector: LongPositionVector {
             gn_address: Address {
                 manually_configured: false,
                 station_type: StationType::Unknown,
-                reserved: bits![0, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+                reserved: arbitrary_int::u10::new(0x0106),
                 address: [0, 96, 224, 105, 87, 141],
             },
             timestamp: Timestamp(542947520),
