@@ -8,7 +8,7 @@ fn decode_beacon() {
         0x49, 0x6d, 0x80, 0x00, 0x0d, 0x4f,
     ];
     let result = Packet::decode(data).unwrap();
-    assert_eq!(
+    pretty_assertions::assert_eq!(
         result,
         Decoded {
             bytes_consumed: 36,
@@ -122,7 +122,7 @@ fn unsecured_round_trip() {
     let decoded = Packet::decode(encoded.as_slice()).unwrap();
     assert!(decoded.bytes_consumed == encoded.len());
     assert_eq!(expected, encoded);
-    assert_eq!(decoded.decoded, packet);
+    pretty_assertions::assert_eq!(decoded.decoded, packet);
 }
 
 #[test]
@@ -137,11 +137,9 @@ fn packet_to_json() {
     ];
     let result = Packet::decode(data.as_slice()).unwrap();
     let json = result.decoded.encode_to_json().unwrap();
-    assert_eq!(
-        String::from(
-            r#"{"Unsecured":{"basic":{"version":1,"next_header":"CommonHeader","reserved":[false,false,false,false,false,false,false,false],"lifetime":80,"remaining_hop_limit":1},"common":{"next_header":"BTPB","reserved_1":[false,false,false,false],"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":45,"maximum_hop_limit":1,"reserved_2":[false,false,false,false,false,false,false,false]},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":[false,true,false,false,false,false,false,true,true,false],"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}},"payload":[7,209,0,0,2,2,224,105,87,141,180,217,0,10,178,36,99,206,39,132,43,31,255,255,252,34,49,181,178,0,128,95,65,45,162,191,233,237,7,55,254,235,255,246,0]}}"#
-        ),
-        json
+    pretty_assertions::assert_eq!(
+        serde_json::from_str::<serde_json::Value>(r#"{"Unsecured":{"basic":{"version":1,"next_header":"CommonHeader","reserved":[false,false,false,false,false,false,false,false],"lifetime":80,"remaining_hop_limit":1},"common":{"next_header":"BTPB","reserved_1":[false,false,false,false],"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":45,"maximum_hop_limit":1,"reserved_2":[false,false,false,false,false,false,false,false]},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":[false,true,false,false,false,false,false,true,true,false],"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}},"payload":[7,209,0,0,2,2,224,105,87,141,180,217,0,10,178,36,99,206,39,132,43,31,255,255,252,34,49,181,178,0,128,95,65,45,162,191,233,237,7,55,254,235,255,246,0]}}"#).unwrap(),
+        serde_json::from_str::<serde_json::Value>(json.as_str()).unwrap()
     );
 }
 
