@@ -165,7 +165,7 @@ pub struct Address {
     pub station_type: StationType,
     /// Reserved
     pub reserved: Bits<10>,
-    /// Represents the LL_ADDR
+    /// Represents the `LL_ADDR`
     pub address: [u8; 6],
 }
 
@@ -215,7 +215,7 @@ pub struct LongPositionVector {
     /// WGS 84 [i.6] longitude of the GeoAdhoc router reference position expressed in 1/10 micro degree
     pub longitude: i32,
     /// Position accuracy indicator of the GeoAdhoc router reference position
-    /// Set to 1 (i.e. True) if the semiMajorConfidence of the PosConfidenceEllipse as specified in ETSI TS 102 894-2 \[11\]
+    /// Set to 1 (i.e. True) if the semiMajorConfidence of the `PosConfidenceEllipse` as specified in ETSI TS 102 894-2 \[11\]
     /// is smaller than the GN protocol constant itsGnPaiInterval / 2
     /// Set to 0 (i.e. False) otherwise
     pub position_accuracy: bool,
@@ -476,7 +476,7 @@ pub struct LSRequest {
     pub reserved: Bits<16>,
     /// Long Position Vector containing the reference position of the source
     pub source_position_vector: LongPositionVector,
-    /// The GN_ADDR address for the GeoAdhoc router entity for which the location is being requested
+    /// The `GN_ADDR` address for the GeoAdhoc router entity for which the location is being requested
     pub request_gn_address: Address,
 }
 
@@ -487,7 +487,7 @@ pub struct LSReply {
     pub sequence_number: u16,
     /// Reserved. Set to 0
     pub reserved: Bits<16>,
-    /// Long Position Vector containing the reference position of the source, which represents the Request GN_ADDR in the corresponding LS Request
+    /// Long Position Vector containing the reference position of the source, which represents the Request `GN_ADDR` in the corresponding LS Request
     pub source_position_vector: LongPositionVector,
     /// Short Position Vector containing the position of the destination
     pub destination_position_vector: ShortPositionVector,
@@ -496,11 +496,11 @@ pub struct LSReply {
 /// only for backwards compatibility
 pub type Aes128CcmCiphertext<'input> = One28BitCcmCiphertext<'input>;
 
-/// contains an individual AppExtension.
+/// contains an individual `AppExtension`.
 ///
-/// AppExtensions specified in this standard are drawn from the ASN.1 Information Object Set
-/// SetCertExtensions. This set, and its use in the AppExtension type, is structured so that each
-/// AppExtension is associated with a CertIssueExtension and a CertRequestExtension and all are
+/// `AppExtensions` specified in this standard are drawn from the ASN.1 Information Object Set
+/// `SetCertExtensions`. This set, and its use in the `AppExtension` type, is structured so that each
+/// `AppExtension` is associated with a `CertIssueExtension` and a `CertRequestExtension` and all are
 /// identified by the same id value.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -522,12 +522,12 @@ pub enum CertIssueExtensionPermissions<'input> {
     All(()),
 }
 
-/// This field contains an individual CertIssueExtension.
+/// This field contains an individual `CertIssueExtension`.
 ///
-/// CertIssueExtensions specified in this standard are drawn from the ASN.1
-/// Information Object Set SetCertExtensions. This set, and its use in the
-/// CertIssueExtension type, is structured so that each CertIssueExtension
-/// is associated with a AppExtension and a CertRequestExtension and all are
+/// `CertIssueExtensions` specified in this standard are drawn from the ASN.1
+/// Information Object Set `SetCertExtensions`. This set, and its use in the
+/// `CertIssueExtension` type, is structured so that each `CertIssueExtension`
+/// is associated with a `AppExtension` and a `CertRequestExtension` and all are
 /// identified by the same id value. In this structure:
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -551,13 +551,13 @@ pub enum CertRequestExtensionPermissions<'input> {
     All(()),
 }
 
-/// This field contains an individual CertRequestExtension
+/// This field contains an individual `CertRequestExtension`
 ///
-/// CertRequestExtensions specified in this standard are drawn from the
-/// ASN.1 Information Object Set SetCertExtensions. This set, and its use in
-/// the CertRequestExtension type, is structured so that each
-/// CertRequestExtension is associated with a AppExtension and a
-/// CertRequestExtension and all are identified by the same id value. In this
+/// `CertRequestExtensions` specified in this standard are drawn from the
+/// ASN.1 Information Object Set `SetCertExtensions`. This set, and its use in
+/// the `CertRequestExtension` type, is structured so that each
+/// `CertRequestExtension` is associated with a `AppExtension` and a
+/// `CertRequestExtension` and all are identified by the same id value. In this
 /// structure:
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -581,17 +581,17 @@ pub struct CertRequestExtension<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the CertificateBase.
+/// applies to the `CertificateBase`.
 pub type Certificate<'input> = CertificateBase<'input>;
 
 /// Base certificate data
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the ToBeSignedCertificate and to the Signature.
+/// applies to the `ToBeSignedCertificate` and to the Signature.
 ///
 /// Note: Whole-certificate hash: If the entirety of a certificate is hashed
-/// to calculate a HashedId3, HashedId8, or HashedId10, the algorithm used for
+/// to calculate a `HashedId3`, `HashedId8`, or `HashedId10`, the algorithm used for
 /// this purpose is known as the whole-certificate hash. The method used to
 /// determine the whole-certificate hash algorithm is specified in 5.3.9.2.
 #[derive(Debug, Clone, PartialEq)]
@@ -602,7 +602,7 @@ pub struct CertificateBase<'input> {
 
     /// states whether the certificate is implicit or explicit.
     /// This field is set to explicit for explicit certificates and to implicit for implicit certificates.
-    /// See ExplicitCertificate and ImplicitCertificate for more details.
+    /// See `ExplicitCertificate` and `ImplicitCertificate` for more details.
     pub r_type: CertificateType,
 
     /// identifies the issuer of the certificate
@@ -611,11 +611,11 @@ pub struct CertificateBase<'input> {
 
     /// is the certificate contents.
     /// This field is an input to the hash when generating or verifying signatures for an explicit certificate, or generating or verifying the public key from the reconstruction value for an implicit certificate.
-    /// The details of how this field are encoded are given in the description of the ToBeSignedCertificate type.
+    /// The details of how this field are encoded are given in the description of the `ToBeSignedCertificate` type.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub to_be_signed: ToBeSignedCertificate<'input>,
 
-    /// is included in an ExplicitCertificate.
+    /// is included in an `ExplicitCertificate`.
     /// It is the signature, calculated by the signer identified in the issuer field, over the hash of toBeSigned.
     /// The hash is calculated as specified in 5.3.1, where:
     ///   - Data input is the encoding of toBeSigned following the COER.
@@ -706,7 +706,7 @@ pub struct ContributedExtensionBlockExtns<'input>(
 /// Defines the format of an extension block provided by an identified
 /// contributor by using the temnplate provided
 /// in the class IEEE1609DOT2-HEADERINFO-CONTRIBUTED-EXTENSION constraint
-/// to the objects in the set Ieee1609Dot2HeaderInfoContributedExtensions.
+/// to the objects in the set `Ieee1609Dot2HeaderInfoContributedExtensions`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ContributedExtensionBlock<'input> {
@@ -728,7 +728,7 @@ pub struct ContributedExtensionBlocks<'input>(
 
 /// Used to perform a countersignature over an already-signed SPDU
 ///
-/// This is the profile of an Ieee1609Dot2Data containing
+/// This is the profile of an `Ieee1609Dot2Data` containing
 /// a signedData. The tbsData within content is composed of a payload
 /// containing the hash (extDataHash) of the externally generated, pre-signed
 /// SPDU over which the countersignature is performed.
@@ -742,7 +742,7 @@ pub type Countersignature<'input> = Ieee1609Dot2Data<'input>;
 ///
 /// Note: Critical information fields:
 ///   - If present, recipients is a critical information field as defined in
-///     5.2.6. An implementation that does not support the number of RecipientInfo
+///     5.2.6. An implementation that does not support the number of `RecipientInfo`
 ///     in recipients when decrypted shall indicate that the encrypted SPDU could
 ///     not be decrypted due to unsupported critical information fields. A
 ///     compliant implementation shall support recipients fields containing at
@@ -750,23 +750,23 @@ pub type Countersignature<'input> = Ieee1609Dot2Data<'input>;
 ///
 /// Note: If the plaintext is raw data, i.e., it has not been output from a
 /// previous operation of the SDS, then it is trivial to encapsulate it in an
-/// Ieee1609Dot2Data of type unsecuredData as noted in 4.2.2.2.2. For example,
+/// `Ieee1609Dot2Data` of type unsecuredData as noted in 4.2.2.2.2. For example,
 /// `03 80 08 01 23 45 67 89 AB CD EF` is the C-OER encoding of `01 23 45 67
-/// 89 AB CD EF` encapsulated in an Ieee1609Dot2Data of type unsecuredData.
+/// 89 AB CD EF` encapsulated in an `Ieee1609Dot2Data` of type unsecuredData.
 /// The first byte of the encoding 03 is the protocolVersion, the second byte
 /// 80 indicates the choice unsecuredData, and the third byte 08 is the length
 /// of the raw data `01 23 45 67 89 AB CD EF`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct EncryptedData<'input> {
-    /// contains one or more RecipientInfos. These entries may
-    /// be more than one RecipientInfo, and more than one type of RecipientInfo,
+    /// contains one or more `RecipientInfos`. These entries may
+    /// be more than one `RecipientInfo`, and more than one type of `RecipientInfo`,
     /// as long as all entries are indicating or containing the same data encryption
     /// key.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub recipients: SequenceOfRecipientInfo<'input>,
 
-    /// contains the encrypted data. This is the encryption of an encoded Ieee1609Dot2Data structure as specified in 5.3.4.2
+    /// contains the encrypted data. This is the encryption of an encoded `Ieee1609Dot2Data` structure as specified in 5.3.4.2
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub ciphertext: SymmetricCiphertext<'input>,
 }
@@ -779,8 +779,8 @@ pub struct EncryptedData<'input> {
 /// Critical information fields: If present and applicable to
 /// the receiving SDEE, this is a critical information field as defined in
 /// 5.2.6. If an implementation receives an encrypted SPDU and determines that
-/// one or more RecipientInfo fields are relevant to it, and if all of those
-/// RecipientInfos contain an EncryptedDataEncryptionKey such that the
+/// one or more `RecipientInfo` fields are relevant to it, and if all of those
+/// `RecipientInfos` contain an `EncryptedDataEncryptionKey` such that the
 /// implementation does not recognize the indicated CHOICE, the implementation
 /// shall indicate that the encrypted SPDU is not decryptable.
 #[derive(Debug, Clone, PartialEq)]
@@ -797,7 +797,7 @@ pub enum EncryptedDataEncryptionKey<'input> {
 /// Indicates which type of permissions may appear in end-entity certificates
 ///
 /// Permissions in end-entity certificates the chain of whose permissions passes through the
-/// PsidGroupPermissions field containing this value. If app is indicated, the
+/// `PsidGroupPermissions` field containing this value. If app is indicated, the
 /// end-entity certificate may contain an appPermissions field. If enroll is
 /// indicated, the end-entity certificate may contain a certRequestPermissions
 /// field.
@@ -805,7 +805,7 @@ pub enum EncryptedDataEncryptionKey<'input> {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct EndEntityType(pub Bits<8>);
 
-/// Profile of the CertificateBase structure providing all the fields necessary for an explicit certificate, and no others
+/// Profile of the `CertificateBase` structure providing all the fields necessary for an explicit certificate, and no others
 pub type ExplicitCertificate<'input> = CertificateBase<'input>;
 
 /// contains the hash of some data with a specified hash algorithm
@@ -837,11 +837,11 @@ pub enum HashedData<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the EncryptionKey. If encryptionKey is present, and indicates
-/// the choice public, and contains a BasePublicEncryptionKey that is an
-/// elliptic curve point (i.e., of type EccP256CurvePoint or
-/// EccP384CurvePoint), then the elliptic curve point is encoded in compressed
-/// form, i.e., such that the choice indicated within the Ecc*CurvePoint is
+/// applies to the `EncryptionKey`. If encryptionKey is present, and indicates
+/// the choice public, and contains a `BasePublicEncryptionKey` that is an
+/// elliptic curve point (i.e., of type `EccP256CurvePoint` or
+/// `EccP384CurvePoint`), then the elliptic curve point is encoded in compressed
+/// form, i.e., such that the choice indicated within the Ecc*`CurvePoint` is
 /// compressed-y-0 or compressed-y-1.
 ///
 /// The canonicalization does not apply to any fields after the extension
@@ -866,7 +866,7 @@ pub struct HeaderInfo<'input> {
     /// if present, is used by the SDS to request certificates for which it has seen identifiers and does not know the entire certificate.
     /// A specification of this peer-to-peer certificate distribution (P2PCD) mechanism is given in Clause 8.
     /// This field is used for the separate-certificate-pdu flavor of P2PCD and shall only be present if inlineP2pcdRequest is not present.
-    /// The HashedId3 is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3, applied to the COER-encoded certificate, canonicalized as defined in the definition of Certificate.
+    /// The `HashedId3` is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3, applied to the COER-encoded certificate, canonicalized as defined in the definition of Certificate.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub p2pcd_learning_request: Option<HashedId3<'input>>,
 
@@ -878,13 +878,13 @@ pub struct HeaderInfo<'input> {
     /// if present, is used to provide a key that is to be used to encrypt at least one response to this SPDU.
     /// The SDEE specification is expected to specify which response SPDUs are to be encrypted with this key.
     /// One possible use of this key to encrypt a response is specified in 6.3.35, 6.3.37, and 6.3.34.
-    /// An encryptionKey field of type symmetric should only be used if the SignedData containing this field is securely encrypted by some means.
+    /// An encryptionKey field of type symmetric should only be used if the `SignedData` containing this field is securely encrypted by some means.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub encryption_key: Option<EncryptionKey<'input>>,
 
     /// if present, is used by the SDS to request unknown certificates per the inline peer-to-peer certificate distribution mechanism is given in Clause 8.
     /// This field shall only be present if p2pcdLearningRequest is not present.
-    /// The HashedId3 is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3, applied to the COER-encoded certificate, canonicalized as defined in the definition of Certificate.
+    /// The `HashedId3` is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3, applied to the COER-encoded certificate, canonicalized as defined in the definition of Certificate.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub inline_p2pcd_request: Option<SequenceOfHashedId3<'input>>,
 
@@ -895,12 +895,12 @@ pub struct HeaderInfo<'input> {
     /// if present, is used to indicate that the SPDU is to be consumed by a process other than an application process as defined in ISO 21177 \[B14a\]. See 6.3.23b for more details.
     pub pdu_functional_type: Option<PduFunctionalType>,
 
-    /// if present, is used to contain additional extensions defined using the ContributedExtensionBlocks structure
+    /// if present, is used to contain additional extensions defined using the `ContributedExtensionBlocks` structure
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub contributed_extensions: Option<ContributedExtensionBlocks<'input>>,
 }
 
-/// integer used to identify a HeaderInfo extension contributing organization
+/// integer used to identify a `HeaderInfo` extension contributing organization
 ///
 /// In this version of this standard two values are defined:
 ///   - ieee1609OriginatingExtensionId indicating extensions originating with IEEE 1609.
@@ -922,7 +922,7 @@ pub type Ieee1609ContributedHeaderInfoExtension<'input> = Extension<'input>;
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2 if it is of type signedData.
-/// The canonicalization applies to the SignedData.
+/// The canonicalization applies to the `SignedData`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum Ieee1609Dot2Content<'input> {
@@ -955,7 +955,7 @@ pub enum Ieee1609Dot2Content<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the Ieee1609Dot2Content.
+/// applies to the `Ieee1609Dot2Content`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Ieee1609Dot2Data<'input> {
@@ -964,13 +964,14 @@ pub struct Ieee1609Dot2Data<'input> {
     /// There are no major or minor version numbers.
     pub protocol_version: Uint8,
 
-    /// contains the content in the form of an Ieee1609Dot2Content
+    /// contains the content in the form of an `Ieee1609Dot2Content`
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub content: Ieee1609Dot2Content<'input>,
 }
 
 impl<'payload> Ieee1609Dot2Data<'payload> {
     /// retrieves unencrypted payload, if present
+    #[must_use]
     pub fn data_payload(&self) -> Option<&'payload [u8]> {
         match &self.content {
             Ieee1609Dot2Content::UnsecuredData(p) => Some(p.0),
@@ -979,24 +980,24 @@ impl<'payload> Ieee1609Dot2Data<'payload> {
                 .payload
                 .data
                 .as_ref()
-                .and_then(|d| d.data_payload()),
+                .and_then(Ieee1609Dot2Data::data_payload),
             _ => None,
         }
     }
 }
 
-/// integer used to identify an Ieee1609ContributedHeaderInfoExtension
+/// integer used to identify an `Ieee1609ContributedHeaderInfoExtension`
 pub type Ieee1609HeaderInfoExtensionId = ExtId;
 
-/// profile of the CertificateBase structure providing all
+/// profile of the `CertificateBase` structure providing all
 /// the fields necessary for an implicit certificate, and no others.
 pub type ImplicitCertificate<'input> = CertificateBase<'input>;
 
 /// allows the recipient of a certificate to determine which keying material to use to authenticate the certificate
 ///
 /// If the choice indicated is sha256AndDigest, sha384AndDigest, or sm3AndDigest:
-///   - The structure contains the HashedId8 of the issuing certificate. The
-///     HashedId8 is calculated with the whole-certificate hash algorithm,
+///   - The structure contains the `HashedId8` of the issuing certificate. The
+///     `HashedId8` is calculated with the whole-certificate hash algorithm,
 ///     determined as described in 6.4.3, applied to the COER-encoded certificate,
 ///     canonicalized as defined in the definition of Certificate.
 ///   - The hash algorithm to be used to generate the hash of the certificate
@@ -1050,8 +1051,8 @@ pub struct LinkageData<'input> {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MissingCrlIdentifier<'input> {
-    /// is the HashedId3 of the CRACA, as defined in 5.1.3.
-    /// The HashedId3 is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3, applied to the COER-encoded certificate, canonicalized as defined in the definition of Certificate.
+    /// is the `HashedId3` of the CRACA, as defined in 5.1.3.
+    /// The `HashedId3` is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3, applied to the COER-encoded certificate, canonicalized as defined in the definition of Certificate.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub craca_id: HashedId3<'input>,
 
@@ -1066,12 +1067,12 @@ pub struct MissingCrlIdentifier<'input> {
 /// 16 bytes longer than the corresponding plaintext due to the inclusion of
 /// the message authentication code (MAC). The plaintext resulting from a
 /// correct decryption of the ciphertext is either a COER-encoded
-/// Ieee1609Dot2Data structure (see 6.3.41), or a 16-byte symmetric key
+/// `Ieee1609Dot2Data` structure (see 6.3.41), or a 16-byte symmetric key
 /// (see 6.3.44).
 ///
 /// The ciphertext is 16 bytes longer than the corresponding plaintext.
 /// The plaintext resulting from a correct decryption of the
-/// ciphertext is a COER-encoded Ieee1609Dot2Data structure.
+/// ciphertext is a COER-encoded `Ieee1609Dot2Data` structure.
 ///
 /// Note: In the name of this structure, "One28" indicates that the
 /// symmetric cipher block size is 128 bits. It happens to also be the case
@@ -1092,10 +1093,10 @@ pub struct One28BitCcmCiphertext<'input> {
     pub ccm_ciphertext: Opaque<'input>,
 }
 
-/// AppExtension used to identify an operating organization
+/// `AppExtension` used to identify an operating organization
 ///
-/// The associated CertIssueExtension and CertRequestExtension
-/// are both of type OperatingOrganizationId.
+/// The associated `CertIssueExtension` and `CertRequestExtension`
+/// are both of type `OperatingOrganizationId`.
 ///
 /// To determine consistency between this type and an SPDU, the SDEE
 /// specification for that SPDU is required to specify how the SPDU can be
@@ -1106,8 +1107,8 @@ pub struct One28BitCcmCiphertext<'input> {
 /// OBJECT IDENTIFIER determined from the SPDU is identical to the OBJECT
 /// IDENTIFIER contained in this field.
 ///
-/// This AppExtension does not have consistency conditions with a
-/// corresponding CertIssueExtension. It can appear in a certificate issued
+/// This `AppExtension` does not have consistency conditions with a
+/// corresponding `CertIssueExtension`. It can appear in a certificate issued
 /// by any CA.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -1117,14 +1118,14 @@ pub struct OperatingOrganizationId(pub Vec<u32>);
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct PKRecipientInfo<'input> {
-    /// contains the hash of the container for the encryption public key as specified in the definition of RecipientInfo.
-    /// Specifically, depending on the choice indicated by the containing RecipientInfo structure:
-    ///   - If the containing RecipientInfo structure indicates certRecipInfo, this field contains the HashedId8 of the certificate.
-    ///     The HashedId8 is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3, applied to the COER-encoded certificate, canonicalized as defined in the definition of Certificate.
-    ///   - If the containing RecipientInfo structure indicates signedDataRecipInfo, this field contains the HashedId8 of the Ieee1609Dot2Data of type signedData that contained the encryption key, with that Ieee¬¬1609¬Dot2¬¬Data canonicalized per 6.3.4.
-    ///     The HashedId8 is calculated with the hash algorithm determined as specified in 5.3.9.5.
-    ///   - If the containing RecipientInfo structure indicates rekRecipInfo, this field contains the HashedId8 of the COER encoding of a PublicEncryptionKey structure containing the response encryption key.
-    ///     The HashedId8 is calculated with the hash algorithm determined as specified in 5.3.9.5.
+    /// contains the hash of the container for the encryption public key as specified in the definition of `RecipientInfo`.
+    /// Specifically, depending on the choice indicated by the containing `RecipientInfo` structure:
+    ///   - If the containing `RecipientInfo` structure indicates certRecipInfo, this field contains the `HashedId8` of the certificate.
+    ///     The `HashedId8` is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3, applied to the COER-encoded certificate, canonicalized as defined in the definition of Certificate.
+    ///   - If the containing `RecipientInfo` structure indicates signedDataRecipInfo, this field contains the `HashedId8` of the `Ieee1609Dot2Data` of type signedData that contained the encryption key, with that Ieee¬¬1609¬Dot2¬¬Data canonicalized per 6.3.4.
+    ///     The `HashedId8` is calculated with the hash algorithm determined as specified in 5.3.9.5.
+    ///   - If the containing `RecipientInfo` structure indicates rekRecipInfo, this field contains the `HashedId8` of the COER encoding of a `PublicEncryptionKey` structure containing the response encryption key.
+    ///     The `HashedId8` is calculated with the hash algorithm determined as specified in 5.3.9.5.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub recipient_id: HashedId8<'input>,
 
@@ -1163,11 +1164,11 @@ pub struct PKRecipientInfo<'input> {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct PduFunctionalType(pub u8);
 
-/// Indicates a symmetric key that may be used directly to decrypt a SymmetricCiphertext
+/// Indicates a symmetric key that may be used directly to decrypt a `SymmetricCiphertext`
 ///
 /// It consists of the low-order 8 bytes of the hash of the COER encoding of a
-/// SymmetricEncryptionKey structure containing the symmetric key in question.
-/// The HashedId8 is calculated with the hash algorithm determined as
+/// `SymmetricEncryptionKey` structure containing the symmetric key in question.
+/// The `HashedId8` is calculated with the hash algorithm determined as
 /// specified in 5.3.9.3. The symmetric key may be established by any
 /// appropriate means agreed by the two parties to the exchange.
 pub type PreSharedKeyRecipientInfo<'input> = HashedId8<'input>;
@@ -1192,7 +1193,7 @@ pub struct PsidGroupPermissions<'input> {
     /// to be (a) greater than or equal to minChainLength certificates and (b)
     /// less than or equal to minChainLength + chainLengthRange certificates. A
     /// value of 0 for minChainLength is not permitted when this type appears in
-    /// the certIssuePermissions field of a ToBeSignedCertificate; a certificate
+    /// the certIssuePermissions field of a `ToBeSignedCertificate`; a certificate
     /// that has a value of 0 for this field is invalid. The value -1 for
     /// chainLengthRange is a special case: if the value of chainLengthRange is -1
     /// it indicates that the certificate chain may be any length equal to or
@@ -1204,8 +1205,8 @@ pub struct PsidGroupPermissions<'input> {
 
     /// takes one or more of the values app and enroll and indicates
     /// the type of certificates or requests that this instance of
-    /// PsidGroupPermissions in the certificate is entitled to authorize.
-    /// Different instances of PsidGroupPermissions within a ToBeSignedCertificate
+    /// `PsidGroupPermissions` in the certificate is entitled to authorize.
+    /// Different instances of `PsidGroupPermissions` within a `ToBeSignedCertificate`
     /// may have different values for eeType.
     ///   - If this field indicates app, the chain is allowed to end in an
     ///     authorization certificate, i.e., a certficate in which these permissions
@@ -1223,10 +1224,10 @@ pub struct PsidGroupPermissions<'input> {
 /// Transfers the data encryption key
 ///
 /// Used to transfer the data encryption key to
-/// an individual recipient of an EncryptedData. The option pskRecipInfo is
-/// selected if the EncryptedData was encrypted using the static encryption
+/// an individual recipient of an `EncryptedData`. The option pskRecipInfo is
+/// selected if the `EncryptedData` was encrypted using the static encryption
 /// key approach specified in 5.3.4. The other options are selected if the
-/// EncryptedData was encrypted using the ephemeral encryption key approach
+/// `EncryptedData` was encrypted using the ephemeral encryption key approach
 /// specified in 5.3.4. The meanings of the choices are:
 /// See Annex C.7 for guidance on when it may be appropriate to use
 /// each of these approaches.
@@ -1237,7 +1238,7 @@ pub struct PsidGroupPermissions<'input> {
 ///
 /// Note: The material input to encryption is the bytes of the encryption key
 /// with no headers, encapsulation, or length indication. Contrast this to
-/// encryption of data, where the data is encapsulated in an Ieee1609Dot2Data.
+/// encryption of data, where the data is encapsulated in an `Ieee1609Dot2Data`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum RecipientInfo<'input> {
@@ -1266,15 +1267,15 @@ pub enum RecipientInfo<'input> {
     /// The data was encrypted with a data encryption
     /// key, the data encryption key was encrypted using a public key encryption
     /// scheme, where the public encryption key was obtained as the public response
-    /// encryption key from a SignedData. In this case, if ECIES is the encryption
+    /// encryption key from a `SignedData`. In this case, if ECIES is the encryption
     /// algorithm, then the parameter P1 to ECIES as defined in 5.3.5 is the
-    /// SHA-256 hash of the Ieee1609Dot2Data of type signedData containing the
+    /// SHA-256 hash of the `Ieee1609Dot2Data` of type signedData containing the
     /// response encryption key, canonicalized as defined in the definition of
-    /// Ieee1609Dot2Data.
+    /// `Ieee1609Dot2Data`.
     ///
     /// Note: If the encryption algorithm is SM2, there is no equivalent of the
     /// parameter P1 and so no input to the encryption process that uses the hash
-    /// of the Ieee1609Dot2Data.
+    /// of the `Ieee1609Dot2Data`.
     #[cfg_attr(feature = "serde", serde(borrow))]
     SignedDataRecipInfo(PKRecipientInfo<'input>),
 
@@ -1289,44 +1290,44 @@ pub enum RecipientInfo<'input> {
     RekRecipInfo(PKRecipientInfo<'input>),
 }
 
-/// contains any AppExtensions that apply to the certificate holder
+/// contains any `AppExtensions` that apply to the certificate holder
 ///
 /// As specified in 5.2.4.2.3, each individual
-/// AppExtension type is associated with consistency conditions, specific to
+/// `AppExtension` type is associated with consistency conditions, specific to
 /// that extension, that govern its consistency with SPDUs signed by the
-/// certificate holder and with the CertIssueExtensions in the CA certificates
+/// certificate holder and with the `CertIssueExtensions` in the CA certificates
 /// in that certificate holders chain. Those consistency conditions are
-/// specified for each individual AppExtension below.
+/// specified for each individual `AppExtension` below.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct SequenceOfAppExtensions<'input>(
     #[cfg_attr(feature = "serde", serde(borrow))] pub Vec<AppExtension<'input>>,
 );
 
-/// This field contains any CertIssueExtensions that apply to the certificate holder
+/// This field contains any `CertIssueExtensions` that apply to the certificate holder
 ///
 /// As specified in 5.2.4.2.3, each individual
-/// CertIssueExtension type is associated with consistency conditions,
+/// `CertIssueExtension` type is associated with consistency conditions,
 /// specific to that extension, that govern its consistency with
-/// AppExtensions in certificates issued by the certificate holder and with
-/// the CertIssueExtensions in the CA certificates in that certificate
+/// `AppExtensions` in certificates issued by the certificate holder and with
+/// the `CertIssueExtensions` in the CA certificates in that certificate
 /// holders chain. Those consistency conditions are specified for each
-/// individual CertIssueExtension below.
+/// individual `CertIssueExtension` below.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct SequenceOfCertIssueExtensions<'input>(
     #[cfg_attr(feature = "serde", serde(borrow))] pub Vec<CertIssueExtension<'input>>,
 );
 
-/// This field contains any CertRequestExtensions that apply to the certificate holder
+/// This field contains any `CertRequestExtensions` that apply to the certificate holder
 ///
 /// As specified in 5.2.4.2.3, each individual
-/// CertRequestExtension type is associated with consistency conditions,
+/// `CertRequestExtension` type is associated with consistency conditions,
 /// specific to that extension, that govern its consistency with
-/// AppExtensions in certificates issued by the certificate holder and with
-/// the CertRequestExtensions in the CA certificates in that certificate
+/// `AppExtensions` in certificates issued by the certificate holder and with
+/// the `CertRequestExtensions` in the CA certificates in that certificate
 /// holders chain. Those consistency conditions are specified for each
-/// individual CertRequestExtension below.
+/// individual `CertRequestExtension` below.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct SequenceOfCertRequestExtensions<'input>(
@@ -1358,7 +1359,7 @@ pub struct SequenceOfRecipientInfo<'input>(
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the ToBeSignedData and the Signature.
+/// applies to the `ToBeSignedData` and the Signature.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct SignedData<'input> {
@@ -1386,7 +1387,7 @@ pub struct SignedData<'input> {
     pub signature: Signature<'input>,
 }
 
-/// contains the data payload of a ToBeSignedData
+/// contains the data payload of a `ToBeSignedData`
 ///
 /// This structure contains at least one of the optional elements, and may
 /// contain more than one. See 5.2.4.3.4 for more details.
@@ -1401,7 +1402,7 @@ pub struct SignedData<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the Ieee1609Dot2Data.
+/// applies to the `Ieee1609Dot2Data`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct SignedDataPayload<'input> {
@@ -1436,7 +1437,7 @@ pub struct SignedDataPayload<'input> {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum SignerIdentifier<'input> {
     /// If the choice indicated is digest:
-    ///   - The structure contains the HashedId8 of the relevant certificate. The HashedId8 is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3.
+    ///   - The structure contains the `HashedId8` of the relevant certificate. The `HashedId8` is calculated with the whole-certificate hash algorithm, determined as described in 6.4.3.
     ///   - The verification type is certificate and the certificate data passed to the hash function as specified in 5.3.1 is the authorization certificate.
     #[cfg_attr(feature = "serde", serde(borrow))]
     Digest(HashedId8<'input>),
@@ -1456,13 +1457,13 @@ pub enum SignerIdentifier<'input> {
 /// Indicates the granted PSIDs and associated SSPs
 ///
 /// Indicates the PSIDs and associated SSPs for which certificate
-/// issuance or request permissions are granted by a PsidGroupPermissions
+/// issuance or request permissions are granted by a `PsidGroupPermissions`
 /// structure. If this takes the value explicit, the enclosing
-/// PsidGroupPermissions structure grants certificate issuance or request
+/// `PsidGroupPermissions` structure grants certificate issuance or request
 /// permissions for the indicated PSIDs and SSP Ranges. If this takes the
-/// value all, the enclosing PsidGroupPermissions structure grants certificate
+/// value all, the enclosing `PsidGroupPermissions` structure grants certificate
 /// issuance or request permissions for all PSIDs not indicated by other
-/// PsidGroupPermissions in the same certIssuePermissions or
+/// `PsidGroupPermissions` in the same certIssuePermissions or
 /// certRequestPermissions field.
 ///
 /// Note: Critical information fields:
@@ -1472,7 +1473,7 @@ pub enum SignerIdentifier<'input> {
 ///     invalidin the sense of 4.2.2.3.2, that is, it is invalid in the sense that
 ///     its validity cannot be established.
 ///   - If present, explicit is a critical information field as defined in
-///     5.2.6. An implementation that does not support the number of PsidSspRange
+///     5.2.6. An implementation that does not support the number of `PsidSspRange`
 ///     in explicit when verifying a signed SPDU shall indicate that the signed
 ///     SPDU is invalid in the sense of 4.2.2.3.2, that is, it is invalid in the
 ///     sense that its validity cannot be established. A conformant implementation
@@ -1492,15 +1493,15 @@ pub struct SymmRecipientInfo<'input> {
     /// contains the hash of the symmetric key encryption key
     /// that may be used to decrypt the data encryption key. It consists of the
     /// low-order 8 bytes of the hash of the COER encoding of a
-    /// SymmetricEncryptionKey structure containing the symmetric key in question.
-    /// The HashedId8 is calculated with the hash algorithm determined as
+    /// `SymmetricEncryptionKey` structure containing the symmetric key in question.
+    /// The `HashedId8` is calculated with the hash algorithm determined as
     /// specified in 5.3.9.4. The symmetric key may be established by any
     /// appropriate means agreed by the two parties to the exchange.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub recipient_id: HashedId8<'input>,
 
     /// contains the encrypted data encryption key within a
-    /// SymmetricCiphertext, where the data encryption key is input to the data
+    /// `SymmetricCiphertext`, where the data encryption key is input to the data
     /// encryption key encryption process with no headers, encapsulation, or
     /// length indication.
     #[cfg_attr(feature = "serde", serde(borrow))]
@@ -1525,7 +1526,7 @@ pub enum SymmetricCiphertext<'input> {
 
 pub type TestCertificate<'input> = Certificate<'input>;
 
-/// The fields in the ToBeSignedCertificate structure have the following meaning:
+/// The fields in the `ToBeSignedCertificate` structure have the following meaning:
 ///
 /// For both implicit and explicit certificates, when the certificate
 /// is hashed to create or recover the public key (in the case of an implicit
@@ -1541,26 +1542,26 @@ pub type TestCertificate<'input> = Certificate<'input>;
 ///     identifier input is the COER encoding of the canonicalization per 6.4.3 of
 ///     the certificate indicated by issuer.
 ///
-/// In other words, for implicit certificates, the value H (CertU) in SEC 4,
+/// In other words, for implicit certificates, the value H (`CertU`) in SEC 4,
 /// section 3, is for purposes of this standard taken to be H [H
-/// (canonicalized ToBeSignedCertificate from the subordinate certificate) ||
+/// (canonicalized `ToBeSignedCertificate` from the subordinate certificate) ||
 /// H (entirety of issuer Certificate)]. See 5.3.2 for further discussion,
 /// including material differences between this standard and SEC 4 regarding
 /// how the hash function output is converted from a bit string to an integer.
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the PublicEncryptionKey and to the VerificationKeyIndicator.
-/// If the PublicEncryptionKey contains a BasePublicEncryptionKey that is an
-/// elliptic curve point (i.e., of type EccP256CurvePoint or EccP384CurvePoint),
+/// applies to the `PublicEncryptionKey` and to the `VerificationKeyIndicator`.
+/// If the `PublicEncryptionKey` contains a `BasePublicEncryptionKey` that is an
+/// elliptic curve point (i.e., of type `EccP256CurvePoint` or `EccP384CurvePoint`),
 /// then the elliptic curve point is encoded in compressed form, i.e., such
-/// that the choice indicated within the Ecc*CurvePoint is compressed-y-0 or
+/// that the choice indicated within the Ecc*`CurvePoint` is compressed-y-0 or
 /// compressed-y-1.
 ///
 /// Note: Critical information fields:
 ///   - If present, appPermissions is a critical information field as defined
 ///     in 5.2.6. If an implementation of verification does not support the number
-///     of PsidSsp in the appPermissions field of a certificate that signed a
+///     of `PsidSsp` in the appPermissions field of a certificate that signed a
 ///     signed SPDU, that implementation shall indicate that the signed SPDU is
 ///     invalid in the sense of 4.2.2.3.2, that is, it is invalid in the sense
 ///     that its validity cannot be established.. A conformant implementation
@@ -1576,7 +1577,7 @@ pub type TestCertificate<'input> = Certificate<'input>;
 ///     certificate) is implementation-specific.
 ///   - If present, certIssuePermissions is a critical information field as
 ///     defined in 5.2.6. If an implementation of verification does not support
-///     the number of PsidGroupPermissions in the certIssuePermissions field of a
+///     the number of `PsidGroupPermissions` in the certIssuePermissions field of a
 ///     CA certificate in the chain of a signed SPDU, the implementation shall
 ///     indicate that the signed SPDU is invalid in the sense of 4.2.2.3.2, that
 ///     is, it is invalid in the sense that its validity cannot be established.
@@ -1593,7 +1594,7 @@ pub type TestCertificate<'input> = Certificate<'input>;
 ///     could not parse the entire certificate) is implementation-specific.
 ///   - If present, certRequestPermissions is a critical information field as
 ///     defined in 5.2.6. If an implementaiton of verification of a certificate
-///     request does not support the number of PsidGroupPermissions in
+///     request does not support the number of `PsidGroupPermissions` in
 ///     certRequestPermissions, the implementation shall indicate that the signed
 ///     SPDU is invalid in the sense of 4.2.2.3.2, that is, it is invalid in the
 ///     sense that its validity cannot be established. A conformant implementation
@@ -1619,7 +1620,7 @@ pub struct ToBeSignedCertificate<'input> {
     /// identifies the Certificate Revocation Authorization CA
     /// (CRACA) responsible for certificate revocation lists (CRLs) on which this
     /// certificate might appear. Use of the cracaId is specified in 5.1.3. The
-    /// HashedId3 is calculated with the whole-certificate hash algorithm,
+    /// `HashedId3` is calculated with the whole-certificate hash algorithm,
     /// determined as described in 6.4.3, applied to the COER-encoded certificate,
     /// canonicalized as defined in the definition of Certificate.
     #[cfg_attr(feature = "serde", serde(borrow))]
@@ -1656,7 +1657,7 @@ pub struct ToBeSignedCertificate<'input> {
     /// indicates all. If the array has multiple entries and one entry has its
     /// psidSspRange field indicate all, then the entry indicating all specifies
     /// the permissions for all PSIDs other than the ones explicitly specified in
-    /// the other entries. See the description of PsidGroupPermissions for further
+    /// the other entries. See the description of `PsidGroupPermissions` for further
     /// discussion.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub cert_issue_permissions: Option<SequenceOfPsidGroupPermissions<'input>>,
@@ -1667,7 +1668,7 @@ pub struct ToBeSignedCertificate<'input> {
     /// all. If the array has multiple entries and one entry has its psidSspRange
     /// field indicate all, then the entry indicating all specifies the permissions
     /// for all PSIDs other than the ones explicitly specified in the other entries.
-    /// See the description of PsidGroupPermissions for further discussion.
+    /// See the description of `PsidGroupPermissions` for further discussion.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub cert_request_permissions: Option<SequenceOfPsidGroupPermissions<'input>>,
 
@@ -1718,8 +1719,8 @@ pub struct ToBeSignedCertificate<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the SignedDataPayload if it is of type data, and to the
-/// HeaderInfo.
+/// applies to the `SignedDataPayload` if it is of type data, and to the
+/// `HeaderInfo`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ToBeSignedData<'input> {
@@ -1731,14 +1732,14 @@ pub struct ToBeSignedData<'input> {
     /// This structure is used as follows to determine the "data input" to the
     /// hash operation for signing or verification as specified in 5.3.1.2.2 or
     /// 5.3.1.3.
-    ///   - If payload does not contain the field omitted, the data input to the hash operation is the COER encoding of the ToBeSignedData.
-    ///   - If payload field in this ToBeSignedData instance contains the field
+    ///   - If payload does not contain the field omitted, the data input to the hash operation is the COER encoding of the `ToBeSignedData`.
+    ///   - If payload field in this `ToBeSignedData` instance contains the field
     ///     omitted, the data input to the hash operation is the COER encoding of the
-    ///     ToBeSignedData, concatenated with the hash of the omitted payload. The hash
+    ///     `ToBeSignedData`, concatenated with the hash of the omitted payload. The hash
     ///     of the omitted payload is calculated with the same hash algorithm that is
     ///     used to calculate the hash of the data input for signing or verification.
     ///     The data input to the hash operation is simply the COER enocding of the
-    ///     ToBeSignedData, concatenated with the hash of the omitted payload: there is
+    ///     `ToBeSignedData`, concatenated with the hash of the omitted payload: there is
     ///     no additional wrapping or length indication. As noted in 5.2.4.3.4, the
     ///     means by which the signer and verifier establish the contents of the
     ///     omitted payload are out of scope for this standard.
@@ -1761,9 +1762,9 @@ pub struct ToBeSignedData<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the PublicVerificationKey and to the EccP256CurvePoint. The
-/// EccP256CurvePoint is encoded in compressed form, i.e., such that the
-/// choice indicated within the EccP256CurvePoint is compressed-y-0 or
+/// applies to the `PublicVerificationKey` and to the `EccP256CurvePoint`. The
+/// `EccP256CurvePoint` is encoded in compressed form, i.e., such that the
+/// choice indicated within the `EccP256CurvePoint` is compressed-y-0 or
 /// compressed-y-1.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -1801,8 +1802,8 @@ pub const TLS_HANDSHAKE: PduFunctionalType = PduFunctionalType(1);
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2 if it appears in a
-/// HeaderInfo or in a ToBeSignedCertificate. See the definitions of HeaderInfo
-/// and ToBeSignedCertificate for a specification of the canonicalization
+/// `HeaderInfo` or in a `ToBeSignedCertificate`. See the definitions of `HeaderInfo`
+/// and `ToBeSignedCertificate` for a specification of the canonicalization
 /// operations.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -1824,13 +1825,13 @@ pub enum BasePublicEncryptionKey<'input> {
 /// appPermissions entry A for which the ssp field is bitmapSsp, A is
 /// consistent with the issuing certificate if the  certificate contains one
 /// of the following:
-///   - (OPTION 1) A SubjectPermissions field indicating the choice all and no PsidSspRange field containing the psid field in A;
-///   - (OPTION 2) A PsidSspRange P for which the following holds:
+///   - (OPTION 1) A `SubjectPermissions` field indicating the choice all and no `PsidSspRange` field containing the psid field in A;
+///   - (OPTION 2) A `PsidSspRange` P for which the following holds:
 ///     - The psid field in P is equal to the psid field in A and one of the following is true:
 ///       - EITHER The sspRange field in P indicates all
 ///       - OR The sspRange field in P indicates bitmapSspRange and for every bit set to 1 in the sspBitmask in P, the bit in the identical position in the sspValue in A is set equal to the bit in that position in the sspValue in P.
 ///
-/// Note: A BitmapSsp B is consistent with a BitmapSspRange R if for every
+/// Note: A `BitmapSsp` B is consistent with a `BitmapSspRange` R if for every
 /// bit set to 1 in the sspBitmask in R, the bit in the identical position in
 /// B is set equal to the bit in that position in the sspValue in R. For each
 /// bit set to 0 in the sspBitmask in R, the corresponding bit in the
@@ -1848,11 +1849,11 @@ pub struct BitmapSsp<'input>(#[cfg_attr(feature = "serde", serde(borrow))] pub &
 /// sspValue and sspBitmask fields shall be of the same length.
 ///
 /// Note: Consistency with issuing certificate: If a certificate has an
-/// PsidSspRange value P for which the sspRange field is bitmapSspRange,
+/// `PsidSspRange` value P for which the sspRange field is bitmapSspRange,
 /// P is consistent with the issuing certificate if the issuing certificate
 /// contains one of the following:
-///   - (OPTION 1) A SubjectPermissions field indicating the choice all and no PsidSspRange field containing the psid field in P;
-///   - (OPTION 2) A PsidSspRange R for which the following holds:
+///   - (OPTION 1) A `SubjectPermissions` field indicating the choice all and no `PsidSspRange` field containing the psid field in P;
+///   - (OPTION 2) A `PsidSspRange` R for which the following holds:
 ///     - The psid field in R is equal to the psid field in P and one of the following is true:
 ///       - EITHER The sspRange field in R indicates all
 ///       - OR The sspRange field in R indicates bitmapSspRange and for every bit set to 1 in the sspBitmask in R:
@@ -1887,19 +1888,19 @@ pub struct CircularRegion {
 
 /// List of countries and regions
 ///
-/// A conformant implementation that supports CountryAndRegions shall
+/// A conformant implementation that supports `CountryAndRegions` shall
 /// support a regions field containing at least eight entries.
 ///
 /// A conformant implementation that implements this type shall recognize
 /// (in the sense of "be able to determine whether a two dimensional location
 /// lies inside or outside the borders identified by") at least one value of
-/// UnCountryId and at least one value for a region within the country
-/// indicated by that recognized UnCountryId value. In this version of this
+/// `UnCountryId` and at least one value for a region within the country
+/// indicated by that recognized `UnCountryId` value. In this version of this
 /// standard, the only means to satisfy this is for a conformant
-/// implementation to recognize the value of UnCountryId indicating USA and
+/// implementation to recognize the value of `UnCountryId` indicating USA and
 /// at least one of the FIPS state codes for US states. The Protocol
 /// Implementation Conformance Statement (PICS) provided in Annex A allows
-/// an implementation to state which UnCountryId values it recognizes and
+/// an implementation to state which `UnCountryId` values it recognizes and
 /// which region values are recognized within that country.
 ///
 /// If a verifying implementation is required to check that an relevant
@@ -1920,7 +1921,7 @@ pub struct CircularRegion {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CountryAndRegions {
-    /// is a UnCountryId as defined above
+    /// is a `UnCountryId` as defined above
     pub country_only: UnCountryId,
 
     /// identifies one or more regions within the country. If
@@ -1934,7 +1935,7 @@ pub struct CountryAndRegions {
 
 /// List of countries and sub-regions
 ///
-/// A conformant implementation that supports CountryAndSubregions
+/// A conformant implementation that supports `CountryAndSubregions`
 /// shall support a regionAndSubregions field containing at least eight
 /// entries.
 ///
@@ -1944,10 +1945,10 @@ pub struct CountryAndRegions {
 /// country and at least one value for a region within the country indicated
 /// by that recognized country value. In this version of this standard, the
 /// only means to satisfy this is for a conformant implementation to recognize
-/// the value of UnCountryId indicating USA and at least one of the FIPS state
+/// the value of `UnCountryId` indicating USA and at least one of the FIPS state
 /// codes for US states. The Protocol Implementation Conformance Statement
 /// (PICS) provided in Annex A allows an implementation to state which
-/// UnCountryId values it recognizes and which region values are recognized
+/// `UnCountryId` values it recognizes and which region values are recognized
 /// within that country.
 ///
 /// If a verifying implementation is required to check that an relevant
@@ -1967,7 +1968,7 @@ pub struct CountryAndRegions {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CountryAndSubregions {
-    /// is a UnCountryId as defined above
+    /// is a `UnCountryId` as defined above
     pub country_only: UnCountryId,
     /// identifies one or more subregions within country
     pub region_and_subregions: SequenceOfRegionAndSubregions,
@@ -2028,8 +2029,8 @@ pub struct EccP256CurvePointUncompressedP256<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2 if it appears in a
-/// HeaderInfo or in a ToBeSignedCertificate. See the definitions of HeaderInfo
-/// and ToBeSignedCertificate for a specification of the canonicalization
+/// `HeaderInfo` or in a `ToBeSignedCertificate`. See the definitions of `HeaderInfo`
+/// and `ToBeSignedCertificate` for a specification of the canonicalization
 /// operations.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -2074,8 +2075,8 @@ pub struct EccP384CurvePointUncompressedP384<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2 if it appears in a
-/// HeaderInfo or in a ToBeSignedCertificate. See the definitions of HeaderInfo
-/// and ToBeSignedCertificate for a specification of the canonicalization
+/// `HeaderInfo` or in a `ToBeSignedCertificate`. See the definitions of `HeaderInfo`
+/// and `ToBeSignedCertificate` for a specification of the canonicalization
 /// operations.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -2095,17 +2096,17 @@ pub enum EccP384CurvePoint<'input> {
 ///
 /// The signature is generated as specified in 5.3.1.
 /// If the signature process followed the specification of FIPS 186-4
-/// and output the integer r, r is represented as an EccP256CurvePoint
+/// and output the integer r, r is represented as an `EccP256CurvePoint`
 /// indicating the selection x-only.
 ///
 /// If the signature process followed the specification of SEC 1 and
 /// output the elliptic curve point R to allow for fast verification, R is
-/// represented as an EccP256CurvePoint indicating the choice compressed-y-0,
+/// represented as an `EccP256CurvePoint` indicating the choice compressed-y-0,
 /// compressed-y-1, or uncompressed at the sender's discretion.
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. When this data structure
-/// is canonicalized, the EccP256CurvePoint in rSig is represented in the
+/// is canonicalized, the `EccP256CurvePoint` in rSig is represented in the
 /// form x-only.
 ///
 /// Note: When the signature is of form x-only, the x-value in rSig is
@@ -2120,10 +2121,10 @@ pub enum EccP384CurvePoint<'input> {
 /// bounded above by approximately square-root(p)/p or 2^(-128). For the
 /// 256-bit curves in this standard, the exact values of n and p in hexadecimal
 /// are:
-/// NISTp256:
+/// - NISTp256:
 ///   - p = FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
 ///   - n = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
-/// Brainpoolp256:
+/// - Brainpoolp256:
 ///   - p = A9FB57DBA1EEA9BC3E660A909D838D726E3BF623D52620282013481D1F6E5377
 ///   - n = A9FB57DBA1EEA9BC3E660A909D838D718C397AA3B561A6F7901E0E82974856A7
 #[derive(Debug, Clone, PartialEq)]
@@ -2139,17 +2140,17 @@ pub struct EcdsaP256Signature<'input> {
 ///
 /// The signature is generated as specified in 5.3.1.
 /// If the signature process followed the specification of FIPS 186-4
-/// and output the integer r, r is represented as an EccP384CurvePoint
+/// and output the integer r, r is represented as an `EccP384CurvePoint`
 /// indicating the selection x-only.
 ///
 /// If the signature process followed the specification of SEC 1 and
 /// output the elliptic curve point R to allow for fast verification, R is
-/// represented as an EccP384CurvePoint indicating the choice compressed-y-0,
+/// represented as an `EccP384CurvePoint` indicating the choice compressed-y-0,
 /// compressed-y-1, or uncompressed at the sender's discretion.
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. When this data structure
-/// is canonicalized, the EccP384CurvePoint in rSig is represented in the
+/// is canonicalized, the `EccP384CurvePoint` in rSig is represented in the
 /// form x-only.
 ///
 /// Note: When the signature is of form x-only, the x-value in rSig is
@@ -2188,7 +2189,7 @@ pub struct EcencP256EncryptedKey<'input> {
     pub v: EccP256CurvePoint<'input>,
 
     /// is the encrypted symmetric key, which is the output C from encryption as specified in 5.3.5.2.
-    /// The algorithm for the symmetric key is identified by the CHOICE indicated in the following SymmetricCiphertext.
+    /// The algorithm for the symmetric key is identified by the CHOICE indicated in the following `SymmetricCiphertext`.
     /// For SM2 this algorithm shall be SM4.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub c: &'input [u8],
@@ -2211,7 +2212,7 @@ pub struct EciesP256EncryptedKey<'input> {
     pub v: EccP256CurvePoint<'input>,
 
     /// is the encrypted symmetric key, which is the output C from encryption as specified in 5.3.5.1.
-    /// The algorithm for the symmetric key is identified by the CHOICE indicated in the following SymmetricCiphertext.
+    /// The algorithm for the symmetric key is identified by the CHOICE indicated in the following `SymmetricCiphertext`.
     /// For ECIES this shall be AES-128.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub c: &'input [u8],
@@ -2245,9 +2246,9 @@ pub type Elevation = Uint16;
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2 if it appears in a
-/// HeaderInfo or in a ToBeSignedCertificate. The canonicalization applies to
-/// the PublicEncryptionKey. See the definitions of HeaderInfo and
-/// ToBeSignedCertificate for a specification of the canonicalization
+/// `HeaderInfo` or in a `ToBeSignedCertificate`. The canonicalization applies to
+/// the `PublicEncryptionKey`. See the definitions of `HeaderInfo` and
+/// `ToBeSignedCertificate` for a specification of the canonicalization
 /// operations.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -2258,7 +2259,7 @@ pub enum EncryptionKey<'input> {
     Symmetric(SymmetricEncryptionKey<'input>),
 }
 
-/// used as an identifier for instances of ExtContent within an EXT-TYPE
+/// used as an identifier for instances of `ExtContent` within an EXT-TYPE
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ExtId(pub u8);
@@ -2266,7 +2267,7 @@ pub struct ExtId(pub u8);
 /// Parameterized type representing a (id, content) pair
 ///
 /// Represents a (id, content) pair drawn from
-/// the set ExtensionTypes, which is constrained to contain objects defined by
+/// the set `ExtensionTypes`, which is constrained to contain objects defined by
 /// the class EXT-TYPE.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -2294,32 +2295,32 @@ pub struct Extension<'input> {
 /// validity cannot be established.
 ///   - If selected, rectangularRegion is a critical information field as
 ///     defined in 5.2.6. An implementation that does not support the number of
-///     RectangularRegion in rectangularRegions when verifying a signed SPDU shall
+///     `RectangularRegion` in rectangularRegions when verifying a signed SPDU shall
 ///     indicate that the signed SPDU is invalid in the sense of 4.2.2.3.2, that
 ///     is, it is invalid in the sense that its validity cannot be established.
 ///     A conformant implementation shall support rectangularRegions fields
 ///     containing at least eight entries.
 ///   - If selected, identifiedRegion is a critical information field as
 ///     defined in 5.2.6. An implementation that does not support the number of
-///     IdentifiedRegion in identifiedRegion shall reject the signed SPDU as
+///     `IdentifiedRegion` in identifiedRegion shall reject the signed SPDU as
 ///     invalid in the sense of 4.2.2.3.2, that is, it is invalid in the sense
 ///     that its validity cannot be established. A conformant implementation shall
 ///     support identifiedRegion fields containing at least eight entries.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum GeographicRegion {
-    /// contains a single instance of the CircularRegion structure
+    /// contains a single instance of the `CircularRegion` structure
     CircularRegion(CircularRegion),
 
-    /// is an array of RectangularRegion structures containing at least one entry.
+    /// is an array of `RectangularRegion` structures containing at least one entry.
     /// This field is interpreted as a series of rectangles, which may overlap or be disjoint.
     /// The permitted region is any point within any of the rectangles.
     RectangularRegion(SequenceOfRectangularRegion),
 
-    /// contains a single instance of the PolygonalRegion structure
+    /// contains a single instance of the `PolygonalRegion` structure
     PolygonalRegion(PolygonalRegion),
 
-    /// is an array of IdentifiedRegion structures containing at least one entry.
+    /// is an array of `IdentifiedRegion` structures containing at least one entry.
     /// The permitted region is any point within any of the identified regions.
     IdentifiedRegion(SequenceOfIdentifiedRegion),
 }
@@ -2370,88 +2371,88 @@ impl TryFrom<i128> for HashAlgorithm {
 
 /// contains the truncated hash of another data structure
 ///
-/// The HashedId10 for a given data structure is calculated by calculating the
+/// The `HashedId10` for a given data structure is calculated by calculating the
 /// hash of the encoded data structure and taking the low-order ten bytes of
 /// the hash output. The low-order ten bytes are the last ten bytes of the
 /// hash when represented in network byte order. If the data structure
 /// is subject to canonicalization it is canonicalized before hashing. See
 /// Example below.
 ///
-/// The hash algorithm to be used to calculate a HashedId10 within a
+/// The hash algorithm to be used to calculate a `HashedId10` within a
 /// structure depends on the context. In this standard, for each structure
-/// that includes a HashedId10 field, the corresponding text indicates how the
+/// that includes a `HashedId10` field, the corresponding text indicates how the
 /// hash algorithm is determined. See also the discussion in 5.3.9.
 /// Example: Consider the SHA-256 hash of the empty string:
 /// SHA-256("") = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 ///
-/// The HashedId10 derived from this hash corresponds to the following:
-/// HashedId10 = 934ca495991b7852b855.
+/// The `HashedId10` derived from this hash corresponds to the following:
+/// `HashedId10` = 934ca495991b7852b855.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct HashedId10<'input>(#[cfg_attr(feature = "serde", serde(borrow))] pub &'input [u8]);
 
 /// contains the truncated hash of another data structure
 ///
-/// The HashedId3 for a given data structure is calculated by calculating the
+/// The `HashedId3` for a given data structure is calculated by calculating the
 /// hash of the encoded data structure and taking the low-order three bytes of
 /// the hash output. The low-order three bytes are the last three bytes of the
 /// 32-byte hash when represented in network byte order. If the data structure
 /// is subject to canonicalization it is canonicalized before hashing. See
 /// Example below.
 ///
-/// The hash algorithm to be used to calculate a HashedId3 within a
+/// The hash algorithm to be used to calculate a `HashedId3` within a
 /// structure depends on the context. In this standard, for each structure
-/// that includes a HashedId3 field, the corresponding text indicates how the
+/// that includes a `HashedId3` field, the corresponding text indicates how the
 /// hash algorithm is determined. See also the discussion in 5.3.9.
 ///
 /// Example: Consider the SHA-256 hash of the empty string:
 /// SHA-256("") = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-/// The HashedId3 derived from this hash corresponds to the following:
-/// HashedId3 = 52b855.
+/// The `HashedId3` derived from this hash corresponds to the following:
+/// `HashedId3` = 52b855.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct HashedId3<'input>(#[cfg_attr(feature = "serde", serde(borrow))] pub &'input [u8]);
 
 /// Truncated hash of another data structure
 ///
-/// The HashedId32 for a given data structure is calculated by
+/// The `HashedId32` for a given data structure is calculated by
 /// calculating the hash of the encoded data structure and taking the
 /// low-order 32 bytes of the hash output. The low-order 32 bytes are the last
 /// 32 bytes of the hash when represented in network byte order. If the data
 /// structure is subject to canonicalization it is canonicalized before
 /// hashing. See Example below.
-/// The hash algorithm to be used to calculate a HashedId32 within a
+/// The hash algorithm to be used to calculate a `HashedId32` within a
 /// structure depends on the context. In this standard, for each structure
-/// that includes a HashedId32 field, the corresponding text indicates how the
+/// that includes a `HashedId32` field, the corresponding text indicates how the
 /// hash algorithm is determined. See also the discussion in 5.3.9.
 ///
 /// Example: Consider the SHA-256 hash of the empty string:
 /// SHA-256("") = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 ///
-/// The HashedId32 derived from this hash corresponds to the following:
-/// HashedId32 = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.
+/// The `HashedId32` derived from this hash corresponds to the following:
+/// `HashedId32` = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct HashedId32<'input>(#[cfg_attr(feature = "serde", serde(borrow))] pub &'input [u8]);
 
 /// Truncated hash of another data structure
 ///
-/// The HashedId48 for a given data structure is calculated by
+/// The `HashedId48` for a given data structure is calculated by
 /// calculating the hash of the encoded data structure and taking the
 /// low-order 48 bytes of the hash output. The low-order 48 bytes are the last
 /// 48 bytes of the hash when represented in network byte order. If the data
 /// structure is subject to canonicalization it is canonicalized before
 /// hashing. See Example below.
 ///
-/// The hash algorithm to be used to calculate a HashedId48 within a
+/// The hash algorithm to be used to calculate a `HashedId48` within a
 /// structure depends on the context. In this standard, for each structure
-/// that includes a HashedId48 field, the corresponding text indicates how the
+/// that includes a `HashedId48` field, the corresponding text indicates how the
 /// hash algorithm is determined. See also the discussion in 5.3.9.
 ///
 /// Example: Consider the SHA-384 hash of the empty string:
 /// SHA-384("") = 38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6 e1da274edebfe76f65fbd51ad2f14898b95b
-/// The HashedId48 derived from this hash corresponds to the following:
-/// HashedId48 = 38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e
+/// The `HashedId48` derived from this hash corresponds to the following:
+/// `HashedId48` = 38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e
 /// 1da274edebfe76f65fbd51ad2f14898b95b.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -2459,22 +2460,22 @@ pub struct HashedId48<'input>(#[cfg_attr(feature = "serde", serde(borrow))] pub 
 
 /// contains the truncated hash of another data structure
 ///
-/// The HashedId8 for a given data structure is calculated by calculating the
+/// The `HashedId8` for a given data structure is calculated by calculating the
 /// hash of the encoded data structure and taking the low-order eight bytes of
 /// the hash output. The low-order eight bytes are the last eight bytes of the
 /// hash when represented in network byte order. If the data structure
 /// is subject to canonicalization it is canonicalized before hashing. See
 /// Example below.
 ///
-/// The hash algorithm to be used to calculate a HashedId8 within a
+/// The hash algorithm to be used to calculate a `HashedId8` within a
 /// structure depends on the context. In this standard, for each structure
-/// that includes a HashedId8 field, the corresponding text indicates how the
+/// that includes a `HashedId8` field, the corresponding text indicates how the
 /// hash algorithm is determined. See also the discussion in 5.3.9.
 ///
 /// Example: Consider the SHA-256 hash of the empty string:
 /// SHA-256("") = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-/// The HashedId8 derived from this hash corresponds to the following:
-/// HashedId8 = a495991b7852b855.
+/// The `HashedId8` derived from this hash corresponds to the following:
+/// `HashedId8` = a495991b7852b855.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct HashedId8<'input>(#[cfg_attr(feature = "serde", serde(borrow))] pub &'input [u8]);
@@ -2498,7 +2499,7 @@ pub type IValue = Uint16;
 /// A conformant implementation that supports this type shall support at least
 /// one of the possible CHOICE values. The Protocol Implementation Conformance
 /// Statement (PICS) provided in Annex A allows an implementation to state
-/// which CountryOnly values it recognizes.
+/// which `CountryOnly` values it recognizes.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum IdentifiedRegion {
@@ -2606,8 +2607,8 @@ pub struct Opaque<'input>(#[cfg_attr(feature = "serde", serde(borrow))] pub &'in
 /// A point which contains an elevation component is considered to be
 /// within the polygonal region if its horizontal projection onto the
 /// reference ellipsoid lies within the region.
-/// A valid PolygonalRegion contains at least three points. In a valid
-/// PolygonalRegion, the implied lines that make up the sides of the polygon
+/// A valid `PolygonalRegion` contains at least three points. In a valid
+/// `PolygonalRegion`, the implied lines that make up the sides of the polygon
 /// do not intersect.
 ///
 /// Note: This type does not support enclaves / exclaves. This might be
@@ -2615,10 +2616,10 @@ pub struct Opaque<'input>(#[cfg_attr(feature = "serde", serde(borrow))] pub &'in
 ///
 /// Note: Critical information fields: If present, this is a critical
 /// information field as defined in 5.2.6. An implementation that does not
-/// support the number of TwoDLocation in the PolygonalRegion when verifying a
+/// support the number of `TwoDLocation` in the `PolygonalRegion` when verifying a
 /// signed SPDU shall indicate that the signed SPDU is invalid. A compliant
-/// implementation shall support PolygonalRegions containing at least eight
-/// TwoDLocation entries.
+/// implementation shall support `PolygonalRegions` containing at least eight
+/// `TwoDLocation` entries.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct PolygonalRegion(pub Vec<TwoDLocation>);
@@ -2639,16 +2640,16 @@ pub struct Psid(pub u128);
 /// identified by a Psid.
 ///
 /// Note: The determination as to whether the activities are consistent with
-/// the permissions indicated by the PSID and ServiceSpecificPermissions is
+/// the permissions indicated by the PSID and `ServiceSpecificPermissions` is
 /// made by the SDEE and not by the SDS; the SDS provides the PSID and SSP
 /// information to the SDEE to enable the SDEE to make that determination.
 /// See 5.2.4.3.3 for more information.
 ///
 /// Note: The SDEE specification is expected to specify what application
-/// activities are permitted by particular ServiceSpecificPermissions values.
+/// activities are permitted by particular `ServiceSpecificPermissions` values.
 /// The SDEE specification is also expected EITHER to specify application
-/// activities that are permitted if the ServiceSpecificPermissions is
-/// omitted, OR to state that the ServiceSpecificPermissions need to always be
+/// activities that are permitted if the `ServiceSpecificPermissions` is
+/// omitted, OR to state that the `ServiceSpecificPermissions` need to always be
 /// present.
 ///
 /// Note: Consistency with signed SPDU: As noted in 5.1.1,
@@ -2658,7 +2659,7 @@ pub struct Psid(pub u128);
 /// Note: Consistency with issuing certificate: If a certificate has an
 /// appPermissions entry A for which the ssp field is omitted, A is consistent
 /// with the issuing certificate if the issuing certificate contains a
-/// PsidSspRange P for which the following holds:
+/// `PsidSspRange` P for which the following holds:
 ///   - The psid field in P is equal to the psid field in A and one of the following is true:
 ///     - The sspRange field in P indicates all.
 ///     - The sspRange field in P indicates opaque and one of the entries in opaque is an OCTET STRING of length 0.
@@ -2698,9 +2699,9 @@ pub struct PsidSspRange<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2 if it appears in a
-/// HeaderInfo or in a ToBeSignedCertificate. The canonicalization applies to
-/// the BasePublicEncryptionKey. See the definitions of HeaderInfo and
-/// ToBeSignedCertificate for a specification of the canonicalization
+/// `HeaderInfo` or in a `ToBeSignedCertificate`. The canonicalization applies to
+/// the `BasePublicEncryptionKey`. See the definitions of `HeaderInfo` and
+/// `ToBeSignedCertificate` for a specification of the canonicalization
 /// operations.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -2713,7 +2714,7 @@ pub struct PublicEncryptionKey<'input> {
 /// represents a public key and states with what algorithm the public key is to be used
 ///
 /// Cryptographic mechanisms are defined in 5.3.
-/// An EccP256CurvePoint or EccP384CurvePoint within a PublicVerificationKey
+/// An `EccP256CurvePoint` or `EccP384CurvePoint` within a `PublicVerificationKey`
 /// structure is invalid if it indicates the choice x-only.
 ///
 /// Note: Critical information fields: If present, this is a critical
@@ -2725,9 +2726,9 @@ pub struct PublicEncryptionKey<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to the EccP256CurvePoint and the Ecc384CurvePoint. Both forms of
+/// applies to the `EccP256CurvePoint` and the `Ecc384CurvePoint`. Both forms of
 /// point are encoded in compressed form, i.e., such that the choice indicated
-/// within the Ecc*CurvePoint is compressed-y-0 or compressed-y-1.
+/// within the Ecc*`CurvePoint` is compressed-y-0 or compressed-y-1.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum PublicVerificationKey<'input> {
@@ -2751,9 +2752,9 @@ pub enum PublicVerificationKey<'input> {
 /// A point which contains an elevation component is considered to be within the rectangular region
 /// if its horizontal projection onto the reference ellipsoid lies within the region.
 ///
-/// A RectangularRegion is invalid if the northWest value is south of the southEast value, or if the
+/// A `RectangularRegion` is invalid if the northWest value is south of the southEast value, or if the
 /// latitude values in the two points are equal, or if the longitude values in the two points are
-/// equal; otherwise it is valid. A certificate that contains an invalid RectangularRegion is invalid.
+/// equal; otherwise it is valid. A certificate that contains an invalid `RectangularRegion` is invalid.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RectangularRegion {
@@ -2768,8 +2769,8 @@ pub struct RectangularRegion {
 /// The meanings of the fields in this structure are to be interpreted
 /// in the context of a country within which the region is located, referred
 /// to as the "enclosing country". If this structure is used in a
-/// CountryAndSubregions structure, the enclosing country is the one indicated
-/// by the country field in the CountryAndSubregions structure. If other uses
+/// `CountryAndSubregions` structure, the enclosing country is the one indicated
+/// by the country field in the `CountryAndSubregions` structure. If other uses
 /// are defined for this structure in future, it is expected that that
 /// definition will include a specification of how the enclosing country can
 /// be determined.
@@ -2794,7 +2795,7 @@ pub struct RectangularRegion {
 /// states, and at least one of the county codes in at least one of the
 /// recognized states. The Protocol Implementation Conformance Statement
 /// (PICS) provided in Annex A allows an implementation to state which
-/// UnCountryId values it recognizes and which region values are recognized
+/// `UnCountryId` values it recognizes and which region values are recognized
 /// within that country.
 ///
 /// If a verifying implementation is required to check that an relevant
@@ -2819,7 +2820,7 @@ pub struct RegionAndSubregions {
     pub region: Uint8,
 
     /// identifies one or more subregions within region. A
-    /// conformant implementation that supports RegionAndSubregions shall support
+    /// conformant implementation that supports `RegionAndSubregions` shall support
     /// a subregions field containing at least eight entries.
     pub subregions: SequenceOfUint16,
 }
@@ -2889,10 +2890,10 @@ pub struct SequenceOfUint16(pub Vec<Uint16>);
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct SequenceOfUint8(pub Vec<Uint8>);
 
-/// SSPs for a given entry in a PsidSsp
+/// SSPs for a given entry in a `PsidSsp`
 ///
 /// This structure represents the Service Specific Permissions (SSP)
-/// relevant to a given entry in a PsidSsp. The meaning of the SSP is specific
+/// relevant to a given entry in a `PsidSsp`. The meaning of the SSP is specific
 /// to the associated Psid. SSPs may be PSID-specific octet strings or
 /// bitmap-based. See Annex C for further discussion of how application
 /// specifiers may choose which SSP form to use.
@@ -2901,13 +2902,13 @@ pub struct SequenceOfUint8(pub Vec<Uint8>);
 /// appPermissions entry A for which the ssp field is opaque, A is consistent
 /// with the issuing certificate if the issuing certificate contains one of
 /// the following:
-///   - (OPTION 1) A SubjectPermissions field indicating the choice all and no PsidSspRange field containing the psid field in A;
-///   - (OPTION 2) A PsidSspRange P for which the following holds:
+///   - (OPTION 1) A `SubjectPermissions` field indicating the choice all and no `PsidSspRange` field containing the psid field in A;
+///   - (OPTION 2) A `PsidSspRange` P for which the following holds:
 ///     - The psid field in P is equal to the psid field in A and one of the following is true:
 ///       - The sspRange field in P indicates all.
 ///       - The sspRange field in P indicates opaque and one of the entries in the opaque field in P is an OCTET STRING identical to the opaque field in A.
 ///
-/// For consistency rules for other types of ServiceSpecificPermissions, see the following subclauses.
+/// For consistency rules for other types of `ServiceSpecificPermissions`, see the following subclauses.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum ServiceSpecificPermissions<'input> {
@@ -2922,7 +2923,7 @@ pub enum ServiceSpecificPermissions<'input> {
 
 /// represents a signature for a supported public key algorithm
 ///
-/// It may be contained within SignedData or Certificate.
+/// It may be contained within `SignedData` or Certificate.
 ///
 /// Note: Critical information fields: If present, this is a critical
 /// information field as defined in 5.2.5. An implementation that does not
@@ -2933,8 +2934,8 @@ pub enum ServiceSpecificPermissions<'input> {
 ///
 /// Note: Canonicalization: This data structure is subject to canonicalization
 /// for the relevant operations specified in 6.1.2. The canonicalization
-/// applies to instances of this data structure of form EcdsaP256Signature
-/// and EcdsaP384Signature.
+/// applies to instances of this data structure of form `EcdsaP256Signature`
+/// and `EcdsaP384Signature`.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum Signature<'input> {
@@ -2953,27 +2954,27 @@ pub enum Signature<'input> {
 /// identifies the SSPs associated with a PSID for which the holder may issue or request certificates
 ///
 /// Note: Consistency with issuing certificate: If a certificate has a
-/// PsidSspRange A for which the ssp field is opaque, A is consistent with
+/// `PsidSspRange` A for which the ssp field is opaque, A is consistent with
 /// the issuing certificate if the issuing certificate contains one of the
 /// following:
-///   - (OPTION 1) A SubjectPermissions field indicating the choice all and no PsidSspRange field containing the psid field in A;
-///   - (OPTION 2) A PsidSspRange P for which the following holds:
+///   - (OPTION 1) A `SubjectPermissions` field indicating the choice all and no `PsidSspRange` field containing the psid field in A;
+///   - (OPTION 2) A `PsidSspRange` P for which the following holds:
 ///     - The psid field in P is equal to the psid field in A and one of the following is true:
 ///       - The sspRange field in P indicates all.
 ///       - The sspRange field in P indicates opaque, and the sspRange field in
 ///         A indicates opaque, and every OCTET STRING within the opaque in A is a
 ///         duplicate of an OCTET STRING within the opaque in P.
 ///
-/// If a certificate has a PsidSspRange A for which the ssp field is all,
+/// If a certificate has a `PsidSspRange` A for which the ssp field is all,
 /// A is consistent with the issuing certificate if the issuing certificate
-/// contains a PsidSspRange P for which the following holds:
-///   - (OPTION 1) A SubjectPermissions field indicating the choice all and no PsidSspRange field containing the psid field in A;
-///   - (OPTION 2) A PsidSspRange P for which the psid field in P is equal to the psid field in A and the sspRange field in P indicates all.
+/// contains a `PsidSspRange` P for which the following holds:
+///   - (OPTION 1) A `SubjectPermissions` field indicating the choice all and no `PsidSspRange` field containing the psid field in A;
+///   - (OPTION 2) A `PsidSspRange` P for which the psid field in P is equal to the psid field in A and the sspRange field in P indicates all.
 ///
-/// For consistency rules for other types of SspRange, see the following subclauses.
+/// For consistency rules for other types of `SspRange`, see the following subclauses.
 ///
 /// Note: The choice "all" may also be indicated by omitting the
-/// SspRange in the enclosing PsidSspRange structure. Omitting the SspRange is
+/// `SspRange` in the enclosing `PsidSspRange` structure. Omitting the `SspRange` is
 /// preferred to explicitly indicating "all".
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -3150,12 +3151,12 @@ pub struct Uint8(pub u8);
 /// area identifier as defined by the United Nations Statistics Division in
 /// October 2013 (see normative references in Clause 0).
 ///
-/// A conformant implementation that implements IdentifiedRegion shall
+/// A conformant implementation that implements `IdentifiedRegion` shall
 /// recognize (in the sense of be able to determine whether a two dimensional
 /// location lies inside or outside the borders identified by) at least one
-/// value of UnCountryId. The Protocol Implementation Conformance Statement
+/// value of `UnCountryId`. The Protocol Implementation Conformance Statement
 /// (PICS) provided in Annex A allows an implementation to state which
-/// UnCountryId values it recognizes.
+/// `UnCountryId` values it recognizes.
 ///
 /// Since 2013 and before the publication of this version of this standard,
 /// three changes have been made to the country code list, to define the

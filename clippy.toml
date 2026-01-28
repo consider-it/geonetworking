@@ -1,0 +1,7 @@
+doc-valid-idents = [
+  "GeoAdhoc",
+  "GeoNetworking",
+  "NISTp256",
+  "Brainpoolp256",
+  ".."
+]
