@@ -135,18 +135,19 @@ impl UnsecuredHeader {
     /// Converts the `UnsecuredHeader` helper struct into a regular `Packet::Unsecured`.
     /// Takes a payload of the length specified in the GeoNetworking's Common Header.
     pub fn with_payload(self, payload: &[u8]) -> Result<Packet<'_>, EncodeError> {
-        match self.common.payload_length as usize == payload.len() {
-            true => Ok(Packet::Unsecured {
+        if self.common.payload_length as usize == payload.len() {
+            Ok(Packet::Unsecured {
                 basic: self.basic,
                 common: self.common,
                 extended: self.extended,
                 payload,
-            }),
-            false => Err(EncodeError::Common(alloc::format!(
+            })
+        } else {
+            Err(EncodeError::Common(alloc::format!(
                 "Payload length {} does not match `payload_length` field {} in Common Header",
                 payload.len(),
                 self.common.payload_length
-            ))),
+            )))
         }
     }
 }
@@ -170,8 +171,7 @@ impl<T> From<nom::Err<DecodeError<T>>> for DecodeError<T> {
                 "Unexpected end of input: Needs at least other {n} bytes!"
             )),
             nom::Err::Incomplete(_) => DecodeError::ParserError("Unexpected end of input!".into()),
-            nom::Err::Error(e) => e,
-            nom::Err::Failure(e) => e,
+            nom::Err::Error(e) | nom::Err::Failure(e) => e,
         }
     }
 }
@@ -320,6 +320,11 @@ fn read_as_uint<'input, I: Integer + FromPrimitive>(
     bit_count: usize,
 ) -> impl FnMut(DecodeIn<'input>) -> IResult<DecodeIn<'input>, I> {
     map_res(take(bit_count), |bits: DecodeIn<'_>| {
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_precision_loss
+        )]
         let padding_bytes = 16 - ((bits.len() as f64 / 8.).ceil() as usize);
         let mut vec = alloc::vec![0u8; padding_bytes];
 
@@ -384,7 +389,7 @@ impl<'s, const SIZE: usize> InternalDecode<'s> for [u8; SIZE] {
     {
         map_res(take(SIZE * 8), |bits: DecodeIn<'_>| {
             bits.chunks(8)
-                .map(|slice| slice.load_be::<u8>())
+                .map(bitvec::field::BitField::load_be::<u8>)
                 .collect::<alloc::vec::Vec<u8>>()
                 .try_into()
                 .map_err(|_| {
@@ -1286,10 +1291,10 @@ fn decode_bytewise_integer<I: Integer + FromPrimitive>(
         (Some(min), Some(max), false) if min >= 0 && max <= 65535 => {
             int!(u16, 2usize, I::from_u16)(input)
         }
-        (Some(min), Some(max), false) if min >= 0 && max <= 4294967295 => {
+        (Some(min), Some(max), false) if min >= 0 && max <= 4_294_967_295 => {
             int!(u32, 4usize, I::from_u32)(input)
         }
-        (Some(min), Some(max), false) if min >= 0 && max <= 18446744073709551615 => {
+        (Some(min), Some(max), false) if min >= 0 && max <= 18_446_744_073_709_551_615 => {
             int!(u64, 8usize, I::from_u64)(input)
         }
         (Some(min), _, false) if min >= 0 => {
@@ -1302,11 +1307,11 @@ fn decode_bytewise_integer<I: Integer + FromPrimitive>(
         (Some(min), Some(max), false) if min >= -32768 && max <= 32767 => {
             int!(i16, 2usize, I::from_i16)(input)
         }
-        (Some(min), Some(max), false) if min >= -2147483648 && max <= 2147483647 => {
+        (Some(min), Some(max), false) if min >= -2_147_483_648 && max <= 2_147_483_647 => {
             int!(i32, 4usize, I::from_i32)(input)
         }
         (Some(min), Some(max), false)
-            if min >= -9223372036854775808 && max <= 9223372036854775807 =>
+            if min >= -9_223_372_036_854_775_808 && max <= 9_223_372_036_854_775_807 =>
         {
             int!(i64, 8usize, I::from_i64)(input)
         }
@@ -1320,7 +1325,7 @@ fn decode_bytewise_integer<I: Integer + FromPrimitive>(
 fn decode_bytewise_enumerated<E: TryFrom<i128>>(input: &[u8]) -> IResult<&[u8], E> {
     let (input, byte) = take(1usize)(input)?;
     match byte[0] {
-        len if len < 128 => (len as i128)
+        len if len < 128 => i128::from(len)
             .try_into()
             .map(|variant| (input, variant))
             .map_err(|_| nom::Err::Error(DecodeError::EnumError("Invalid enum index!".into()))),
@@ -1432,8 +1437,8 @@ uint!(ExtId, Some(255));
 uint!(HeaderInfoContributorId, Some(255));
 uint!(PduFunctionalType, Some(255));
 uint!(Uint16, Some(65535));
-uint!(Uint32, Some(4294967295));
-uint!(Uint64, Some(18446744073709551615));
+uint!(Uint32, Some(4_294_967_295));
+uint!(Uint64, Some(18_446_744_073_709_551_615));
 uint!(Psid, None);
 
 macro_rules! octets {
@@ -1967,7 +1972,7 @@ impl<'s> InternalDecode<'s> for NinetyDegreeInt {
         Self: Sized,
     {
         let (input, int) =
-            decode_bytewise_integer(Some(-900000000), Some(900000001), false, input)?;
+            decode_bytewise_integer(Some(-900_000_000), Some(900_000_001), false, input)?;
         Ok((input, Self(int)))
     }
 }
@@ -1978,7 +1983,7 @@ impl<'s> InternalDecode<'s> for OneEightyDegreeInt {
         Self: Sized,
     {
         let (input, int) =
-            decode_bytewise_integer(Some(-1799999999), Some(1800000001), false, input)?;
+            decode_bytewise_integer(Some(-1_799_999_999), Some(1_800_000_001), false, input)?;
         Ok((input, Self(int)))
     }
 }
@@ -2100,8 +2105,8 @@ impl<'s> InternalDecode<'s> for BitmapSspRange<'s> {
         Ok((
             input,
             Self {
-                ssp_bitmask,
                 ssp_value,
+                ssp_bitmask,
             },
         ))
     }
@@ -2250,8 +2255,8 @@ impl<'s> InternalDecode<'s> for Ieee1609Dot2Data<'s> {
         Ok((
             input,
             Self {
-                content,
                 protocol_version,
+                content,
             },
         ))
     }
@@ -2314,8 +2319,8 @@ impl<'s> InternalDecode<'s> for SignedData<'s> {
             Self {
                 hash_id,
                 tbs_data,
-                signature,
                 signer,
+                signature,
             },
         ))
     }
@@ -2361,7 +2366,7 @@ impl<'s> InternalDecode<'s> for SignedDataPayload<'s> {
         };
         let (input, omitted) = if extended {
             let (input, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
-            let (mut input, omitted) = if bitmap.get(0).map_or(false, |bit| *bit) {
+            let (mut input, omitted) = if bitmap.get(0).is_some_and(|bit| *bit) {
                 decode_bytewise_open_type(|i| Ok((i, Some(()))), input)?
             } else {
                 (input, None)
@@ -2516,25 +2521,25 @@ impl<'s> InternalDecode<'s> for HeaderInfo<'s> {
             contributed_extensions,
         ) = if extended {
             let (input, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
-            let (input, inline_p2pcd_request) = if bitmap.get(0).map_or(false, |bit| *bit) {
+            let (input, inline_p2pcd_request) = if bitmap.get(0).is_some_and(|bit| *bit) {
                 decode_bytewise_open_type(SequenceOfHashedId3::decode_bytewise, input)
                     .map(|(rem, req)| (rem, Some(req)))?
             } else {
                 (input, None)
             };
-            let (input, requested_certificate) = if bitmap.get(1).map_or(false, |bit| *bit) {
+            let (input, requested_certificate) = if bitmap.get(1).is_some_and(|bit| *bit) {
                 decode_bytewise_open_type(Certificate::decode_bytewise, input)
                     .map(|(rem, cert)| (rem, Some(cert)))?
             } else {
                 (input, None)
             };
-            let (input, pdu_functional_type) = if bitmap.get(2).map_or(false, |bit| *bit) {
+            let (input, pdu_functional_type) = if bitmap.get(2).is_some_and(|bit| *bit) {
                 decode_bytewise_open_type(PduFunctionalType::decode_bytewise, input)
                     .map(|(rem, ty)| (rem, Some(ty)))?
             } else {
                 (input, None)
             };
-            let (mut input, contributed_extensions) = if bitmap.get(3).map_or(false, |bit| *bit) {
+            let (mut input, contributed_extensions) = if bitmap.get(3).is_some_and(|bit| *bit) {
                 decode_bytewise_open_type(ContributedExtensionBlocks::decode_bytewise, input)
                     .map(|(rem, extensions)| (rem, Some(extensions)))?
             } else {
@@ -2558,13 +2563,13 @@ impl<'s> InternalDecode<'s> for HeaderInfo<'s> {
         Ok((
             input,
             Self {
-                encryption_key,
-                expiry_time,
-                p2pcd_learning_request,
                 psid,
-                generation_location,
                 generation_time,
+                expiry_time,
+                generation_location,
+                p2pcd_learning_request,
                 missing_crl_identifier,
+                encryption_key,
                 inline_p2pcd_request,
                 requested_certificate,
                 pdu_functional_type,
@@ -2635,8 +2640,8 @@ impl<'s> InternalDecode<'s> for One28BitCcmCiphertext<'s> {
         Ok((
             input,
             Self {
-                ccm_ciphertext,
                 nonce,
+                ccm_ciphertext,
             },
         ))
     }
@@ -2804,7 +2809,7 @@ impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
         let (input, flags, app_extensions, cert_issue_extensions, cert_request_extension) =
             if extended {
                 let (input, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
-                let (input, flags) = if bitmap.get(0).map_or(false, |bit| *bit) {
+                let (input, flags) = if bitmap.get(0).is_some_and(|bit| *bit) {
                     decode_bytewise_open_type(
                         |i| decode_bytewise_bitstring(Some(8), Some(8), false, i),
                         input,
@@ -2813,28 +2818,28 @@ impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
                 } else {
                     (input, None)
                 };
-                let (input, app_extensions) = if bitmap.get(1).map_or(false, |bit| *bit) {
+                let (input, app_extensions) = if bitmap.get(1).is_some_and(|bit| *bit) {
                     decode_bytewise_open_type(SequenceOfAppExtensions::decode_bytewise, input)
                         .map(|(rem, extensions)| (rem, Some(extensions)))?
                 } else {
                     (input, None)
                 };
-                let (input, cert_issue_extensions) = if bitmap.get(2).map_or(false, |bit| *bit) {
+                let (input, cert_issue_extensions) = if bitmap.get(2).is_some_and(|bit| *bit) {
                     decode_bytewise_open_type(SequenceOfCertIssueExtensions::decode_bytewise, input)
                         .map(|(rem, extensions)| (rem, Some(extensions)))?
                 } else {
                     (input, None)
                 };
-                let (mut input, cert_request_extensions) =
-                    if bitmap.get(3).map_or(false, |bit| *bit) {
-                        decode_bytewise_open_type(
-                            SequenceOfCertRequestExtensions::decode_bytewise,
-                            input,
-                        )
-                        .map(|(rem, extensions)| (rem, Some(extensions)))?
-                    } else {
-                        (input, None)
-                    };
+                let (mut input, cert_request_extensions) = if bitmap.get(3).is_some_and(|bit| *bit)
+                {
+                    decode_bytewise_open_type(
+                        SequenceOfCertRequestExtensions::decode_bytewise,
+                        input,
+                    )
+                    .map(|(rem, extensions)| (rem, Some(extensions)))?
+                } else {
+                    (input, None)
+                };
                 for bit in bitmap.get(4..).unwrap_or_default() {
                     if *bit {
                         input = decode_bytewise_octetstring(Some(0), None, false, input)?.0;
@@ -3179,6 +3184,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn decodes_secure_header() {
         assert_eq!(
             Ieee1609Dot2Data::decode_bytewise(&[
@@ -3248,7 +3254,7 @@ mod tests {
                         },
                         header_info: HeaderInfo {
                             psid: Psid(36),
-                            generation_time: Some(Uint64(616075920207354)),
+                            generation_time: Some(Uint64(616_075_920_207_354)),
                             expiry_time: None,
                             generation_location: None,
                             p2pcd_learning_request: None,
@@ -3272,7 +3278,7 @@ mod tests {
                                 craca_id: HashedId3(&[0, 0, 0]),
                                 crl_series: Uint16(0),
                                 validity_period: ValidityPeriod {
-                                    start: Uint32(612489605),
+                                    start: Uint32(612_489_605),
                                     duration: Duration::Years(Uint16(1))
                                 },
                                 region: None,
@@ -3378,6 +3384,6 @@ mod tests {
                     })
                 }))
             }
-        )
+        );
     }
 }

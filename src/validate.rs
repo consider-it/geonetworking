@@ -111,7 +111,7 @@ impl Validate for SignedData<'_> {
 
         let (verifying_key, encoded_certificate) = match &self.signer {
             SignerIdentifier::Certificate(c) => {
-                let certificate = c.0.get(0).ok_or(ValidationError::InvalidInput(
+                let certificate = c.0.first().ok_or(ValidationError::InvalidInput(
                     "Certificate list is empty!".into(),
                 ))?;
                 (&certificate.to_be_signed.verify_key_indicator, certificate.raw)
@@ -120,7 +120,7 @@ impl Validate for SignedData<'_> {
                 // TODO: Support digest lookup
                 return Err(ValidationError::Unsupported("Certificate retrieval by digest is unsupported!".into()))
             },
-            SignerIdentifier::RsSelf(_) => {
+            SignerIdentifier::RsSelf(()) => {
                 return Ok(ValidationResult::Failure {
                     reason: "Violates ETSI TS 103 097: Signer Identifier must be of type Digest or Certificate!".into(),
                 })
@@ -174,7 +174,7 @@ impl Validate for SignerIdentifier<'_> {
             SignerIdentifier::Certificate(_) => Ok(ValidationResult::Failure {
                 reason: "Exactly one certificate must be included!".into(),
             }),
-            SignerIdentifier::RsSelf(_) => Ok(ValidationResult::Failure {
+            SignerIdentifier::RsSelf(()) => Ok(ValidationResult::Failure {
                 reason: "Violates ETSI TS 103 097: Signer Identifier must be of type Digest or Certificate!".into(),
             }),
         }
@@ -201,7 +201,7 @@ impl Validate for HeaderInfo<'_> {
                 })
             }
             _ => (),
-        };
+        }
         if self.p2pcd_learning_request.is_some() {
             return Ok(ValidationResult::Failure {
                 reason: "P2PCD Learning Request must be absent!".into(),
@@ -256,7 +256,7 @@ fn ecdsa_brainpool_p256_r1(
     verifying_key.check_key().unwrap();
     let r_unwrapped = match r {
         EccP256CurvePoint::XOnly(x) => x,
-        EccP256CurvePoint::Fill(_) => {
+        EccP256CurvePoint::Fill(()) => {
             return Ok(ValidationResult::Failure {
                 reason: "R value of signature is not given!".into(),
             })
@@ -304,7 +304,7 @@ fn ecdsa_brainpool_p384_r1(
     verifying_key.check_key().unwrap();
     let r_unwrapped = match r {
         EccP384CurvePoint::XOnly(x) => x,
-        EccP384CurvePoint::Fill(_) => {
+        EccP384CurvePoint::Fill(()) => {
             return Ok(ValidationResult::Failure {
                 reason: "R value of signature is not given!".into(),
             })
@@ -339,7 +339,7 @@ fn ecdsa_nist_p256(
 ) -> Result<ValidationResult, ValidationError> {
     let r_unwrapped = match r {
         EccP256CurvePoint::XOnly(x) => x,
-        EccP256CurvePoint::Fill(_) => {
+        EccP256CurvePoint::Fill(()) => {
             return Ok(ValidationResult::Failure {
                 reason: "R value of signature is not given!".into(),
             })
@@ -381,7 +381,7 @@ fn ecdsa_nist_p256(
         &[sha256(msg), sha256(encoded_certificate.unwrap_or(&[]))].concat(),
         &signature,
     ) {
-        Ok(_) => Ok(ValidationResult::Success),
+        Ok(()) => Ok(ValidationResult::Success),
         Err(e) => Ok(ValidationResult::Failure {
             reason: format!("{e:?}"),
         }),
@@ -397,7 +397,7 @@ fn ecdsa_nist_p384(
 ) -> Result<ValidationResult, ValidationError> {
     let r_unwrapped = match r {
         EccP384CurvePoint::XOnly(x) => x,
-        EccP384CurvePoint::Fill(_) => {
+        EccP384CurvePoint::Fill(()) => {
             return Ok(ValidationResult::Failure {
                 reason: "R value of signature is not given!".into(),
             })
@@ -439,7 +439,7 @@ fn ecdsa_nist_p384(
         &[sha384(msg), sha384(encoded_certificate.unwrap_or(&[]))].concat(),
         &signature,
     ) {
-        Ok(_) => Ok(ValidationResult::Success),
+        Ok(()) => Ok(ValidationResult::Success),
         Err(e) => Ok(ValidationResult::Failure {
             reason: format!("{e:?}"),
         }),
@@ -473,7 +473,7 @@ fn ecdsa_sm2(
         EccP256CurvePoint::UncompressedP256(EccP256CurvePointUncompressedP256 { x, y }) => {
             let affine = Sm2AffinePoint::decompress(
                 (*x).into(),
-                Choice::from(if y.last().unwrap().is_even() { 0 } else { 1 }),
+                Choice::from(u8::from(!y.last().unwrap().is_even())),
             )
             .unwrap();
             Sm2VerifyingKey::from_affine("verifier", affine)
@@ -488,7 +488,7 @@ fn ecdsa_sm2(
         &[sm3(msg), sm3(encoded_certificate.unwrap_or(&[]))].concat(),
         &signature,
     ) {
-        Ok(_) => Ok(ValidationResult::Success),
+        Ok(()) => Ok(ValidationResult::Success),
         Err(e) => Ok(ValidationResult::Failure {
             reason: format!("{e:?}"),
         }),

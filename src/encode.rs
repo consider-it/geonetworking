@@ -18,6 +18,7 @@ pub enum EncodeError {
 }
 
 impl EncodeError {
+    #[must_use]
     pub fn message(&self) -> &str {
         match self {
             Self::Unsupported(message) => message,
@@ -34,6 +35,7 @@ pub struct Encoder {
 }
 
 impl Encoder {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             bits: bitvec![u8, Msb0;],
@@ -87,8 +89,9 @@ impl Encode for bool {
     }
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "common interface")]
 fn write_as_int<I: Integer + ToBytes + Display>(
-    integer: I,
+    integer: &I,
     bit_count: usize,
     output: &mut Encoder,
 ) -> Result<(), EncodeError> {
@@ -123,19 +126,19 @@ impl Encode for &'_ [u8] {
 
 impl Encode for Lifetime {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(self.0, 8, output)
+        write_as_int(&self.0, 8, output)
     }
 }
 
 impl Encode for Timestamp {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(self.0, 32, output)
+        write_as_int(&self.0, 32, output)
     }
 }
 
 impl Encode for StationType {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(*self as u8, 5, output)
+        write_as_int(&(*self as u8), 5, output)
     }
 }
 
@@ -150,17 +153,17 @@ impl Encode for Address {
 
 impl Encode for NextAfterBasic {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(*self as u8, 4, output)
+        write_as_int(&(*self as u8), 4, output)
     }
 }
 
 impl Encode for BasicHeader {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(self.version, 4, output)?;
+        write_as_int(&self.version, 4, output)?;
         self.next_header.encode(output)?;
         self.reserved.encode(output)?;
         self.lifetime.encode(output)?;
-        write_as_int(self.remaining_hop_limit, 8, output)
+        write_as_int(&self.remaining_hop_limit, 8, output)
     }
 }
 
@@ -168,11 +171,11 @@ impl Encode for LongPositionVector {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.gn_address.encode(output)?;
         self.timestamp.encode(output)?;
-        write_as_int(self.latitude, 32, output)?;
-        write_as_int(self.longitude, 32, output)?;
+        write_as_int(&self.latitude, 32, output)?;
+        write_as_int(&self.longitude, 32, output)?;
         self.position_accuracy.encode(output)?;
-        write_as_int(self.speed, 15, output)?;
-        write_as_int(self.heading, 16, output)
+        write_as_int(&self.speed, 15, output)?;
+        write_as_int(&self.heading, 16, output)
     }
 }
 
@@ -180,8 +183,8 @@ impl Encode for ShortPositionVector {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.gn_address.encode(output)?;
         self.timestamp.encode(output)?;
-        write_as_int(self.latitude, 32, output)?;
-        write_as_int(self.longitude, 32, output)
+        write_as_int(&self.latitude, 32, output)?;
+        write_as_int(&self.longitude, 32, output)
     }
 }
 
@@ -189,13 +192,13 @@ impl Encode for TrafficClass {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.store_carry_forward.encode(output)?;
         self.channel_offload.encode(output)?;
-        write_as_int(self.traffic_class_id, 6, output)
+        write_as_int(&self.traffic_class_id, 6, output)
     }
 }
 
 impl Encode for NextAfterCommon {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(*self as u8, 4, output)
+        write_as_int(&(*self as u8), 4, output)
     }
 }
 
@@ -216,8 +219,8 @@ impl Encode for HeaderType {
             HeaderType::LocationService(LocationServiceType::Request) => (6, 0),
             HeaderType::LocationService(_) => (6, 1),
         };
-        write_as_int(ty, 4, output)?;
-        write_as_int(subty, 4, output)
+        write_as_int(&ty, 4, output)?;
+        write_as_int(&subty, 4, output)
     }
 }
 
@@ -228,29 +231,29 @@ impl Encode for CommonHeader {
         self.header_type_and_subtype.encode(output)?;
         self.traffic_class.encode(output)?;
         self.flags.encode(output)?;
-        write_as_int(self.payload_length, 16, output)?;
-        write_as_int(self.maximum_hop_limit, 8, output)?;
+        write_as_int(&self.payload_length, 16, output)?;
+        write_as_int(&self.maximum_hop_limit, 8, output)?;
         self.reserved_2.encode(output)
     }
 }
 
 impl Encode for GeoAnycast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(self.sequence_number, 16, output)?;
+        write_as_int(&self.sequence_number, 16, output)?;
         self.reserved_1.encode(output)?;
         self.source_position_vector.encode(output)?;
-        write_as_int(self.geo_area_position_latitude, 32, output)?;
-        write_as_int(self.geo_area_position_longitude, 32, output)?;
-        write_as_int(self.distance_a, 16, output)?;
-        write_as_int(self.distance_b, 16, output)?;
-        write_as_int(self.angle, 16, output)?;
+        write_as_int(&self.geo_area_position_latitude, 32, output)?;
+        write_as_int(&self.geo_area_position_longitude, 32, output)?;
+        write_as_int(&self.distance_a, 16, output)?;
+        write_as_int(&self.distance_b, 16, output)?;
+        write_as_int(&self.angle, 16, output)?;
         self.reserved_2.encode(output)
     }
 }
 
 impl Encode for GeoUnicast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(self.sequence_number, 16, output)?;
+        write_as_int(&self.sequence_number, 16, output)?;
         self.reserved.encode(output)?;
         self.source_position_vector.encode(output)?;
         self.destination_position_vector.encode(output)
@@ -259,7 +262,7 @@ impl Encode for GeoUnicast {
 
 impl Encode for TopologicallyScopedBroadcast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(self.sequence_number, 16, output)?;
+        write_as_int(&self.sequence_number, 16, output)?;
         self.reserved.encode(output)?;
         self.source_position_vector.encode(output)
     }
@@ -280,7 +283,7 @@ impl Encode for Beacon {
 
 impl Encode for LSRequest {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(self.sequence_number, 16, output)?;
+        write_as_int(&self.sequence_number, 16, output)?;
         self.reserved.encode(output)?;
         self.source_position_vector.encode(output)?;
         self.request_gn_address.encode(output)
@@ -289,7 +292,7 @@ impl Encode for LSRequest {
 
 impl Encode for LSReply {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(self.sequence_number, 16, output)?;
+        write_as_int(&self.sequence_number, 16, output)?;
         self.reserved.encode(output)?;
         self.source_position_vector.encode(output)?;
         self.destination_position_vector.encode(output)
@@ -341,9 +344,11 @@ impl Encode for Packet<'_> {
 //     #+#     #+#        #+#        #+#               #+#  #+#    #+# #+#   #+# #+#    #+# #+#  #+#
 // ########### ########## ########## ##########      ####### ########   #######   ########  ### ##########
 
+#[allow(clippy::unnecessary_wraps, reason = "common interface")]
 fn encode_oer_length(length: usize, output: &mut Encoder) -> Result<(), EncodeError> {
     match length {
         len if len < 128 => {
+            #[allow(clippy::cast_possible_truncation)]
             output.bits.extend_from_raw_slice(&[len as u8]);
             Ok(())
         }
@@ -351,8 +356,9 @@ fn encode_oer_length(length: usize, output: &mut Encoder) -> Result<(), EncodeEr
             let raw = len.to_be_bytes();
             let mut length_bytes = raw.as_ref();
             while length_bytes.len() > 1 && length_bytes[0] == 0 {
-                length_bytes = &length_bytes[1..]
+                length_bytes = &length_bytes[1..];
             }
+            #[allow(clippy::cast_possible_truncation)]
             output
                 .bits
                 .extend_from_raw_slice(&[(length_bytes.len() + 128) as u8]);
@@ -365,7 +371,7 @@ fn encode_oer_length(length: usize, output: &mut Encoder) -> Result<(), EncodeEr
 fn encode_oer_integer<I: Integer + ToBytes>(
     min: Option<i128>,
     max: Option<i128>,
-    value: I,
+    value: &I,
     output: &mut Encoder,
 ) -> Result<(), EncodeError> {
     match (min, max) {
@@ -379,7 +385,7 @@ fn encode_oer_integer<I: Integer + ToBytes>(
             let raw = value.to_be_bytes();
             let mut bytes = raw.as_ref();
             while bytes.len() > 1 && bytes[0] == 0 {
-                bytes = &bytes[1..]
+                bytes = &bytes[1..];
             }
             encode_oer_length(bytes.len(), output)?;
             output.bits.extend_from_raw_slice(bytes);
@@ -392,7 +398,7 @@ fn encode_oer_integer<I: Integer + ToBytes>(
 }
 
 fn encode_oer_enumerated(value: u8, output: &mut Encoder) -> Result<(), EncodeError> {
-    encode_oer_integer(Some(0), Some(255), value, output)
+    encode_oer_integer(Some(0), Some(255), &value, output)
 }
 
 fn encode_oer_octetstring(
@@ -414,6 +420,7 @@ fn encode_oer_octetstring(
     }
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "common interface")]
 fn encode_oer_fixed_bitstring(
     value: &BitVec<u8, Msb0>,
     output: &mut Encoder,
@@ -427,8 +434,10 @@ fn encode_oer_fixed_bitstring(
 
 fn encode_oer_varlength_bitstring(value: &[bool], output: &mut Encoder) -> Result<(), EncodeError> {
     encode_oer_length(Integer::div_ceil(&value.len(), &8usize) + 1, output)?;
+    #[allow(clippy::cast_possible_truncation)]
     let unused_bits = 8 - value.len() % 8;
-    encode_oer_integer(Some(0), Some(8), unused_bits as u8, output)?;
+    #[allow(clippy::cast_possible_truncation)]
+    encode_oer_integer(Some(0), Some(8), &(unused_bits as u8), output)?;
     for bit in value {
         output.bits.push(*bit);
     }
@@ -460,7 +469,7 @@ fn encode_extension_and_optional_bitmap(
 
 fn encode_oer_tag(tag: u8, output: &mut Encoder) -> Result<(), EncodeError> {
     match tag {
-        t if t < 63 => encode_oer_integer(Some(0), Some(255), t + 128, output),
+        t if t < 63 => encode_oer_integer(Some(0), Some(255), &(t + 128), output),
         _ => Err(EncodeError::Unsupported(
             "Tag larger than 62 are unsupported!".into(),
         )),
@@ -476,19 +485,19 @@ macro_rules! encode_int {
     ($typ:ty, $min:expr, $max:expr) => {
         impl Encode for $typ {
             fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-                encode_oer_integer($min, $max, self.0, output)
+                encode_oer_integer($min, $max, &self.0, output)
             }
         }
     };
 }
 
-encode_int!(Latitude, Some(-900000000), Some(900000001));
-encode_int!(Longitude, Some(-1799999999), Some(1800000001));
+encode_int!(Latitude, Some(-900_000_000), Some(900_000_001));
+encode_int!(Longitude, Some(-1_799_999_999), Some(1_800_000_001));
 encode_int!(PduFunctionalType, Some(0), Some(255));
 encode_int!(HeaderInfoContributorId, Some(0), Some(255));
 encode_int!(Uint8, Some(0), Some(255));
 encode_int!(Uint16, Some(0), Some(65535));
-encode_int!(Uint32, Some(0), Some(4294967295));
+encode_int!(Uint32, Some(0), Some(4_294_967_295));
 encode_int!(ExtId, Some(0), Some(255));
 encode_int!(Psid, Some(0), None);
 
@@ -588,28 +597,22 @@ impl Encode for ToBeSignedCertificate<'_> {
         self.validity_period.encode(output)?;
         self.region
             .as_ref()
-            .map(|reg| reg.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |reg| reg.encode(output))?;
         self.assurance_level
             .as_ref()
-            .map(|sub_ass| sub_ass.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |sub_ass| sub_ass.encode(output))?;
         self.app_permissions
             .as_ref()
-            .map(|app_perm| app_perm.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |app_perm| app_perm.encode(output))?;
         self.cert_issue_permissions
             .as_ref()
-            .map(|cert_issue_perm| cert_issue_perm.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |cert_issue_perm| cert_issue_perm.encode(output))?;
         self.cert_request_permissions
             .as_ref()
-            .map(|cert_request_perm| cert_request_perm.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |cert_request_perm| cert_request_perm.encode(output))?;
         self.encryption_key
             .as_ref()
-            .map(|enc_key| enc_key.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |enc_key| enc_key.encode(output))?;
         self.verify_key_indicator.encode(output)?;
         let ext_bitmap = [
             self.flags.is_some(),
@@ -617,30 +620,26 @@ impl Encode for ToBeSignedCertificate<'_> {
             self.cert_issue_extensions.is_some(),
             self.cert_request_extension.is_some(),
         ];
-        is_extended
-            .then(|| encode_oer_varlength_bitstring(&ext_bitmap, output))
-            .unwrap_or(Ok(()))?;
-        self.flags
-            .as_ref()
-            .map(|flags| {
-                let mut encoder = Encoder::new();
-                encode_oer_fixed_bitstring(&flags.0, &mut encoder).and_then(|_| {
-                    encode_oer_octetstring(Some(0), None, &Into::<Vec<u8>>::into(encoder), output)
-                })
+        if is_extended {
+            encode_oer_varlength_bitstring(&ext_bitmap, output)
+        } else {
+            Ok(())
+        }?;
+        self.flags.as_ref().map_or(Ok(()), |flags| {
+            let mut encoder = Encoder::new();
+            encode_oer_fixed_bitstring(&flags.0, &mut encoder).and_then(|()| {
+                encode_oer_octetstring(Some(0), None, &Into::<Vec<u8>>::into(encoder), output)
             })
-            .unwrap_or(Ok(()))?;
+        })?;
         self.app_extensions
             .as_ref()
-            .map(|app_ext| encode_oer_open_type(app_ext, output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |app_ext| encode_oer_open_type(app_ext, output))?;
         self.cert_issue_extensions
             .as_ref()
-            .map(|cert_ext| encode_oer_open_type(cert_ext, output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |cert_ext| encode_oer_open_type(cert_ext, output))?;
         self.cert_request_extension
             .as_ref()
-            .map(|cert_ext| encode_oer_open_type(cert_ext, output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |cert_ext| encode_oer_open_type(cert_ext, output))?;
         Ok(())
     }
 }
@@ -659,7 +658,7 @@ impl Encode for CertIssueExtensionPermissions<'_> {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(0), None, inner, output)
             }
-            CertIssueExtensionPermissions::All(_) => encode_oer_tag(1, output),
+            CertIssueExtensionPermissions::All(()) => encode_oer_tag(1, output),
         }
     }
 }
@@ -671,7 +670,7 @@ impl Encode for CertRequestExtensionPermissions<'_> {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(0), None, inner, output)
             }
-            CertRequestExtensionPermissions::All(_) => encode_oer_tag(1, output),
+            CertRequestExtensionPermissions::All(()) => encode_oer_tag(1, output),
         }
     }
 }
@@ -739,17 +738,23 @@ impl Encode for PsidGroupPermissions<'_> {
             self.chain_length_range == 0,
             self.ee_type == EndEntityType(crate::bits!(1, 0, 0, 0, 0, 0, 0, 0)),
         ];
-        encode_oer_fixed_bitstring(&BitVec::<u8, Msb0>::from_iter(bitmap.iter()), output)?;
+        encode_oer_fixed_bitstring(&bitmap.iter().collect::<BitVec<u8, Msb0>>(), output)?;
         self.subject_permissions.encode(output)?;
-        bitmap[0]
-            .then(|| encode_oer_integer(Some(0), None, self.min_chain_length, output))
-            .unwrap_or(Ok(()))?;
-        bitmap[1]
-            .then(|| encode_oer_integer(Some(0), None, self.chain_length_range, output))
-            .unwrap_or(Ok(()))?;
-        bitmap[0]
-            .then(|| self.ee_type.encode(output))
-            .unwrap_or(Ok(()))?;
+        if bitmap[0] {
+            encode_oer_integer(Some(0), None, &self.min_chain_length, output)
+        } else {
+            Ok(())
+        }?;
+        if bitmap[1] {
+            encode_oer_integer(Some(0), None, &self.chain_length_range, output)
+        } else {
+            Ok(())
+        }?;
+        if bitmap[0] {
+            self.ee_type.encode(output)
+        } else {
+            Ok(())
+        }?;
         Ok(())
     }
 }
@@ -767,10 +772,7 @@ impl Encode for PsidSsp<'_> {
             None => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 0], output),
         }?;
         self.psid.encode(output)?;
-        self.ssp
-            .as_ref()
-            .map(|ssp| ssp.encode(output))
-            .unwrap_or(Ok(()))
+        self.ssp.as_ref().map_or(Ok(()), |ssp| ssp.encode(output))
     }
 }
 
@@ -783,8 +785,7 @@ impl Encode for PsidSspRange<'_> {
         self.psid.encode(output)?;
         self.ssp_range
             .as_ref()
-            .map(|ssp| ssp.encode(output))
-            .unwrap_or(Ok(()))
+            .map_or(Ok(()), |ssp| ssp.encode(output))
     }
 }
 
@@ -802,7 +803,7 @@ impl Encode for SspRange<'_> {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            SspRange::All(_) => encode_oer_tag(1, output),
+            SspRange::All(()) => encode_oer_tag(1, output),
             SspRange::BitmapSspRange(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_open_type(inner, output)
@@ -818,7 +819,7 @@ impl Encode for SubjectPermissions<'_> {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            SubjectPermissions::All(_) => encode_oer_tag(1, output),
+            SubjectPermissions::All(()) => encode_oer_tag(1, output),
         }
     }
 }
@@ -864,7 +865,7 @@ impl Encode for EccP256CurvePoint<'_> {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(32), Some(32), inner, output)
             }
-            EccP256CurvePoint::Fill(_) => encode_oer_tag(1, output),
+            EccP256CurvePoint::Fill(()) => encode_oer_tag(1, output),
             EccP256CurvePoint::CompressedY0(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_octetstring(Some(32), Some(32), inner, output)
@@ -888,7 +889,7 @@ impl Encode for EccP384CurvePoint<'_> {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(48), Some(48), inner, output)
             }
-            EccP384CurvePoint::Fill(_) => encode_oer_tag(1, output),
+            EccP384CurvePoint::Fill(()) => encode_oer_tag(1, output),
             EccP384CurvePoint::CompressedY0(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_octetstring(Some(48), Some(48), inner, output)
@@ -909,7 +910,7 @@ macro_rules! encode_sequence_of {
     ($typ:ty) => {
         impl Encode for $typ {
             fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-                encode_oer_integer(Some(0), None, self.0.len(), output)?;
+                encode_oer_integer(Some(0), None, &self.0.len(), output)?;
                 for inner in &self.0 {
                     inner.encode(output)?;
                 }
@@ -1061,7 +1062,7 @@ impl Encode for CertificateId<'_> {
                 encode_oer_tag(2, output)?;
                 encode_oer_octetstring(Some(1), Some(64), inner, output)
             }
-            CertificateId::None(_) => encode_oer_tag(3, output),
+            CertificateId::None(()) => encode_oer_tag(3, output),
         }
     }
 }
@@ -1082,8 +1083,7 @@ impl Encode for LinkageData<'_> {
         self.linkage_value.encode(output)?;
         self.group_linkage_value
             .as_ref()
-            .map(|glv| glv.encode(output))
-            .unwrap_or(Ok(()))
+            .map_or(Ok(()), |glv| glv.encode(output))
     }
 }
 
@@ -1223,15 +1223,12 @@ impl Encode for SignedDataPayload<'_> {
         encode_extension_and_optional_bitmap(self.omitted.is_some(), &bitmap, output)?;
         self.data
             .as_ref()
-            .map(|data| data.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |data| data.encode(output))?;
         self.ext_data_hash
             .as_ref()
-            .map(|hash| hash.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |hash| hash.encode(output))?;
         self.omitted
-            .map(|_| encode_oer_varlength_bitstring(&[true], output))
-            .unwrap_or(Ok(()))
+            .map_or(Ok(()), |()| encode_oer_varlength_bitstring(&[true], output))
     }
 }
 
@@ -1247,7 +1244,7 @@ impl Encode for Ieee1609Dot2Content<'_> {
     }
 }
 
-encode_int!(Uint64, Some(0), Some(18446744073709551615));
+encode_int!(Uint64, Some(0), Some(18_446_744_073_709_551_615));
 
 impl Encode for HeaderInfo<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
@@ -1267,53 +1264,45 @@ impl Encode for HeaderInfo<'_> {
         self.psid.encode(output)?;
         self.generation_time
             .as_ref()
-            .map(|time| time.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |time| time.encode(output))?;
         self.expiry_time
             .as_ref()
-            .map(|time| time.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |time| time.encode(output))?;
         self.generation_location
             .as_ref()
-            .map(|location| location.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |location| location.encode(output))?;
         self.p2pcd_learning_request
             .as_ref()
-            .map(|id| id.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |id| id.encode(output))?;
         self.missing_crl_identifier
             .as_ref()
-            .map(|id| id.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |id| id.encode(output))?;
         self.encryption_key
             .as_ref()
-            .map(|enc_key| enc_key.encode(output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |enc_key| enc_key.encode(output))?;
         let ext_bitmap = [
             self.inline_p2pcd_request.is_some(),
             self.requested_certificate.is_some(),
             self.pdu_functional_type.is_some(),
             self.contributed_extensions.is_some(),
         ];
-        is_extended
-            .then(|| encode_oer_varlength_bitstring(&ext_bitmap, output))
-            .unwrap_or(Ok(()))?;
+        if is_extended {
+            encode_oer_varlength_bitstring(&ext_bitmap, output)
+        } else {
+            Ok(())
+        }?;
         self.inline_p2pcd_request
             .as_ref()
-            .map(|request| encode_oer_open_type(request, output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |request| encode_oer_open_type(request, output))?;
         self.requested_certificate
             .as_ref()
-            .map(|cert| encode_oer_open_type(cert, output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |cert| encode_oer_open_type(cert, output))?;
         self.pdu_functional_type
             .as_ref()
-            .map(|ty| encode_oer_open_type(ty, output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |ty| encode_oer_open_type(ty, output))?;
         self.contributed_extensions
             .as_ref()
-            .map(|ext| encode_oer_open_type(ext, output))
-            .unwrap_or(Ok(()))?;
+            .map_or(Ok(()), |ext| encode_oer_open_type(ext, output))?;
         Ok(())
     }
 }
@@ -1333,7 +1322,7 @@ mod tests {
     #[test]
     fn encodes_oer_integer() {
         let mut encoder = Encoder::new();
-        encode_oer_integer(Some(0), Some(255), 3u8, &mut encoder).unwrap();
+        encode_oer_integer(Some(0), Some(255), &3u8, &mut encoder).unwrap();
         assert_eq!(
             &[3],
             <encode::Encoder as std::convert::Into<Vec<u8>>>::into(encoder).as_slice()
@@ -1345,7 +1334,7 @@ mod tests {
             <encode::Encoder as std::convert::Into<Vec<u8>>>::into(encoder).as_slice()
         );
         let mut encoder = Encoder::new();
-        encode_oer_integer(Some(-900000000), Some(900000001), 32i32, &mut encoder).unwrap();
+        encode_oer_integer(Some(-900_000_000), Some(900_000_001), &32i32, &mut encoder).unwrap();
         assert_eq!(
             &[0, 0, 0, 32],
             <encode::Encoder as std::convert::Into<Vec<u8>>>::into(encoder).as_slice()

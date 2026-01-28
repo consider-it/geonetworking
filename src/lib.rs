@@ -48,7 +48,7 @@ impl<'de, const SIZE: usize> Visitor<'de> for BitsVisitor<SIZE> {
         while let Some(bit) = seq.next_element::<bool>()? {
             bits.push(bit);
         }
-        Ok(Bits(BitVec::<u8, Msb0>::from_iter(bits.iter())))
+        Ok(Bits(bits.iter().collect::<BitVec<u8, Msb0>>()))
     }
 }
 
@@ -121,6 +121,7 @@ impl<'p> Packet<'p> {
     ///                             ^                              ^
     ///                             |_________return slice_________|
     /// ```
+    #[must_use]
     pub fn secured_payload_after_gn(&self) -> Option<&'p [u8]> {
         match self {
             Packet::Secured {
@@ -147,10 +148,10 @@ impl<'p> Packet<'p> {
     }
 
     /// Returns a reference to the Common header regardless of Packet type
+    #[must_use]
     pub fn common(&self) -> &CommonHeader {
         match self {
-            Packet::Unsecured { common, .. } => common,
-            Packet::Secured { common, .. } => common,
+            Packet::Unsecured { common, .. } | Packet::Secured { common, .. } => common,
         }
     }
 }
@@ -196,8 +197,9 @@ pub enum StationType {
 pub struct Timestamp(pub u32);
 
 impl Timestamp {
+    #[must_use]
     pub fn as_unix_timestamp(&self) -> u64 {
-        self.0 as u64 + 1_072_915_200_000
+        u64::from(self.0) + 1_072_915_200_000
     }
 }
 
@@ -276,22 +278,25 @@ pub struct Lifetime(pub u8);
 
 impl Lifetime {
     /// returns the lifetime base (bit 6 and 7)
+    #[must_use]
     pub fn base(&self) -> u8 {
         self.0 & 0b0000_0011
     }
 
     /// returns the lifetime multiplier (bit 0 to 5)
+    #[must_use]
     pub fn multiplier(&self) -> u8 {
         self.0 >> 2
     }
 
     /// returns the lifetime value in milliseconds
+    #[must_use]
     pub fn as_milliseconds(&self) -> u32 {
         match self.base() {
-            0 => 50 * self.multiplier() as u32,
-            1 => 1000 * self.multiplier() as u32,
-            2 => 10000 * self.multiplier() as u32,
-            3 => 100000 * self.multiplier() as u32,
+            0 => 50 * u32::from(self.multiplier()),
+            1 => 1000 * u32::from(self.multiplier()),
+            2 => 10000 * u32::from(self.multiplier()),
+            3 => 100_000 * u32::from(self.multiplier()),
             _ => unreachable!(),
         }
     }
@@ -2777,11 +2782,11 @@ pub struct RectangularRegion {
 ///
 /// If the enclosing country is the United States of America:
 /// - The region field identifies the state or statistically equivalent
-///     entity using the integer version of the 2010 FIPS codes as provided by the
-///     U.S. Census Bureau (see normative references in Clause 0).
+///   entity using the integer version of the 2010 FIPS codes as provided by the
+///   U.S. Census Bureau (see normative references in Clause 0).
 /// - The values in the subregions field identify the county or county
-///     equivalent entity using the integer version of the 2010 FIPS codes as
-///     provided by the U.S. Census Bureau.
+///   equivalent entity using the integer version of the 2010 FIPS codes as
+///   provided by the U.S. Census Bureau.
 ///
 /// If the enclosing country is a different country from the USA, the meaning
 /// of regionAndSubregions is not defined in this version of this standard.
