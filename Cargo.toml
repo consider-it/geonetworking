@@ -1,6 +1,6 @@
 [package]
 name = "geonetworking"
-version = "0.2.1"
+version = "0.3.0-rc.1"
 edition = "2021"
 authors = ["Kevin Westphal<westphal@consider-it.de>", "consider it GmbH"]
 keywords = ["its", "v2x", "etsi", "geonetworking"]
@@ -15,7 +15,7 @@ documentation = "https://docs.rs/geonetworking"
 [features]
 default = ["json", "validate"]
 json = ["dep:serde_json", "serde", "bytes/serde"]
-validate = ["ecdsa", "openssl", "openssl-sys", "p256", "p384", "sha2", "sm2", "sm3", "generic-array"]
+validate = ["ecdsa", "p256", "p384", "bp256", "bp384", "sha2", "sm2", "sm3"]
 
 [dependencies]
 bitvec = { version = "1.0", default-features = false, features = ["alloc"] }
@@ -30,15 +30,14 @@ serde = { version = "1.0", default-features = false, features = ["derive"], opti
 serde_json = { version = "1.0", default-features = false, features = ["alloc"], optional = true }
 
 # "validate" feature dependencies
-ecdsa = { version = "0.16.9", default-features = false, features = ["verifying"], optional = true }
-generic-array = { version = "=0.14.7", optional = true } # workaround until ecdsa is updated
-openssl-sys = { version = "0.9", optional = true }
-openssl = { version = "0.10", optional = true }
-p256 = { version = "0.13.2", default-features = false, features = ["ecdsa"], optional = true }
-p384 = { version = "0.13.1", default-features = false, features = ["ecdsa"], optional = true }
-sha2 = { version = "0.10.9", default-features = false, optional = true }
-sm2 = { version = "0.13.3", default-features = false, features = ["dsa"], optional = true }
-sm3 = { version = "0.4.2", default-features = false, optional = true }
+ecdsa = { version = "=0.17.0-rc.14", default-features = false, features = ["algorithm"], optional = true }
+p256  = { version = "=0.14.0-rc.6",  default-features = false, features = ["ecdsa"], optional = true }
+p384  = { version = "=0.14.0-rc.6",  default-features = false, features = ["ecdsa"], optional = true }
+bp256 = { version = "=0.14.0-rc.6",  default-features = false, features = ["ecdsa", "arithmetic", "sha256"], optional = true }
+bp384 = { version = "=0.14.0-rc.6",  default-features = false, features = ["ecdsa", "arithmetic", "sha384"], optional = true }
+sm2   = { version = "=0.14.0-rc.6",  default-features = false, features = ["dsa", "arithmetic"], optional = true }
+sha2  = { version = "=0.11.0-rc.4",  default-features = false, optional = true }
+sm3   = { version = "=0.5.0-rc.4",   default-features = false, optional = true }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
