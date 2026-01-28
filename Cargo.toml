@@ -15,7 +15,7 @@ documentation = "https://docs.rs/geonetworking"
 [features]
 default = ["json", "validate"]
 json = ["dep:serde_json", "serde", "bytes/serde"]
-validate = ["ecdsa", "openssl", "openssl-sys", "p256", "p384", "sha2", "sm2", "sm3"]
+validate = ["ecdsa", "openssl", "openssl-sys", "p256", "p384", "sha2", "sm2", "sm3", "generic-array"]
 
 [dependencies]
 bitvec = { version = "1.0", default-features = false, features = ["alloc"] }
@@ -31,6 +31,7 @@ serde_json = { version = "1.0", default-features = false, features = ["alloc"], 
 
 # "validate" feature dependencies
 ecdsa = { version = "0.16.9", default-features = false, features = ["verifying"], optional = true }
+generic-array = { version = "=0.14.7", optional = true } # workaround until ecdsa is updated
 openssl-sys = { version = "0.9", optional = true }
 openssl = { version = "0.10", optional = true }
 p256 = { version = "0.13.2", default-features = false, features = ["ecdsa"], optional = true }
