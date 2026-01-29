@@ -4,7 +4,7 @@ use arbitrary_int::u10;
 use bitvec::prelude::*;
 use nom::{
     bytes::streaming::take,
-    combinator::{into, map, map_res, peek},
+    combinator::{into, map, map_res},
     error::{ErrorKind, FromExternalError, ParseError},
     sequence::{pair, tuple},
     Needed, Parser,
@@ -1415,39 +1415,46 @@ fn decode_bytewise_enumerated<E: TryFrom<i128>>(input: &[u8]) -> IResult<&[u8], 
     }
 }
 
-// TODO: deprecated, replace with decode_bytewise_bitstring_vec
-fn decode_bytewise_bitstring(
-    min: Option<usize>,
-    max: Option<usize>,
-    extensible: bool,
-    input: &[u8],
-) -> IResult<&[u8], BitVec<u8, Msb0>> {
-    match (min, max, extensible) {
-        (Some(min), Some(max), false) if min == max => {
-            let (input, bytes) = take(Integer::div_ceil(&max, &8usize))(input)?;
-            let mut bitstring = bytes.view_bits::<Msb0>().to_bitvec();
-            let to_pop = 8 - max % 8;
-            if to_pop != 8 {
-                (0..to_pop).for_each(|_| {
-                    bitstring.pop();
-                });
-            }
-            Ok((input, bitstring))
-        }
-        _ => {
-            let (input, length) = decode_bytewise_length(input)?;
-            let (input, unused_octets) =
-                decode_bytewise_integer::<usize>(Some(0), Some(8), false, input)?;
-            let (input, bytes) = take(length - 1)(input)?;
-            let mut bitstring = bytes.view_bits::<Msb0>().to_bitvec();
-            if unused_octets != 8 {
-                (0..unused_octets).for_each(|_| {
-                    bitstring.pop();
-                });
-            }
-            Ok((input, bitstring))
-        }
+/// Extracts bits from ASN.1 buffer
+///
+/// First bit is the MSB of the first byte in ASN.1
+fn bitslice_to_bitvec(buffer: &[u8], offset: usize, count: usize) -> Vec<bool> {
+    let mut bitvec = vec![];
+
+    // iterate using 0-based index
+    for i in offset..(offset + count) {
+        let byte_idx = Integer::div_floor(&i, &8);
+        let bit_idx = (8 - (i % 8)) - 1;
+
+        bitvec.push((buffer[byte_idx] >> bit_idx & 0x01) > 0);
     }
+
+    bitvec
+}
+
+/// Decodes ASN.1 SEQUENCE preamble
+///
+/// Note: Only execute, if there is either an extension bit or optional values present!
+/// (Otherwise the sequence preamble will be omitted.)
+fn decode_bytewise_sequence_preamble(
+    has_extension: bool,
+    presence_bits: usize,
+    input: &[u8],
+) -> IResult<&[u8], (bool, Vec<bool>)> {
+    let (input, preamble) = take(util::bitstring_buffer_size(presence_bits))(input)?;
+
+    let (ext, bitmap) = if has_extension {
+        let extension = (preamble[0] & 0b1000_0000) > 0;
+        let bitstring = bitslice_to_bitvec(preamble, 1, presence_bits);
+
+        (extension, bitstring)
+    } else {
+        let bitstring = bitslice_to_bitvec(preamble, 0, presence_bits);
+
+        (false, bitstring)
+    };
+
+    Ok((input, (ext, bitmap)))
 }
 
 // ASN.1 OER "bitstring" values
@@ -1460,7 +1467,7 @@ fn decode_bytewise_bitstring_vec(
 ) -> IResult<&[u8], Vec<bool>> {
     match (min, max, extensible) {
         (Some(min), Some(max), false) if min == max => {
-            let (input, bytes) = take(Integer::div_ceil(&max, &8usize))(input)?;
+            let (input, bytes) = take(util::bitstring_buffer_size(max))(input)?;
 
             let mut bitstring = vec![];
             for byte in bytes {
@@ -1534,12 +1541,6 @@ fn decode_bytewise_octetstring(
             take::<usize, &[u8], DecodeError<&[u8]>>(length)(input)
         }
     }
-}
-
-fn decode_bytewise_is_extended(input: &[u8]) -> IResult<&[u8], bool> {
-    map(peek(take(1usize)), |byte: &[u8]| {
-        byte[0] & 0b1000_0000 != 0b0000_0000
-    })(input)
 }
 
 fn decode_bytewise_tag(input: &[u8]) -> IResult<&[u8], u64> {
@@ -2163,7 +2164,8 @@ impl<'s> InternalDecode<'s> for PsidSsp<'s> {
     where
         Self: Sized,
     {
-        let (input, bitmap) = decode_bytewise_bitstring(Some(1), Some(1), false, input)?;
+        let (input, (_, bitmap)) = decode_bytewise_sequence_preamble(false, 1, input)?;
+
         let (input, psid) = Psid::decode_bytewise(input)?;
         let (input, ssp) = if bitmap[0] {
             map(ServiceSpecificPermissions::decode_bytewise, |inner| {
@@ -2204,7 +2206,8 @@ impl<'s> InternalDecode<'s> for PsidSspRange<'s> {
     where
         Self: Sized,
     {
-        let (input, bitmap) = decode_bytewise_bitstring(Some(1), Some(1), false, input)?;
+        let (input, (_, bitmap)) = decode_bytewise_sequence_preamble(false, 1, input)?;
+
         let (input, psid) = Psid::decode_bytewise(input)?;
         let (input, ssp_range) = if bitmap[0] {
             map(SspRange::decode_bytewise, Some)(input)?
@@ -2496,14 +2499,14 @@ impl<'s> InternalDecode<'s> for SignedDataPayload<'s> {
     where
         Self: Sized,
     {
-        let (input, extended) = decode_bytewise_is_extended(input)?;
-        let (input, bitmap) = decode_bytewise_bitstring(Some(3), Some(3), false, input)?;
-        let (input, data) = if bitmap[1] {
+        let (input, (extended, bitmap)) = decode_bytewise_sequence_preamble(true, 2, input)?;
+
+        let (input, data) = if bitmap[0] {
             map(Ieee1609Dot2Data::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, ext_data_hash) = if bitmap[2] {
+        let (input, ext_data_hash) = if bitmap[1] {
             map(HashedData::decode_bytewise, Some)(input)?
         } else {
             (input, None)
@@ -2511,6 +2514,7 @@ impl<'s> InternalDecode<'s> for SignedDataPayload<'s> {
         let (input, omitted) = if extended {
             let (input, bitmap) = decode_bytewise_bitstring_vec(Some(0), None, false, input)?;
 
+            #[allow(clippy::get_first, reason = "similarity to subsequent lines")]
             let (mut input, omitted) = if bitmap.get(0).is_some_and(|bit| *bit) {
                 decode_bytewise_open_type(|i| Ok((i, Some(()))), input)?
             } else {
@@ -2600,7 +2604,8 @@ impl<'s> InternalDecode<'s> for MissingCrlIdentifier<'s> {
     where
         Self: Sized,
     {
-        let (input, extended) = decode_bytewise_is_extended(input)?;
+        let (input, (extended, _)) = decode_bytewise_sequence_preamble(true, 0, input)?;
+
         let (input, craca_id) = HashedId3::decode_bytewise(input)?;
         let (input, crl_series) = CrlSeries::decode_bytewise(input)?;
         let input = if extended {
@@ -2633,35 +2638,35 @@ impl<'s> InternalDecode<'s> for HeaderInfo<'s> {
     where
         Self: Sized,
     {
-        let (input, extended) = decode_bytewise_is_extended(input)?;
-        let (input, bitmap) = decode_bytewise_bitstring(Some(7), Some(7), false, input)?;
+        let (input, (extended, bitmap)) = decode_bytewise_sequence_preamble(true, 6, input)?;
+
         let (input, psid) = Psid::decode_bytewise(input)?;
-        let (input, generation_time) = if bitmap[1] {
+        let (input, generation_time) = if bitmap[0] {
             map(Time64::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, expiry_time) = if bitmap[2] {
+        let (input, expiry_time) = if bitmap[1] {
             map(Time64::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, generation_location) = if bitmap[3] {
+        let (input, generation_location) = if bitmap[2] {
             map(ThreeDLocation::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, p2pcd_learning_request) = if bitmap[4] {
+        let (input, p2pcd_learning_request) = if bitmap[3] {
             map(HashedId3::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, missing_crl_identifier) = if bitmap[5] {
+        let (input, missing_crl_identifier) = if bitmap[4] {
             map(MissingCrlIdentifier::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, encryption_key) = if bitmap[6] {
+        let (input, encryption_key) = if bitmap[5] {
             map(EncryptionKey::decode_bytewise, Some)(input)?
         } else {
             (input, None)
@@ -2675,6 +2680,7 @@ impl<'s> InternalDecode<'s> for HeaderInfo<'s> {
         ) = if extended {
             let (input, bitmap) = decode_bytewise_bitstring_vec(Some(0), None, false, input)?;
 
+            #[allow(clippy::get_first, reason = "similarity to subsequent lines")]
             let (input, inline_p2pcd_request) = if bitmap.get(0).is_some_and(|bit| *bit) {
                 decode_bytewise_open_type(SequenceOfHashedId3::decode_bytewise, input)
                     .map(|(rem, req)| (rem, Some(req)))?
@@ -2891,7 +2897,9 @@ impl<'s> InternalDecode<'s> for CertificateBase<'s> {
     {
         #[cfg(feature = "validate")]
         let (input_before, length_before) = (input, input.len());
-        let (input, bitmap) = decode_bytewise_bitstring(Some(1), Some(1), false, input)?;
+
+        let (input, (_, bitmap)) = decode_bytewise_sequence_preamble(false, 1, input)?;
+
         let (input, version) = Uint8::decode_bytewise(input)?;
         let (input, r_type) = CertificateType::decode_bytewise(input)?;
         let (input, issuer) = IssuerIdentifier::decode_bytewise(input)?;
@@ -2921,43 +2929,43 @@ impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
     where
         Self: Sized,
     {
-        let (input, extended) = decode_bytewise_is_extended(input)?;
-        let (input, bitmap) = decode_bytewise_bitstring(Some(8), Some(8), false, input)?;
+        let (input, (extended, bitmap)) = decode_bytewise_sequence_preamble(true, 7, input)?;
+
         let (input, id) = CertificateId::decode_bytewise(input)?;
         let (input, craca_id) = HashedId3::decode_bytewise(input)?;
         let (input, crl_series) = CrlSeries::decode_bytewise(input)?;
         let (input, validity_period) = ValidityPeriod::decode_bytewise(input)?;
-        let (input, region) = if bitmap[1] {
+        let (input, region) = if bitmap[0] {
             map(GeographicRegion::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, assurance_level) = if bitmap[2] {
+        let (input, assurance_level) = if bitmap[1] {
             map(SubjectAssurance::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, app_permissions) = if bitmap[3] {
+        let (input, app_permissions) = if bitmap[2] {
             map(SequenceOfPsidSsp::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, cert_issue_permissions) = if bitmap[4] {
+        let (input, cert_issue_permissions) = if bitmap[3] {
             map(SequenceOfPsidGroupPermissions::decode_bytewise, |inner| {
                 Some(inner)
             })(input)?
         } else {
             (input, None)
         };
-        let (input, cert_request_permissions) = if bitmap[5] {
+        let (input, cert_request_permissions) = if bitmap[4] {
             map(SequenceOfPsidGroupPermissions::decode_bytewise, |inner| {
                 Some(inner)
             })(input)?
         } else {
             (input, None)
         };
-        let (input, can_request_rollover) = (input, bitmap[6].then_some(()));
-        let (input, encryption_key) = if bitmap[7] {
+        let (input, can_request_rollover) = (input, bitmap[5].then_some(()));
+        let (input, encryption_key) = if bitmap[6] {
             map(PublicEncryptionKey::decode_bytewise, Some)(input)?
         } else {
             (input, None)
@@ -2967,6 +2975,7 @@ impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
             if extended {
                 let (input, bitmap) = decode_bytewise_bitstring_vec(Some(0), None, false, input)?;
 
+                #[allow(clippy::get_first, reason = "similarity to subsequent lines")]
                 let (input, flags) = if bitmap.get(0).is_some_and(|bit| *bit) {
                     decode_bytewise_open_type(BitString::<8>::decode_bytewise, input)
                         .map(|(rem, flags)| (rem, Some(flags)))?
@@ -3173,7 +3182,8 @@ impl<'s> InternalDecode<'s> for LinkageData<'s> {
     where
         Self: Sized,
     {
-        let (input, bitmap) = decode_bytewise_bitstring(Some(1), Some(1), false, input)?;
+        let (input, (_, bitmap)) = decode_bytewise_sequence_preamble(false, 1, input)?;
+
         let (input, i_cert) = IValue::decode_bytewise(input)?;
         let (input, linkage_value) = LinkageValue::decode_bytewise(input)?;
         let (input, group_linkage_value) = if bitmap[0] {
@@ -3197,7 +3207,8 @@ impl<'s> InternalDecode<'s> for PsidGroupPermissions<'s> {
     where
         Self: Sized,
     {
-        let (input, bitmap) = decode_bytewise_bitstring(Some(3), Some(3), false, input)?;
+        let (input, (_, bitmap)) = decode_bytewise_sequence_preamble(false, 3, input)?;
+
         let (input, subject_permissions) = SubjectPermissions::decode_bytewise(input)?;
         let (input, min_chain_length) = if bitmap[0] {
             decode_bytewise_integer(None, None, false, input)?
