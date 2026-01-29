@@ -465,10 +465,24 @@ fn encode_oer_fixed_bitstring_old(
     output: &mut Encoder,
 ) -> Result<(), EncodeError> {
     output.bits.extend_from_bitslice(value);
-    for _ in 0..(8 - value.len() % 8) {
+
+    let padding_bits = bitstring_padding_bits(value.len());
+    for _ in 0..padding_bits {
         output.bits.push(false);
     }
+
     Ok(())
+}
+
+fn bitstring_padding_bits(len: usize) -> usize {
+    let extra_bits = len % 8;
+
+    // 0 extra bits mean no padding needed
+    if extra_bits > 0 {
+        8 - extra_bits
+    } else {
+        0
+    }
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "common interface")]
@@ -479,8 +493,8 @@ fn encode_oer_fixed_bitstring(value: &[bool], output: &mut Encoder) -> Result<()
     }
     output.bits.extend_from_bitslice(bv.as_bitslice());
 
-    // add padding bits
-    for _ in 0..(8 - value.len() % 8) {
+    let padding_bits = bitstring_padding_bits(value.len());
+    for _ in 0..padding_bits {
         output.bits.push(false);
     }
 
@@ -491,8 +505,7 @@ fn encode_oer_fixed_bitstring(value: &[bool], output: &mut Encoder) -> Result<()
 fn encode_oer_varlength_bitstring(value: &[bool], output: &mut Encoder) -> Result<(), EncodeError> {
     encode_oer_length(num::Integer::div_ceil(&value.len(), &8usize) + 1, output)?;
 
-    #[allow(clippy::cast_possible_truncation)]
-    let unused_bits = 8 - value.len() % 8;
+    let unused_bits = bitstring_padding_bits(value.len());
 
     // Note: using integer encoding is not 100% correct, but leads to same result in this case
     #[allow(clippy::cast_possible_truncation)]
@@ -506,6 +519,7 @@ fn encode_oer_varlength_bitstring(value: &[bool], output: &mut Encoder) -> Resul
     for _ in 0..unused_bits {
         output.bits.push(false);
     }
+
     Ok(())
 }
 
@@ -538,7 +552,10 @@ fn encode_oer_tag(tag: u8, output: &mut Encoder) -> Result<(), EncodeError> {
     }
 }
 
-fn encode_oer_open_type<T: Encode>(value: &T, output: &mut Encoder) -> Result<(), EncodeError> {
+fn encode_oer_open_type<T: Encode + std::fmt::Debug>(
+    value: &T,
+    output: &mut Encoder,
+) -> Result<(), EncodeError> {
     let bytes = value.encode_to_vec()?;
     encode_oer_octetstring(Some(0), None, &bytes, output)
 }
@@ -1422,6 +1439,15 @@ mod tests {
 
         let mut encoder = Encoder::new();
         encode_oer_fixed_bitstring(
+            &[true, false, false, false, false, false, false, false],
+            &mut encoder,
+        )
+        .unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[0x80], output.as_slice());
+
+        let mut encoder = Encoder::new();
+        encode_oer_fixed_bitstring(
             &[
                 true, false, false, false, false, false, false, false, false, true,
             ],
@@ -1438,6 +1464,15 @@ mod tests {
 
         let mut encoder = Encoder::new();
         encode_oer_varlength_bitstring(
+            &[true, false, false, false, false, false, false, false],
+            &mut encoder,
+        )
+        .unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[2, 0, 0x80], output.as_slice());
+
+        let mut encoder = Encoder::new();
+        encode_oer_varlength_bitstring(
             &[
                 true, false, false, false, false, false, false, false, false, true,
             ],
@@ -1446,5 +1481,17 @@ mod tests {
         .unwrap();
         let output: Vec<u8> = encoder.into();
         assert_eq!(&[3, 6, 0x80, 0x40], output.as_slice());
+
+        let mut encoder = Encoder::new();
+        encode_oer_varlength_bitstring(
+            &[
+                true, false, false, false, false, false, false, false, false, true, false, false,
+                false, false, true, false,
+            ],
+            &mut encoder,
+        )
+        .unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[3, 0, 0x80, 0x42], output.as_slice());
     }
 }

@@ -3594,9 +3594,8 @@ mod tests {
             0x02, // extension addition presence bitmap: length determinant
             0x04, // extension addition presence bitmap: how many unused bits -> 4
             0x80, // extension addition presence bitmap: bitmap -> ext. 1 present, 2-4 not present
-            0x02, // open type encoding: length
-            0x80, // BIT STRING: 0b1000.0000
-            0x00, // TODO ???
+            0x01, // open type encoding: length
+            0x80, // fixed size BIT STRING: 0b1000.0000
         ];
 
         let data = ToBeSignedCertificate {
