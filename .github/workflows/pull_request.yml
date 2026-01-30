@@ -1,0 +1,65 @@
+name: Rust
+
+on:
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_TERM_VERBOSE: true
+
+jobs:
+  check-fmt:
+    name: cargo fmt
+    runs-on:
+      - ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Add nightly rustfmt
+        run: |
+          rustup toolchain install nightly
+          rustup component add --toolchain nightly rustfmt
+      - name: cargo fmt
+        run: cargo +nightly fmt --check
+
+  check-clippy:
+    name: cargo clippy
+    runs-on:
+      - ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: cargo clippy
+        run: cargo clippy --all-features --all-targets --verbose -- --deny warnings
+
+  test:
+    name: cargo build and test
+    runs-on:
+      - ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: cargo build
+        run: cargo build --all-features
+      - name: cargo test
+        run: cargo test --all-features
+
+      - name: cargo build and test no-default-features
+        run: |
+          cargo build --no-default-features
+          cargo test  --no-default-features
+      - name: cargo build and test 'json' feature only
+        run: |
+          cargo build -F json
+          cargo test  -F json
+      - name: cargo build and test 'validate' feature only
+        run: |
+          cargo build -F validate
+          cargo test  -F validate
