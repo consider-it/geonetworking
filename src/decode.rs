@@ -10,6 +10,8 @@ use nom::{
 };
 use nom_bitvec::BSlice;
 use num::{FromPrimitive, Integer};
+#[cfg(not(any(feature = "validate", test)))]
+use num_traits::float::FloatCore;
 
 use crate::{
     util::{cast_nom_err, write_into_vec_left_padded},
@@ -3224,6 +3226,7 @@ mod tests {
                 content: Ieee1609Dot2Content::SignedData(Box::new(SignedData {
                     hash_id: HashAlgorithm::Sha256,
                     tbs_data: ToBeSignedData {
+                        #[cfg(feature = "validate")]
                         raw: &[
                             64, 3, 128, 120, 32, 80, 2, 128, 0, 84, 1, 0, 20, 0, 202, 131, 26, 63,
                             61, 57, 112, 252, 130, 128, 31, 235, 50, 12, 5, 236, 58, 253, 128, 4,
@@ -3355,6 +3358,7 @@ mod tests {
                                     ]
                                 }
                             )),
+                            #[cfg(feature = "validate")]
                             raw: &[
                                 128, 3, 0, 128, 93, 93, 203, 238, 251, 231, 210, 45, 48, 131, 0, 0,
                                 0, 0, 0, 36, 129, 217, 133, 134, 0, 1, 224, 1, 7, 128, 1, 36, 129,
