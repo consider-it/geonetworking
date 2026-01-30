@@ -126,6 +126,7 @@ fn unsecured_round_trip() {
 }
 
 #[test]
+#[cfg(feature = "json")]
 fn packet_to_json() {
     let data: Vec<u8> = vec![
         0x11, 0x00, 0x50, 0x01, 0x20, 0x50, 0x02, 0x00, 0x00, 0x2d, 0x01, 0x00, 0x01, 0x06, 0x00,
@@ -269,6 +270,7 @@ fn certificate_round_trip() {
     );
 }
 
+#[cfg(feature = "validate")]
 macro_rules! decode_and_validate {
     ($input: expr) => {
         let data: &'static [u8] = $input;
@@ -278,6 +280,7 @@ macro_rules! decode_and_validate {
 }
 
 #[test]
+#[cfg(feature = "validate")]
 #[allow(clippy::too_many_lines)]
 fn decode_and_validate() {
     decode_and_validate!(&[
