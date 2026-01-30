@@ -383,7 +383,10 @@ impl Encode for Packet<'_> {
 // =====================================================
 
 #[allow(clippy::unnecessary_wraps, reason = "common interface")]
-fn encode_oer_length(length: usize, output: &mut Encoder) -> Result<(), EncodeError> {
+fn encode_oer_length(
+    length: usize,
+    output: &mut Encoder, // TODO: replace Encoder
+) -> Result<(), EncodeError> {
     match length {
         len if len < 128 => {
             #[allow(clippy::cast_possible_truncation)]
@@ -410,7 +413,7 @@ fn encode_oer_integer<I: num::Integer + ToBytes>(
     min: Option<i128>,
     max: Option<i128>,
     value: &I,
-    output: &mut Encoder,
+    output: &mut Encoder, // TODO: replace Encoder
 ) -> Result<(), EncodeError> {
     match (min, max) {
         (Some(_), Some(_)) => {
@@ -435,7 +438,10 @@ fn encode_oer_integer<I: num::Integer + ToBytes>(
     }
 }
 
-fn encode_oer_enumerated(value: u8, output: &mut Encoder) -> Result<(), EncodeError> {
+fn encode_oer_enumerated(
+    value: u8,
+    output: &mut Encoder, // TODO: replace Encoder
+) -> Result<(), EncodeError> {
     encode_oer_integer(Some(0), Some(255), &value, output)
 }
 
@@ -443,7 +449,7 @@ fn encode_oer_octetstring(
     min: Option<usize>,
     max: Option<usize>,
     value: &[u8],
-    output: &mut Encoder,
+    output: &mut Encoder, // TODO: replace Encoder
 ) -> Result<(), EncodeError> {
     match (min, max) {
         (Some(min), Some(max)) if min == max => {
@@ -459,7 +465,10 @@ fn encode_oer_octetstring(
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "common interface")]
-fn encode_oer_fixed_bitstring(value: &[bool], output: &mut Encoder) -> Result<(), EncodeError> {
+fn encode_oer_fixed_bitstring(
+    value: &[bool],
+    output: &mut Encoder, // TODO: replace Encoder
+) -> Result<(), EncodeError> {
     let mut bv: bitvec::vec::BitVec<u8, Msb0> = BitVec::new();
     for bit in value {
         bv.push(*bit);
@@ -475,7 +484,10 @@ fn encode_oer_fixed_bitstring(value: &[bool], output: &mut Encoder) -> Result<()
 }
 
 // ASN.1 OER "bitstring" values and the "extension addition presence bitmap"
-fn encode_oer_varlength_bitstring(value: &[bool], output: &mut Encoder) -> Result<(), EncodeError> {
+fn encode_oer_varlength_bitstring(
+    value: &[bool],
+    output: &mut Encoder, // TODO: replace Encoder
+) -> Result<(), EncodeError> {
     encode_oer_length(util::bitstring_buffer_size(value.len()) + 1, output)?;
 
     let unused_bits = util::bitstring_padding_bits(value.len());
@@ -503,7 +515,7 @@ fn encode_oer_varlength_bitstring(value: &[bool], output: &mut Encoder) -> Resul
 fn encode_extension_and_optional_bitmap(
     extension: Option<bool>,
     bitmap: &[bool],
-    output: &mut Encoder,
+    output: &mut Encoder, // TODO: replace Encoder
 ) -> Result<(), EncodeError> {
     if let Some(is_extended) = extension {
         output.bits.push(is_extended);
@@ -523,7 +535,10 @@ fn encode_extension_and_optional_bitmap(
     Ok(())
 }
 
-fn encode_oer_tag(tag: u8, output: &mut Encoder) -> Result<(), EncodeError> {
+fn encode_oer_tag(
+    tag: u8,
+    output: &mut Encoder, // TODO: replace Encoder
+) -> Result<(), EncodeError> {
     match tag {
         t if t < 63 => encode_oer_integer(Some(0), Some(255), &(t + 128), output),
         _ => Err(EncodeError::Unsupported(
@@ -534,14 +549,17 @@ fn encode_oer_tag(tag: u8, output: &mut Encoder) -> Result<(), EncodeError> {
 
 fn encode_oer_open_type<T: Encode + std::fmt::Debug>(
     value: &T,
-    output: &mut Encoder,
+    output: &mut Encoder, // TODO: replace Encoder
 ) -> Result<(), EncodeError> {
     let bytes = value.encode_to_vec()?;
     encode_oer_octetstring(Some(0), None, &bytes, output)
 }
 
 impl<const SIZE: usize> Encode for BitString<SIZE> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_fixed_bitstring(&self.0, output)
     }
 }
@@ -549,7 +567,10 @@ impl<const SIZE: usize> Encode for BitString<SIZE> {
 macro_rules! encode_int {
     ($typ:ty, $min:expr, $max:expr) => {
         impl Encode for $typ {
-            fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+            fn encode(
+                &self,
+                output: &mut Encoder, // TODO: replace Encoder
+            ) -> Result<(), EncodeError> {
                 encode_oer_integer($min, $max, &self.0, output)
             }
         }
@@ -567,7 +588,10 @@ encode_int!(ExtId, Some(0), Some(255));
 encode_int!(Psid, Some(0), None);
 
 impl Encode for CertificateBase<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         let bitmap = [self.signature.is_some()];
         encode_extension_and_optional_bitmap(None, &bitmap, output)?;
 
@@ -585,7 +609,10 @@ impl Encode for CertificateBase<'_> {
 macro_rules! encode_octets {
     ($typ:ty, $min:expr, $max:expr) => {
         impl Encode for $typ {
-            fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+            fn encode(
+                &self,
+                output: &mut Encoder, // TODO: replace Encoder
+            ) -> Result<(), EncodeError> {
                 encode_oer_octetstring($min, $max, self.0, output)
             }
         }
@@ -602,19 +629,28 @@ encode_octets!(HashedId32<'_>, Some(32), Some(32));
 encode_octets!(HashedId48<'_>, Some(48), Some(48));
 
 impl Encode for CertificateType {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_enumerated(*self as u8, output)
     }
 }
 
 impl Encode for HashAlgorithm {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_enumerated(*self as u8, output)
     }
 }
 
 impl Encode for IssuerIdentifier<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             IssuerIdentifier::Sha256AndDigest(inner) => {
                 encode_oer_tag(0, output)?;
@@ -637,7 +673,10 @@ impl Encode for IssuerIdentifier<'_> {
 }
 
 impl Encode for ToBeSignedCertificate<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         let is_extended = self.flags.is_some()
             || self.app_extensions.is_some()
             || self.cert_issue_extensions.is_some()
@@ -704,14 +743,20 @@ impl Encode for ToBeSignedCertificate<'_> {
 }
 
 impl Encode for AppExtension<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         self.id.encode(output)?;
         encode_oer_octetstring(Some(0), None, self.content, output)
     }
 }
 
 impl Encode for CertIssueExtensionPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             CertIssueExtensionPermissions::Specific(inner) => {
                 encode_oer_tag(0, output)?;
@@ -723,7 +768,10 @@ impl Encode for CertIssueExtensionPermissions<'_> {
 }
 
 impl Encode for CertRequestExtensionPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             CertRequestExtensionPermissions::Content(inner) => {
                 encode_oer_tag(0, output)?;
@@ -735,21 +783,30 @@ impl Encode for CertRequestExtensionPermissions<'_> {
 }
 
 impl Encode for CertIssueExtension<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         self.id.encode(output)?;
         self.permissions.encode(output)
     }
 }
 
 impl Encode for CertRequestExtension<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         self.id.encode(output)?;
         self.permissions.encode(output)
     }
 }
 
 impl Encode for VerificationKeyIndicator<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             VerificationKeyIndicator::VerificationKey(inner) => {
                 encode_oer_tag(0, output)?;
@@ -764,7 +821,10 @@ impl Encode for VerificationKeyIndicator<'_> {
 }
 
 impl Encode for PublicVerificationKey<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             PublicVerificationKey::EcdsaNistP256(inner) => {
                 encode_oer_tag(0, output)?;
@@ -791,7 +851,10 @@ impl Encode for PublicVerificationKey<'_> {
 }
 
 impl Encode for PsidGroupPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         let bitmap = [
             self.min_chain_length == 1,
             self.chain_length_range == 0,
@@ -821,13 +884,19 @@ impl Encode for PsidGroupPermissions<'_> {
 }
 
 impl Encode for EndEntityType {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         self.0.encode(output)
     }
 }
 
 impl Encode for PsidSsp<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         let bitmap = [self.ssp.is_some()];
         encode_extension_and_optional_bitmap(None, &bitmap, output)?;
 
@@ -837,7 +906,10 @@ impl Encode for PsidSsp<'_> {
 }
 
 impl Encode for PsidSspRange<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         let bitmap = [self.ssp_range.is_some()];
         encode_extension_and_optional_bitmap(None, &bitmap, output)?;
 
@@ -849,14 +921,20 @@ impl Encode for PsidSspRange<'_> {
 }
 
 impl Encode for BitmapSspRange<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(1), Some(32), self.ssp_value, output)?;
         encode_oer_octetstring(Some(1), Some(32), self.ssp_bitmask, output)
     }
 }
 
 impl Encode for SspRange<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             SspRange::Opaque(inner) => {
                 encode_oer_tag(0, output)?;
@@ -872,7 +950,10 @@ impl Encode for SspRange<'_> {
 }
 
 impl Encode for SubjectPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             SubjectPermissions::Explicit(inner) => {
                 encode_oer_tag(0, output)?;
@@ -884,7 +965,10 @@ impl Encode for SubjectPermissions<'_> {
 }
 
 impl Encode for ServiceSpecificPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             ServiceSpecificPermissions::Opaque(inner) => {
                 encode_oer_tag(0, output)?;
@@ -899,7 +983,10 @@ impl Encode for ServiceSpecificPermissions<'_> {
 }
 
 impl Encode for BasePublicEncryptionKey<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             BasePublicEncryptionKey::EciesNistP256(inner) => {
                 encode_oer_tag(0, output)?;
@@ -918,7 +1005,10 @@ impl Encode for BasePublicEncryptionKey<'_> {
 }
 
 impl Encode for EccP256CurvePoint<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             EccP256CurvePoint::XOnly(inner) => {
                 encode_oer_tag(0, output)?;
@@ -942,7 +1032,10 @@ impl Encode for EccP256CurvePoint<'_> {
 }
 
 impl Encode for EccP384CurvePoint<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             EccP384CurvePoint::XOnly(inner) => {
                 encode_oer_tag(0, output)?;
@@ -968,7 +1061,10 @@ impl Encode for EccP384CurvePoint<'_> {
 macro_rules! encode_sequence_of {
     ($typ:ty) => {
         impl Encode for $typ {
-            fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+            fn encode(
+                &self,
+                output: &mut Encoder, // TODO: replace Encoder
+            ) -> Result<(), EncodeError> {
                 encode_oer_integer(Some(0), None, &self.0.len(), output)?;
                 for inner in &self.0 {
                     inner.encode(output)?;
@@ -1000,7 +1096,8 @@ encode_sequence_of!(ContributedExtensionBlockExtns<'_>);
 macro_rules! encode_sequence {
     ($typ:ty, $( $field:ident ),*) => {
         impl Encode for $typ {
-            fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+            fn encode(&self, output: &mut Encoder// TODO: replace Encoder
+) -> Result<(), EncodeError> {
                 $(
                     self.$field.encode(output)?;
                 )*
@@ -1024,13 +1121,19 @@ encode_sequence!(Ieee1609Dot2Data<'_>, protocol_version, content);
 encode_sequence!(ContributedExtensionBlock<'_>, contributor_id, extns);
 
 impl Encode for SymmAlgorithm {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_enumerated(*self as u8, output)
     }
 }
 
 impl Encode for GeographicRegion {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             GeographicRegion::CircularRegion(inner) => {
                 encode_oer_tag(0, output)?;
@@ -1053,7 +1156,10 @@ impl Encode for GeographicRegion {
 }
 
 impl Encode for IdentifiedRegion {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             IdentifiedRegion::CountryOnly(inner) => {
                 encode_oer_tag(0, output)?;
@@ -1072,7 +1178,10 @@ impl Encode for IdentifiedRegion {
 }
 
 impl Encode for Duration {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             Duration::Microseconds(inner) => {
                 encode_oer_tag(0, output)?;
@@ -1107,7 +1216,10 @@ impl Encode for Duration {
 }
 
 impl Encode for CertificateId<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             CertificateId::LinkageData(inner) => {
                 encode_oer_tag(0, output)?;
@@ -1127,13 +1239,19 @@ impl Encode for CertificateId<'_> {
 }
 
 impl Encode for Hostname {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(0), Some(255), self.0.as_bytes(), output)
     }
 }
 
 impl Encode for LinkageData<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         let bitmap = [self.group_linkage_value.is_some()];
         encode_extension_and_optional_bitmap(None, &bitmap, output)?;
 
@@ -1146,28 +1264,40 @@ impl Encode for LinkageData<'_> {
 }
 
 impl Encode for GroupLinkageValue<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(4), Some(4), self.j_value, output)?;
         encode_oer_octetstring(Some(9), Some(9), self.value, output)
     }
 }
 
 impl Encode for EccP256CurvePointUncompressedP256<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(32), Some(32), self.x, output)?;
         encode_oer_octetstring(Some(32), Some(32), self.y, output)
     }
 }
 
 impl Encode for EccP384CurvePointUncompressedP384<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(48), Some(48), self.x, output)?;
         encode_oer_octetstring(Some(48), Some(48), self.y, output)
     }
 }
 
 impl Encode for EcsigP256Signature<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(32), Some(32), self.r_sig, output)?;
         encode_oer_octetstring(Some(32), Some(32), self.s_sig, output)
     }
@@ -1181,14 +1311,20 @@ impl Encode for EcdsaP256Signature<'_> {
 }
 
 impl Encode for EcdsaP384Signature<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         self.r_sig.encode(output)?;
         encode_oer_octetstring(Some(48), Some(48), self.s_sig, output)
     }
 }
 
 impl Encode for Signature<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             Signature::EcdsaNistP256Signature(inner) => {
                 encode_oer_tag(0, output)?;
@@ -1215,7 +1351,10 @@ impl Encode for Signature<'_> {
 }
 
 impl Encode for HashedData<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             HashedData::Sha256HashedData(inner) => {
                 encode_oer_tag(0, output)?;
@@ -1234,7 +1373,10 @@ impl Encode for HashedData<'_> {
 }
 
 impl Encode for EncryptionKey<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             EncryptionKey::Public(inner) => {
                 encode_oer_tag(0, output)?;
@@ -1249,7 +1391,10 @@ impl Encode for EncryptionKey<'_> {
 }
 
 impl Encode for SymmetricEncryptionKey<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             SymmetricEncryptionKey::Aes128Ccm(inner) => {
                 encode_oer_tag(0, output)?;
@@ -1270,13 +1415,19 @@ impl Encode for SymmetricEncryptionKey<'_> {
 }
 
 impl Encode for AnonymousContributedExtensionBlockExtns<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(0), None, self.0, output)
     }
 }
 
 impl Encode for SignedDataPayload<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         let bitmap = [self.data.is_some(), self.ext_data_hash.is_some()];
         encode_extension_and_optional_bitmap(Some(self.omitted.is_some()), &bitmap, output)?;
 
@@ -1292,7 +1443,10 @@ impl Encode for SignedDataPayload<'_> {
 }
 
 impl Encode for Ieee1609Dot2Content<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         match self {
             Ieee1609Dot2Content::UnsecuredData(inner) => {
                 encode_oer_tag(0, output)?;
@@ -1306,7 +1460,10 @@ impl Encode for Ieee1609Dot2Content<'_> {
 encode_int!(Uint64, Some(0), Some(18_446_744_073_709_551_615));
 
 impl Encode for HeaderInfo<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         let is_extended = self.inline_p2pcd_request.is_some()
             || self.requested_certificate.is_some()
             || self.pdu_functional_type.is_some()
@@ -1368,7 +1525,10 @@ impl Encode for HeaderInfo<'_> {
 }
 
 impl Encode for MissingCrlIdentifier<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+    fn encode(
+        &self,
+        output: &mut Encoder, // TODO: replace Encoder
+    ) -> Result<(), EncodeError> {
         encode_extension_and_optional_bitmap(Some(false), &[], output)?;
 
         self.craca_id.encode(output)?;
