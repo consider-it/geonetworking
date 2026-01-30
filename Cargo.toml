@@ -1,6 +1,6 @@
 [package]
 name = "geonetworking"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Kevin Westphal<westphal@consider-it.de>", "consider it GmbH"]
 keywords = ["its", "v2x", "etsi", "geonetworking"]
