@@ -36,44 +36,37 @@
 //! use geonetworking::*;
 //!
 //! let packet = Packet::Unsecured {
-//!     basic: BasicHeader {
-//!         version: 1,
-//!         next_header: NextAfterBasic::CommonHeader,
-//!         reserved: 0x00,
-//!         lifetime: Lifetime(80),
-//!         remaining_hop_limit: 1,
-//!     },
-//!     common: CommonHeader {
-//!         next_header: NextAfterCommon::BTPB,
-//!         reserved_1: arbitrary_int::u4::from_u8(0x00),
-//!         header_type_and_subtype: HeaderType::TopologicallyScopedBroadcast(
+//!     basic: BasicHeader::try_new(
+//!         1,
+//!         NextAfterBasic::CommonHeader,
+//!         Lifetime(80),
+//!         1,
+//!     ).expect("Failed to create BasicHeader"),
+//!     common: CommonHeader::new(
+//!         NextAfterCommon::BTPB,
+//!         HeaderType::TopologicallyScopedBroadcast(
 //!             BroadcastType::SingleHop,
 //!         ),
-//!         traffic_class: TrafficClass {
-//!             store_carry_forward: false,
-//!             channel_offload: false,
-//!             traffic_class_id: 2,
-//!         },
-//!         flags: [false; 8],
-//!         payload_length: 1,
-//!         maximum_hop_limit: 1,
-//!         reserved_2: 0x00,
-//!     },
+//!         TrafficClass::try_new(false, false, 2).expect("Failed to create TrafficClass"),
+//!         [false; 8],
+//!         1,
+//!         1,
+//!     ),
 //!     extended: Some(ExtendedHeader::SHB(SingleHopBroadcast {
-//!         source_position_vector: LongPositionVector {
-//!             gn_address: Address {
+//!         source_position_vector: LongPositionVector::try_new(
+//!             Address {
 //!                 manually_configured: false,
 //!                 station_type: StationType::Unknown,
 //!                 reserved: arbitrary_int::u10::new(0x0106),
 //!                 address: [0, 96, 224, 105, 87, 141],
 //!             },
-//!             timestamp: Timestamp(542947520),
-//!             latitude: 535574568,
-//!             longitude: 99765648,
-//!             position_accuracy: false,
-//!             speed: 680,
-//!             heading: 2122,
-//!         },
+//!             Timestamp(542947520),
+//!             535574568,
+//!             99765648,
+//!             false,
+//!             680,
+//!             2122,
+//!         ).expect("Failed to create LongPositionVector"),
 //!         media_dependent_data: [127, 0, 184, 0],
 //!     })),
 //!     payload: &[42]
@@ -109,7 +102,6 @@
 //! ```
 
 #![cfg_attr(all(not(test), not(feature = "validate")), no_std)]
-#[cfg(not(feature = "validate"))]
 extern crate alloc;
 #[cfg(all(feature = "json", not(feature = "validate")))]
 use alloc::vec;
@@ -118,9 +110,8 @@ use std::fmt::Debug;
 #[cfg(not(feature = "validate"))]
 use {alloc::vec::Vec, core::fmt::Debug};
 
-use arbitrary_int::u4;
+use arbitrary_int::{i15, u4};
 use bitvec::prelude::*;
-use bytes::Bytes;
 
 mod decode;
 mod encode;
@@ -138,59 +129,10 @@ pub use encode::{Encode, EncodeError, Encoder};
 pub use validate::{Validate, ValidationError, ValidationResult};
 
 #[cfg(feature = "json")]
-use serde::{de::Visitor, Deserialize, Serialize};
-
-#[cfg(feature = "json")]
-struct BitsVisitor<const SIZE: usize>;
-
-#[cfg(feature = "json")]
-impl<'de, const SIZE: usize> Visitor<'de> for BitsVisitor<SIZE> {
-    type Value = Bits<SIZE>;
-
-    fn expecting(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
-        formatter.write_str("a sequence of boolean values")
-    }
-
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: serde::de::SeqAccess<'de>,
-    {
-        let mut bits = vec![];
-        while let Some(bit) = seq.next_element::<bool>()? {
-            bits.push(bit);
-        }
-        Ok(Bits(bits.iter().collect::<BitVec<u8, Msb0>>()))
-    }
-}
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq)]
 pub struct Bits<const SIZE: usize>(pub BitVec<u8, Msb0>);
-
-impl<const SIZE: usize> Debug for Bits<SIZE> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-#[cfg(feature = "json")]
-impl<'de, const SIZE: usize> Deserialize<'de> for Bits<SIZE> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        deserializer.deserialize_seq(BitsVisitor::<SIZE>)
-    }
-}
-
-#[cfg(feature = "json")]
-impl<const SIZE: usize> Serialize for Bits<SIZE> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.collect_seq(self.0.iter().map(|bit| *bit))
-    }
-}
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
