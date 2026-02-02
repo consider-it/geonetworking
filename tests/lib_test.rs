@@ -1,3 +1,4 @@
+use arbitrary_int::u4;
 use geonetworking::*;
 
 #[test]
@@ -16,30 +17,30 @@ fn decode_beacon() {
                 basic: BasicHeader {
                     version: 1,
                     next_header: NextAfterBasic::CommonHeader,
-                    reserved: bits![0, 0, 0, 0, 0, 0, 0, 0],
+                    reserved: 0x00,
                     lifetime: Lifetime(26),
                     remaining_hop_limit: 1
                 },
                 common: CommonHeader {
                     next_header: NextAfterCommon::Any,
-                    reserved_1: bits![0, 0, 0, 0],
+                    reserved_1: u4::from_u8(0x00),
                     header_type_and_subtype: HeaderType::Beacon,
                     traffic_class: TrafficClass {
                         store_carry_forward: false,
                         channel_offload: false,
                         traffic_class_id: 3
                     },
-                    flags: bits![0, 0, 0, 0, 0, 0, 0, 0],
+                    flags: [false; 8],
                     payload_length: 0,
                     maximum_hop_limit: 1,
-                    reserved_2: bits![0, 0, 0, 0, 0, 0, 0, 0]
+                    reserved_2: 0x00
                 },
                 extended: Some(ExtendedHeader::Beacon(Beacon {
                     source_position_vector: LongPositionVector {
                         gn_address: Address {
                             manually_configured: false,
                             station_type: StationType::RoadSideUnit,
-                            reserved: bits![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            reserved: arbitrary_int::u10::new(0x0000),
                             address: [0, 13, 65, 18, 54, 112]
                         },
                         timestamp: Timestamp(1_897_856_500),
@@ -79,13 +80,13 @@ fn unsecured_round_trip() {
         basic: BasicHeader {
             version: 1,
             next_header: NextAfterBasic::CommonHeader,
-            reserved: bits![0, 0, 0, 0, 0, 0, 0, 0],
+            reserved: 0x00,
             lifetime: Lifetime(80),
             remaining_hop_limit: 1,
         },
         common: CommonHeader {
             next_header: NextAfterCommon::BTPB,
-            reserved_1: bits![0, 0, 0, 0],
+            reserved_1: u4::from_u8(0x00),
             header_type_and_subtype: HeaderType::TopologicallyScopedBroadcast(
                 BroadcastType::SingleHop,
             ),
@@ -94,17 +95,17 @@ fn unsecured_round_trip() {
                 channel_offload: false,
                 traffic_class_id: 2,
             },
-            flags: bits![0, 0, 0, 0, 0, 0, 0, 0],
+            flags: [false; 8],
             payload_length: 1,
             maximum_hop_limit: 1,
-            reserved_2: bits![0, 0, 0, 0, 0, 0, 0, 0],
+            reserved_2: 0x00,
         },
         extended: Some(ExtendedHeader::SHB(SingleHopBroadcast {
             source_position_vector: LongPositionVector {
                 gn_address: Address {
                     manually_configured: false,
                     station_type: StationType::Unknown,
-                    reserved: bits![0, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+                    reserved: arbitrary_int::u10::new(0x0106),
                     address: [0, 96, 224, 105, 87, 141],
                 },
                 timestamp: Timestamp(542_947_520),
@@ -139,7 +140,7 @@ fn packet_to_json() {
     let result = Packet::decode(data.as_slice()).unwrap();
     let json = result.decoded.encode_to_json().unwrap();
     pretty_assertions::assert_eq!(
-        serde_json::from_str::<serde_json::Value>(r#"{"Unsecured":{"basic":{"version":1,"next_header":"CommonHeader","reserved":[false,false,false,false,false,false,false,false],"lifetime":80,"remaining_hop_limit":1},"common":{"next_header":"BTPB","reserved_1":[false,false,false,false],"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":45,"maximum_hop_limit":1,"reserved_2":[false,false,false,false,false,false,false,false]},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":[false,true,false,false,false,false,false,true,true,false],"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}},"payload":[7,209,0,0,2,2,224,105,87,141,180,217,0,10,178,36,99,206,39,132,43,31,255,255,252,34,49,181,178,0,128,95,65,45,162,191,233,237,7,55,254,235,255,246,0]}}"#).unwrap(),
+        serde_json::from_str::<serde_json::Value>(r#"{"Unsecured":{"basic":{"version":1,"next_header":"CommonHeader","reserved":0,"lifetime":80,"remaining_hop_limit":1},"common":{"next_header":"BTPB","reserved_1":0,"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":45,"maximum_hop_limit":1,"reserved_2":0},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":262,"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}},"payload":[7,209,0,0,2,2,224,105,87,141,180,217,0,10,178,36,99,206,39,132,43,31,255,255,252,34,49,181,178,0,128,95,65,45,162,191,233,237,7,55,254,235,255,246,0]}}"#).unwrap(),
         serde_json::from_str::<serde_json::Value>(json.as_str()).unwrap()
     );
 }

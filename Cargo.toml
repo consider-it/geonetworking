@@ -14,14 +14,15 @@ documentation = "https://docs.rs/geonetworking"
 
 [features]
 default = ["json", "validate"]
-json = ["dep:serde_json", "serde", "bytes/serde"]
+json = ["dep:serde_json", "serde", "bytes/serde", "arbitrary-int/serde"]
 validate = ["ecdsa", "p256", "p384", "bp256", "bp384", "sha2", "sm2", "sm3"]
 
 [dependencies]
-bitvec = { version = "1.0", default-features = false, features = ["alloc"] }
+bitvec = { version = "1.0", default-features = false, features = ["alloc"] } # TODO: remove
 bytes = { version = "1.10", default-features = false }
 nom = { version = "7.1", default-features = false, features = ["alloc"] }
-nom-bitvec = { package = "bitvec-nom2", version = "0.2.1" }
+nom-bitvec = { package = "bitvec-nom2", version = "0.2.1" } # TODO: remove
+arbitrary-int = { version = "2.0.0" }
 num = { version = "0.4", default-features = false }
 num-traits = { version = "0.2", default-features = false }
 
