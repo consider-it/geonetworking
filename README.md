@@ -50,37 +50,31 @@ let packet = Packet::Unsecured {
         lifetime: Lifetime(80),
         remaining_hop_limit: 1,
     },
-    common: CommonHeader {
-        next_header: NextAfterCommon::BTPB,
-        reserved_1: arbitrary_int::u4::from_u8(0x00),
-        header_type_and_subtype: HeaderType::TopologicallyScopedBroadcast(
+    common: CommonHeader::new(
+        NextAfterCommon::BTPB,
+        HeaderType::TopologicallyScopedBroadcast(
             BroadcastType::SingleHop,
         ),
-        traffic_class: TrafficClass {
-            store_carry_forward: false,
-            channel_offload: false,
-            traffic_class_id: 2,
-        },
-        flags: [false; 8],
-        payload_length: 1,
-        maximum_hop_limit: 1,
-        reserved_2: 0x00,
-    },
+        TrafficClass::try_new(false, false, 2).expect("Failed to create TrafficClass"),
+        [false; 8],
+        1,
+        1,
+    ),
     extended: Some(ExtendedHeader::SHB(SingleHopBroadcast {
-        source_position_vector: LongPositionVector {
-            gn_address: Address {
+        source_position_vector: LongPositionVector::try_new(
+            Address {
                 manually_configured: false,
                 station_type: StationType::Unknown,
                 reserved: arbitrary_int::u10::new(0x0106),
                 address: [0, 96, 224, 105, 87, 141],
             },
-            timestamp: Timestamp(542947520),
-            latitude: 535574568,
-            longitude: 99765648,
-            position_accuracy: false,
-            speed: 680,
-            heading: 2122,
-        },
+            Timestamp(542947520),
+            535574568,
+            99765648,
+            false,
+            680,
+            2122,
+        ).expect("Failed to create LongPositionVector"),
         media_dependent_data: [127, 0, 184, 0],
     })),
     payload: &[42]

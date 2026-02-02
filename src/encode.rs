@@ -46,7 +46,11 @@ impl Encoder {
 impl From<Encoder> for alloc::vec::Vec<u8> {
     fn from(val: Encoder) -> Self {
         let mut vec = alloc::vec![];
-        write_into_vec_left_padded(val.bits.bitwise(), &mut vec);
+
+        for slice in val.bits.chunks(8) {
+            vec.push(slice.load_be());
+        }
+
         vec
     }
 }
@@ -201,7 +205,7 @@ impl Encode for NextAfterBasic {
 
 impl Encode for BasicHeader {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&self.version, 4, output)?;
+        // write_as_int(&self.version, 4, output)?; // TODO!
         self.next_header.encode(output)?;
         write_as_int(&self.reserved, 8, output)?;
         self.lifetime.encode(output)?;
@@ -216,7 +220,7 @@ impl Encode for LongPositionVector {
         write_as_int(&self.latitude, 32, output)?;
         write_as_int(&self.longitude, 32, output)?;
         self.position_accuracy.encode(output)?;
-        write_as_int(&self.speed, 15, output)?;
+        // write_as_int(&self.speed, 15, output)?; // TODO!
         write_as_int(&self.heading, 16, output)
     }
 }
@@ -234,7 +238,8 @@ impl Encode for TrafficClass {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.store_carry_forward.encode(output)?;
         self.channel_offload.encode(output)?;
-        write_as_int(&self.traffic_class_id, 6, output)
+        // write_as_int(&self.traffic_class_id, 6, output) // TODO!
+        Ok(())
     }
 }
 
@@ -282,21 +287,22 @@ impl Encode for CommonHeader {
 impl Encode for GeoAnycast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
-        self.reserved_1.encode(output)?;
+        // self.reserved_1.encode(output)?;
         self.source_position_vector.encode(output)?;
         write_as_int(&self.geo_area_position_latitude, 32, output)?;
         write_as_int(&self.geo_area_position_longitude, 32, output)?;
         write_as_int(&self.distance_a, 16, output)?;
         write_as_int(&self.distance_b, 16, output)?;
         write_as_int(&self.angle, 16, output)?;
-        self.reserved_2.encode(output)
+        // self.reserved_2.encode(output)
+        Ok(())
     }
 }
 
 impl Encode for GeoUnicast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
-        self.reserved.encode(output)?;
+        // self.reserved.encode(output)?;
         self.source_position_vector.encode(output)?;
         self.destination_position_vector.encode(output)
     }
@@ -305,7 +311,7 @@ impl Encode for GeoUnicast {
 impl Encode for TopologicallyScopedBroadcast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
-        self.reserved.encode(output)?;
+        // self.reserved.encode(output)?;
         self.source_position_vector.encode(output)
     }
 }

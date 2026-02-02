@@ -14,42 +14,34 @@ fn decode_beacon() {
         Decoded {
             bytes_consumed: 36,
             decoded: Packet::Unsecured {
-                basic: BasicHeader {
-                    version: 1,
-                    next_header: NextAfterBasic::CommonHeader,
-                    reserved: 0x00,
-                    lifetime: Lifetime(26),
-                    remaining_hop_limit: 1
-                },
+                basic: BasicHeader::try_new(1, NextAfterBasic::CommonHeader, Lifetime(26), 1)
+                    .unwrap(),
                 common: CommonHeader {
                     next_header: NextAfterCommon::Any,
                     reserved_1: u4::from_u8(0x00),
                     header_type_and_subtype: HeaderType::Beacon,
-                    traffic_class: TrafficClass {
-                        store_carry_forward: false,
-                        channel_offload: false,
-                        traffic_class_id: 3
-                    },
+                    traffic_class: TrafficClass::try_new(false, false, 3).unwrap(),
                     flags: [false; 8],
                     payload_length: 0,
                     maximum_hop_limit: 1,
                     reserved_2: 0x00
                 },
                 extended: Some(ExtendedHeader::Beacon(Beacon {
-                    source_position_vector: LongPositionVector {
-                        gn_address: Address {
+                    source_position_vector: LongPositionVector::try_new(
+                        Address {
                             manually_configured: false,
                             station_type: StationType::RoadSideUnit,
                             reserved: arbitrary_int::u10::new(0x0000),
                             address: [0, 13, 65, 18, 54, 112]
                         },
-                        timestamp: Timestamp(1_897_856_500),
-                        latitude: 535_637_062,
-                        longitude: 99_895_661,
-                        position_accuracy: true,
-                        speed: 0,
-                        heading: 3407
-                    }
+                        Timestamp(1_897_856_500),
+                        535_637_062,
+                        99_895_661,
+                        true,
+                        0,
+                        3407
+                    )
+                    .unwrap(),
                 })),
                 payload: &[]
             },
@@ -77,44 +69,35 @@ fn unsecured_round_trip() {
         0x4d, 0x90, 0x02, 0xa8, 0x08, 0x4a, 0x7f, 0x00, 0xb8, 0x00, 0x00,
     ];
     let packet = Packet::Unsecured {
-        basic: BasicHeader {
-            version: 1,
-            next_header: NextAfterBasic::CommonHeader,
-            reserved: 0x00,
-            lifetime: Lifetime(80),
-            remaining_hop_limit: 1,
-        },
+        basic: BasicHeader::try_new(1, NextAfterBasic::CommonHeader, Lifetime(80), 1).unwrap(),
         common: CommonHeader {
             next_header: NextAfterCommon::BTPB,
             reserved_1: u4::from_u8(0x00),
             header_type_and_subtype: HeaderType::TopologicallyScopedBroadcast(
                 BroadcastType::SingleHop,
             ),
-            traffic_class: TrafficClass {
-                store_carry_forward: false,
-                channel_offload: false,
-                traffic_class_id: 2,
-            },
+            traffic_class: TrafficClass::try_new(false, false, 2).unwrap(),
             flags: [false; 8],
             payload_length: 1,
             maximum_hop_limit: 1,
             reserved_2: 0x00,
         },
         extended: Some(ExtendedHeader::SHB(SingleHopBroadcast {
-            source_position_vector: LongPositionVector {
-                gn_address: Address {
+            source_position_vector: LongPositionVector::try_new(
+                Address {
                     manually_configured: false,
                     station_type: StationType::Unknown,
                     reserved: arbitrary_int::u10::new(0x0106),
                     address: [0, 96, 224, 105, 87, 141],
                 },
-                timestamp: Timestamp(542_947_520),
-                latitude: 535_574_568,
-                longitude: 99_765_648,
-                position_accuracy: false,
-                speed: 680,
-                heading: 2122,
-            },
+                Timestamp(542_947_520),
+                535_574_568,
+                99_765_648,
+                false,
+                680,
+                2122,
+            )
+            .unwrap(),
             media_dependent_data: [127, 0, 184, 0],
         })),
         payload: &[0],
