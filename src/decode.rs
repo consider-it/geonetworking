@@ -1,5 +1,6 @@
 extern crate alloc;
 
+use arbitrary_int::u10;
 use bitvec::prelude::*;
 use nom::{
     bytes::streaming::take,
@@ -18,7 +19,7 @@ use crate::{
     *,
 };
 
-type DecodeIn<'input> = BSlice<'input, u8, Msb0>;
+type DecodeIn<'input> = BSlice<'input, u8, Msb0>; // MSB first
 
 /// Returns the value of a decoding attempt
 #[derive(Debug, PartialEq)]
@@ -63,7 +64,7 @@ pub trait Decode<'s>: Sized + Debug + PartialEq {
     ///     decoded: BasicHeader {
     ///         version: 1,
     ///         next_header: NextAfterBasic::SecuredPacket,
-    ///         reserved: crate::bits!(0;8),
+    ///         reserved: 0x00,
     ///         lifetime: Lifetime(21),
     ///         remaining_hop_limit: 1
     ///     }
@@ -125,7 +126,7 @@ impl UnsecuredHeader {
     /// ### Usage
     /// ```
     /// # use geonetworking::*;
-    /// let json_header = r#"{"basic":{"version":1,"next_header":"CommonHeader","reserved":[false,false,false,false,false,false,false,false],"lifetime":80,"remaining_hop_limit":1},"secured":null,"common":{"next_header":"BTPB","reserved_1":[false,false,false,false],"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":8,"maximum_hop_limit":1,"reserved_2":[false,false,false,false,false,false,false,false]},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":[false,true,false,false,false,false,false,true,true,false],"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}}}"#;
+    /// let json_header = r#"{"basic":{"version":1,"next_header":"CommonHeader","reserved":[false,false,false,false,false,false,false,false],"lifetime":80,"remaining_hop_limit":1},"secured":null,"common":{"next_header":"BTPB","reserved_1":[false,false,false,false],"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":8,"maximum_hop_limit":1,"reserved_2":[false,false,false,false,false,false,false,false]},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":262,"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}}}"#;
     /// let payload: &'static [u8] = &[0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03];
     /// let unsecured_header = UnsecuredHeader::from_json(json_header).unwrap();
     /// let unsecured_packet: Packet = unsecured_header.with_payload(payload);
@@ -414,6 +415,77 @@ impl<'s, const SIZE: usize> InternalDecode<'s> for [u8; SIZE] {
     }
 }
 
+impl<'s> InternalDecode<'s> for u10 {
+    fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
+    where
+        Self: Sized,
+    {
+        map_res(read_as_uint::<u16>(10), |val| {
+            Ok::<arbitrary_int::UInt<u16, 10>, ()>(Self::from_u16(val))
+        })(input)
+    }
+
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (remaining, instance) = Self::decode_bitwise(input.bitwise()).map_err(cast_nom_err)?;
+        Ok((
+            &input[(input.len() - Integer::div_ceil(&remaining.len(), &8usize))..],
+            instance,
+        ))
+    }
+}
+
+impl<'s> InternalDecode<'s> for u4 {
+    fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
+    where
+        Self: Sized,
+    {
+        map_res(read_as_uint::<u8>(4), |val| {
+            Ok::<arbitrary_int::UInt<u8, 4>, ()>(Self::from_u8(val))
+        })(input)
+    }
+
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (remaining, instance) = Self::decode_bitwise(input.bitwise()).map_err(cast_nom_err)?;
+        Ok((
+            &input[(input.len() - Integer::div_ceil(&remaining.len(), &8usize))..],
+            instance,
+        ))
+    }
+}
+
+impl<'s> InternalDecode<'s> for [bool; 8] {
+    fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
+    where
+        Self: Sized,
+    {
+        map_res(read_as_uint::<u8>(8), |val| {
+            let mut bitvec = [false; 8];
+            for (i, item) in bitvec.iter_mut().enumerate().take(7) {
+                *item = (val << i & 0x80) > 0;
+            }
+
+            Ok::<[bool; 8], ()>(bitvec)
+        })(input)
+    }
+
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (remaining, instance) = Self::decode_bitwise(input.bitwise()).map_err(cast_nom_err)?;
+        Ok((
+            &input[(input.len() - Integer::div_ceil(&remaining.len(), &8usize))..],
+            instance,
+        ))
+    }
+}
+
 impl<'s> InternalDecode<'s> for Address {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
@@ -422,7 +494,7 @@ impl<'s> InternalDecode<'s> for Address {
         into(tuple((
             bool::decode_bitwise,
             StationType::decode_bitwise,
-            Bits::<10>::decode_bitwise,
+            u10::decode_bitwise,
             <[u8; 6]>::decode_bitwise,
         )))(input)
     }
@@ -439,8 +511,8 @@ impl<'s> InternalDecode<'s> for Address {
     }
 }
 
-impl From<(bool, StationType, Bits<10>, [u8; 6])> for Address {
-    fn from(value: (bool, StationType, Bits<10>, [u8; 6])) -> Self {
+impl From<(bool, StationType, u10, [u8; 6])> for Address {
+    fn from(value: (bool, StationType, u10, [u8; 6])) -> Self {
         Self {
             manually_configured: value.0,
             station_type: value.1,
@@ -495,7 +567,7 @@ impl<'s> InternalDecode<'s> for BasicHeader {
         into(tuple((
             read_as_uint(4),
             NextAfterBasic::decode_bitwise,
-            Bits::<8>::decode_bitwise,
+            read_as_uint(8),
             Lifetime::decode_bitwise,
             read_as_uint(8),
         )))(input)
@@ -513,8 +585,8 @@ impl<'s> InternalDecode<'s> for BasicHeader {
     }
 }
 
-impl From<(u8, NextAfterBasic, Bits<8>, Lifetime, u8)> for BasicHeader {
-    fn from(value: (u8, NextAfterBasic, Bits<8>, Lifetime, u8)) -> Self {
+impl From<(u8, NextAfterBasic, u8, Lifetime, u8)> for BasicHeader {
+    fn from(value: (u8, NextAfterBasic, u8, Lifetime, u8)) -> Self {
         Self {
             version: value.0,
             next_header: value.1,
@@ -794,13 +866,13 @@ impl<'s> InternalDecode<'s> for CommonHeader {
     {
         into(tuple((
             NextAfterCommon::decode_bitwise,
-            Bits::<4>::decode_bitwise,
+            u4::decode_bitwise,
             HeaderType::decode_bitwise,
             TrafficClass::decode_bitwise,
-            Bits::<8>::decode_bitwise,
+            <[bool; 8]>::decode_bitwise,
             read_as_uint(16),
             read_as_uint(8),
-            Bits::<8>::decode_bitwise,
+            read_as_uint(8),
         )))(input)
     }
 
@@ -819,25 +891,25 @@ impl<'s> InternalDecode<'s> for CommonHeader {
 impl
     From<(
         NextAfterCommon,
-        Bits<4>,
+        u4,
         HeaderType,
         TrafficClass,
-        Bits<8>,
+        [bool; 8],
         u16,
         u8,
-        Bits<8>,
+        u8,
     )> for CommonHeader
 {
     fn from(
         value: (
             NextAfterCommon,
-            Bits<4>,
+            u4,
             HeaderType,
             TrafficClass,
-            Bits<8>,
+            [bool; 8],
             u16,
             u8,
-            Bits<8>,
+            u8,
         ),
     ) -> Self {
         Self {
@@ -1060,7 +1132,7 @@ impl<'s> InternalDecode<'s> for LSRequest {
     {
         into(tuple((
             read_as_uint(16),
-            Bits::<16>::decode_bitwise,
+            read_as_uint(16),
             LongPositionVector::decode_bitwise,
             Address::decode_bitwise,
         )))(input)
@@ -1078,8 +1150,8 @@ impl<'s> InternalDecode<'s> for LSRequest {
     }
 }
 
-impl From<(u16, Bits<16>, LongPositionVector, Address)> for LSRequest {
-    fn from(value: (u16, Bits<16>, LongPositionVector, Address)) -> Self {
+impl From<(u16, u16, LongPositionVector, Address)> for LSRequest {
+    fn from(value: (u16, u16, LongPositionVector, Address)) -> Self {
         Self {
             sequence_number: value.0,
             reserved: value.1,
@@ -1096,7 +1168,7 @@ impl<'s> InternalDecode<'s> for LSReply {
     {
         into(tuple((
             read_as_uint(16),
-            Bits::<16>::decode_bitwise,
+            read_as_uint(16),
             LongPositionVector::decode_bitwise,
             ShortPositionVector::decode_bitwise,
         )))(input)
@@ -1114,8 +1186,8 @@ impl<'s> InternalDecode<'s> for LSReply {
     }
 }
 
-impl From<(u16, Bits<16>, LongPositionVector, ShortPositionVector)> for LSReply {
-    fn from(value: (u16, Bits<16>, LongPositionVector, ShortPositionVector)) -> Self {
+impl From<(u16, u16, LongPositionVector, ShortPositionVector)> for LSReply {
+    fn from(value: (u16, u16, LongPositionVector, ShortPositionVector)) -> Self {
         Self {
             sequence_number: value.0,
             reserved: value.1,
@@ -3302,7 +3374,7 @@ mod tests {
                 decoded: BasicHeader {
                     version: 1,
                     next_header: NextAfterBasic::SecuredPacket,
-                    reserved: crate::bits!(0;8),
+                    reserved: 0x00,
                     lifetime: Lifetime(21),
                     remaining_hop_limit: 1
                 }
