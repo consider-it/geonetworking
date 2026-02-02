@@ -9,7 +9,6 @@ The `geonetworking` library decodes and encodes GeoNetworking packets according 
 Add `geonetworking = "$version"` to the `[dependencies]` section of your project's `Cargo.toml` manifest.
 The default features include data validation functionalities and JSON serialization with `serde`.
 If you do not wish to include validation and JSON functionalities in your build, declare the dependency as follows: `geonetworking = { version = "$version", default-features = false }`.
-The `"validation"` features requires the standard library as well as an openssl installation of major version 3.
 
 #### Decoding
 `geonetworking` provides a `Decode` trait that is implemented by the GeoNetworking `Packet` (containing all headers and payload), the subheaders `BasicHeader` `CommonHeader` `Ieee1609Dot2Data` (a.k.a. Secured Header) as well as the extended headers:
