@@ -2,6 +2,7 @@ extern crate alloc;
 
 #[cfg(not(feature = "validate"))]
 use alloc::vec;
+use arbitrary_int::u10;
 use bitvec::prelude::*;
 use nom::{
     bytes::streaming::take,
@@ -20,7 +21,7 @@ use crate::{
     *,
 };
 
-type DecodeIn<'input> = BSlice<'input, u8, Msb0>;
+type DecodeIn<'input> = BSlice<'input, u8, Msb0>; // MSB first
 
 /// Returns the value of a decoding attempt
 #[derive(Debug, PartialEq)]
@@ -65,7 +66,7 @@ pub struct Decoded<T: Debug + PartialEq> {
 ///     decoded: en302636_4_1::BasicHeader {
 ///         version: 1,
 ///         next_header: en302636_4_1::NextAfterBasic::SecuredPacket,
-///         reserved: bits!(0;8),
+///         reserved: 0x00,
 ///         lifetime: en302636_4_1::Lifetime(21),
 ///         remaining_hop_limit: 1
 ///     }
@@ -129,9 +130,9 @@ impl UnsecuredHeader {
     #[cfg(feature = "json")]
     /// Tries to deserialize an unsecured GeoNetworking header from JSON.
     /// ### Usage
-    /// ```
+    /// ```rust
     /// # use geonetworking::*;
-    /// let json_header = r#"{"basic":{"version":1,"next_header":"CommonHeader","reserved":[false,false,false,false,false,false,false,false],"lifetime":80,"remaining_hop_limit":1},"secured":null,"common":{"next_header":"BTPB","reserved_1":[false,false,false,false],"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":8,"maximum_hop_limit":1,"reserved_2":[false,false,false,false,false,false,false,false]},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":[false,true,false,false,false,false,false,true,true,false],"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}}}"#;
+    /// let json_header = r#"{"basic":{"version":1,"next_header":"CommonHeader","reserved":0,"lifetime":80,"remaining_hop_limit":1},"secured":null,"common":{"next_header":"BTPB","reserved_1":0,"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":8,"maximum_hop_limit":1,"reserved_2":0},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":262,"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}}}"#;
     /// let payload: &'static [u8] = &[0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03];
     /// let unsecured_header = UnsecuredHeader::from_json(json_header).unwrap();
     /// let unsecured_packet: Packet = unsecured_header.with_payload(payload).expect("REASON");
@@ -426,6 +427,77 @@ impl<'s, const SIZE: usize> InternalDecode<'s> for [u8; SIZE] {
     }
 }
 
+impl<'s> InternalDecode<'s> for u10 {
+    fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
+    where
+        Self: Sized,
+    {
+        map_res(read_as_uint::<u16>(10), |val| {
+            Ok::<arbitrary_int::UInt<u16, 10>, ()>(Self::from_u16(val))
+        })(input)
+    }
+
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (remaining, instance) = Self::decode_bitwise(input.bitwise()).map_err(cast_nom_err)?;
+        Ok((
+            &input[(input.len() - Integer::div_ceil(&remaining.len(), &8usize))..],
+            instance,
+        ))
+    }
+}
+
+impl<'s> InternalDecode<'s> for u4 {
+    fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
+    where
+        Self: Sized,
+    {
+        map_res(read_as_uint::<u8>(4), |val| {
+            Ok::<arbitrary_int::UInt<u8, 4>, ()>(Self::from_u8(val))
+        })(input)
+    }
+
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (remaining, instance) = Self::decode_bitwise(input.bitwise()).map_err(cast_nom_err)?;
+        Ok((
+            &input[(input.len() - Integer::div_ceil(&remaining.len(), &8usize))..],
+            instance,
+        ))
+    }
+}
+
+impl<'s> InternalDecode<'s> for [bool; 8] {
+    fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
+    where
+        Self: Sized,
+    {
+        map_res(read_as_uint::<u8>(8), |val| {
+            let mut bitvec = [false; 8];
+            for (i, item) in bitvec.iter_mut().enumerate().take(7) {
+                *item = (val << i & 0x80) > 0;
+            }
+
+            Ok::<[bool; 8], ()>(bitvec)
+        })(input)
+    }
+
+    fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
+    where
+        Self: Sized,
+    {
+        let (remaining, instance) = Self::decode_bitwise(input.bitwise()).map_err(cast_nom_err)?;
+        Ok((
+            &input[(input.len() - Integer::div_ceil(&remaining.len(), &8usize))..],
+            instance,
+        ))
+    }
+}
+
 impl<'s> InternalDecode<'s> for en302636_4_1::Address {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
@@ -434,7 +506,7 @@ impl<'s> InternalDecode<'s> for en302636_4_1::Address {
         into(tuple((
             bool::decode_bitwise,
             en302636_4_1::StationType::decode_bitwise,
-            Bits::<10>::decode_bitwise,
+            u10::decode_bitwise,
             <[u8; 6]>::decode_bitwise,
         )))(input)
     }
@@ -451,8 +523,8 @@ impl<'s> InternalDecode<'s> for en302636_4_1::Address {
     }
 }
 
-impl From<(bool, en302636_4_1::StationType, Bits<10>, [u8; 6])> for en302636_4_1::Address {
-    fn from(value: (bool, en302636_4_1::StationType, Bits<10>, [u8; 6])) -> Self {
+impl From<(bool, en302636_4_1::StationType, u10, [u8; 6])> for en302636_4_1::Address {
+    fn from(value: (bool, en302636_4_1::StationType, u10, [u8; 6])) -> Self {
         Self {
             manually_configured: value.0,
             station_type: value.1,
@@ -507,7 +579,7 @@ impl<'s> InternalDecode<'s> for en302636_4_1::BasicHeader {
         into(tuple((
             read_as_uint(4),
             en302636_4_1::NextAfterBasic::decode_bitwise,
-            Bits::<8>::decode_bitwise,
+            read_as_uint(8),
             en302636_4_1::Lifetime::decode_bitwise,
             read_as_uint(8),
         )))(input)
@@ -529,7 +601,7 @@ impl
     From<(
         u8,
         en302636_4_1::NextAfterBasic,
-        Bits<8>,
+        u8,
         en302636_4_1::Lifetime,
         u8,
     )> for en302636_4_1::BasicHeader
@@ -538,7 +610,7 @@ impl
         value: (
             u8,
             en302636_4_1::NextAfterBasic,
-            Bits<8>,
+            u8,
             en302636_4_1::Lifetime,
             u8,
         ),
@@ -852,13 +924,13 @@ impl<'s> InternalDecode<'s> for en302636_4_1::CommonHeader {
     {
         into(tuple((
             en302636_4_1::NextAfterCommon::decode_bitwise,
-            Bits::<4>::decode_bitwise,
+            u4::decode_bitwise,
             en302636_4_1::HeaderType::decode_bitwise,
             en302636_4_1::TrafficClass::decode_bitwise,
-            Bits::<8>::decode_bitwise,
+            <[bool; 8]>::decode_bitwise,
             read_as_uint(16),
             read_as_uint(8),
-            Bits::<8>::decode_bitwise,
+            read_as_uint(8),
         )))(input)
     }
 
@@ -877,25 +949,25 @@ impl<'s> InternalDecode<'s> for en302636_4_1::CommonHeader {
 impl
     From<(
         en302636_4_1::NextAfterCommon,
-        Bits<4>,
+        u4,
         en302636_4_1::HeaderType,
         en302636_4_1::TrafficClass,
-        Bits<8>,
+        [bool; 8],
         u16,
         u8,
-        Bits<8>,
+        u8,
     )> for en302636_4_1::CommonHeader
 {
     fn from(
         value: (
             en302636_4_1::NextAfterCommon,
-            Bits<4>,
+            u4,
             en302636_4_1::HeaderType,
             en302636_4_1::TrafficClass,
-            Bits<8>,
+            [bool; 8],
             u16,
             u8,
-            Bits<8>,
+            u8,
         ),
     ) -> Self {
         Self {
@@ -1134,7 +1206,7 @@ impl<'s> InternalDecode<'s> for en302636_4_1::LSRequest {
     {
         into(tuple((
             read_as_uint(16),
-            Bits::<16>::decode_bitwise,
+            read_as_uint(16),
             en302636_4_1::LongPositionVector::decode_bitwise,
             en302636_4_1::Address::decode_bitwise,
         )))(input)
@@ -1155,7 +1227,7 @@ impl<'s> InternalDecode<'s> for en302636_4_1::LSRequest {
 impl
     From<(
         u16,
-        Bits<16>,
+        u16,
         en302636_4_1::LongPositionVector,
         en302636_4_1::Address,
     )> for en302636_4_1::LSRequest
@@ -1163,7 +1235,7 @@ impl
     fn from(
         value: (
             u16,
-            Bits<16>,
+            u16,
             en302636_4_1::LongPositionVector,
             en302636_4_1::Address,
         ),
@@ -1184,7 +1256,7 @@ impl<'s> InternalDecode<'s> for en302636_4_1::LSReply {
     {
         into(tuple((
             read_as_uint(16),
-            Bits::<16>::decode_bitwise,
+            read_as_uint(16),
             en302636_4_1::LongPositionVector::decode_bitwise,
             en302636_4_1::ShortPositionVector::decode_bitwise,
         )))(input)
@@ -1205,7 +1277,7 @@ impl<'s> InternalDecode<'s> for en302636_4_1::LSReply {
 impl
     From<(
         u16,
-        Bits<16>,
+        u16,
         en302636_4_1::LongPositionVector,
         en302636_4_1::ShortPositionVector,
     )> for en302636_4_1::LSReply
@@ -1213,7 +1285,7 @@ impl
     fn from(
         value: (
             u16,
-            Bits<16>,
+            u16,
             en302636_4_1::LongPositionVector,
             en302636_4_1::ShortPositionVector,
         ),
@@ -3518,7 +3590,7 @@ mod tests {
                 decoded: en302636_4_1::BasicHeader {
                     version: 1,
                     next_header: en302636_4_1::NextAfterBasic::SecuredPacket,
-                    reserved: crate::bits!(0;8),
+                    reserved: 0x00,
                     lifetime: en302636_4_1::Lifetime(21),
                     remaining_hop_limit: 1
                 }

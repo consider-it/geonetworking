@@ -4,6 +4,7 @@ extern crate alloc;
 use crate::{bits, Bits};
 use alloc::string::ToString;
 
+use arbitrary_int::{u10, u4};
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
@@ -95,13 +96,13 @@ fn make_heading(deg: f32) -> Result<u16, Error> {
 pub struct Address {
     /// This bit allows distinguishing between manually configured network address (clause 10.2.1.3.3) (update)
     /// and the initial GeoNetworking address (clause 10.2.1.3.2). M is set to 1 if the address is manually configured otherwise it equals 0.
-    pub manually_configured: bool,
+    pub manually_configured: bool, // 1 bit
     /// ITS Station type
-    pub station_type: StationType,
+    pub station_type: StationType, // 5 bits
     /// Reserved
-    pub reserved: Bits<10>,
+    pub reserved: u10, // 10 bits
     /// Represents the `LL_ADDR`
-    pub address: [u8; 6],
+    pub address: [u8; 6], // 48 bits (6 byte)
 }
 
 impl Address {
@@ -110,7 +111,7 @@ impl Address {
         Self {
             manually_configured,
             station_type,
-            reserved: bits![0;10],
+            reserved: u10::from_u16(0),
             address,
         }
     }
@@ -336,20 +337,21 @@ impl ShortPositionVector {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+// 4 byte in total
 pub struct BasicHeader {
     /// Identifies the version of the GeoNetworking protocol
-    pub version: u8,
+    pub version: u8, // 4 bits
     /// Identifies the type of header immediately following the GeoNetworking Basic Header
-    pub next_header: NextAfterBasic,
+    pub next_header: NextAfterBasic, // 4 bits (but only 2 LSB are used)
     /// Reserved. Set to 0
-    pub reserved: Bits<8>,
+    pub reserved: u8, // 8 bits
     /// Lifetime field. Indicates the maximum tolerable time a packet may be buffered until it reaches its destination
     /// Bit 0 to Bit 5: LT sub-field Multiplier
     /// Bit 6 to Bit 7: LT sub-field Base
-    pub lifetime: Lifetime,
+    pub lifetime: Lifetime, // 8 bits
     /// Decremented by 1 by each GeoAdhoc router that forwards the packet
     /// The packet shall not be forwarded if RHL is decremented to zero
-    pub remaining_hop_limit: u8,
+    pub remaining_hop_limit: u8, // 8 bits
 }
 
 impl BasicHeader {
@@ -374,7 +376,7 @@ impl BasicHeader {
         Ok(Self {
             version,
             next_header,
-            reserved: bits![0; 8],
+            reserved: 0,
             lifetime,
             remaining_hop_limit,
         })
@@ -471,24 +473,25 @@ impl Lifetime {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+// 8 bytes in total
 pub struct CommonHeader {
     /// Identifies the type of header immediately following the GeoNetworking headers
-    pub next_header: NextAfterCommon,
+    pub next_header: NextAfterCommon, // 4 bits
     /// Reserved. Set to 0
-    pub reserved_1: Bits<4>,
+    pub reserved_1: u4, // 4 bits
     /// Identifies the type and sub-type of the GeoNetworking header
-    pub header_type_and_subtype: HeaderType,
+    pub header_type_and_subtype: HeaderType, // 8 bits
     /// Traffic class that represents Facility-layer requirements on packet transport
-    pub traffic_class: TrafficClass,
+    pub traffic_class: TrafficClass, // 8 bits
     /// Bit 0: Indicates whether the ITS-S is mobile or stationary (GN protocol constant itsGnIsMobile)
     /// Bit 1 to Bit 7: Reserved, set to 0
-    pub flags: Bits<8>,
+    pub flags: [bool; 8], // 8 bits
     /// Length of the GeoNetworking payload, i.e. the rest of the packet following the whole GeoNetworking header in octets, for example BTP + CAM
-    pub payload_length: u16,
-    ///  The Maximum hop limit is not decremented by a GeoAdhoc router that forwards the packet
-    pub maximum_hop_limit: u8,
+    pub payload_length: u16, // 16 bits
+    /// The Maximum hop limit is not decremented by a GeoAdhoc router that forwards the packet
+    pub maximum_hop_limit: u8, // 8 bits
     /// Reserved. Set to 0
-    pub reserved_2: Bits<8>,
+    pub reserved_2: u8, // 8 bits
 }
 
 impl CommonHeader {
@@ -501,17 +504,15 @@ impl CommonHeader {
         payload_length: u16,
         maximum_hop_limit: u8,
     ) -> Self {
-        let flags = Bits(flags.iter().collect::<_>());
-
         Self {
             next_header,
-            reserved_1: bits![0; 4],
+            reserved_1: u4::from_u8(0),
             header_type_and_subtype,
             traffic_class,
             flags,
             payload_length,
             maximum_hop_limit,
-            reserved_2: bits![0; 8],
+            reserved_2: 0,
         }
     }
 
@@ -525,18 +526,17 @@ impl CommonHeader {
         payload_length: u16,
         maximum_hop_limit: u8,
     ) -> Self {
-        let mobile_flag = u8::from(is_mobile);
-        let flags = bits![mobile_flag, 0, 0, 0, 0, 0, 0, 0];
+        let flags = [is_mobile, false, false, false, false, false, false, false];
 
         Self {
             next_header,
-            reserved_1: bits![0; 4],
+            reserved_1: u4::from_u8(0),
             header_type_and_subtype,
             traffic_class,
             flags,
             payload_length,
             maximum_hop_limit,
-            reserved_2: bits![0; 8],
+            reserved_2: 0,
         }
     }
 }
@@ -854,7 +854,7 @@ pub struct LSRequest {
     /// Sequence number field. Indicates the index of the sent LS Request packet (clause 8.3) and used to detect duplicate GeoNetworking packets
     pub sequence_number: u16,
     /// Reserved. Set to 0
-    pub reserved: Bits<16>,
+    pub reserved: u16,
     /// Long Position Vector containing the reference position of the source
     pub source_position_vector: LongPositionVector,
     /// The `GN_ADDR` address for the GeoAdhoc router entity for which the location is being requested
@@ -870,7 +870,7 @@ impl LSRequest {
     ) -> Self {
         Self {
             sequence_number,
-            reserved: bits![0; 16],
+            reserved: 0,
             source_position_vector,
             request_gn_address,
         }
@@ -883,7 +883,7 @@ pub struct LSReply {
     /// Sequence number field. Indicates the index of the sent LS Reply packet (clause 8.3) and used to detect duplicate GeoNetworking packets
     pub sequence_number: u16,
     /// Reserved. Set to 0
-    pub reserved: Bits<16>,
+    pub reserved: u16,
     /// Long Position Vector containing the reference position of the source, which represents the Request `GN_ADDR` in the corresponding LS Request
     pub source_position_vector: LongPositionVector,
     /// Short Position Vector containing the position of the destination
@@ -899,7 +899,7 @@ impl LSReply {
     ) -> Self {
         Self {
             sequence_number,
-            reserved: bits![0; 16],
+            reserved: 0,
             source_position_vector,
             destination_position_vector,
         }

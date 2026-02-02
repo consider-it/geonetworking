@@ -39,13 +39,13 @@
 //!     basic: en302636_4_1::BasicHeader {
 //!         version: 1,
 //!         next_header: en302636_4_1::NextAfterBasic::CommonHeader,
-//!         reserved: bits![0; 8],
+//!         reserved: 0x00,
 //!         lifetime: en302636_4_1::Lifetime(80),
 //!         remaining_hop_limit: 1,
 //!     },
 //!     common: en302636_4_1::CommonHeader {
 //!         next_header: en302636_4_1::NextAfterCommon::BTPB,
-//!         reserved_1: bits![0, 0, 0, 0],
+//!         reserved_1: arbitrary_int::u4::from_u8(0x00),
 //!         header_type_and_subtype: en302636_4_1::HeaderType::TopologicallyScopedBroadcast(
 //!             en302636_4_1::BroadcastType::SingleHop,
 //!         ),
@@ -54,17 +54,17 @@
 //!             channel_offload: false,
 //!             traffic_class_id: 2,
 //!         },
-//!         flags: bits![0, 0, 0, 0, 0, 0, 0, 0],
+//!         flags: [false; 8],
 //!         payload_length: 1,
 //!         maximum_hop_limit: 1,
-//!         reserved_2: bits![0, 0, 0, 0, 0, 0, 0, 0],
+//!         reserved_2: 0x00,
 //!     },
 //!     extended: Some(en302636_4_1::ExtendedHeader::SHB(en302636_4_1::SingleHopBroadcast {
 //!         source_position_vector: en302636_4_1::LongPositionVector {
 //!             gn_address: en302636_4_1::Address {
 //!                 manually_configured: false,
 //!                 station_type: en302636_4_1::StationType::Unknown,
-//!                 reserved: bits![0, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+//!                 reserved: arbitrary_int::u10::new(0x0106),
 //!                 address: [0, 96, 224, 105, 87, 141],
 //!             },
 //!             timestamp: en302636_4_1::Timestamp(542947520),
@@ -119,6 +119,7 @@ use std::fmt::Debug;
 #[cfg(not(feature = "validate"))]
 use {alloc::vec::Vec, core::fmt::Debug};
 
+use arbitrary_int::u4;
 use bitvec::prelude::*;
 use bytes::Bytes;
 
