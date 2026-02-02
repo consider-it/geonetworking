@@ -14,42 +14,39 @@ fn decode_beacon() {
         Decoded {
             bytes_consumed: 36,
             decoded: Packet::Unsecured {
-                basic: en302636_4_1::BasicHeader {
-                    version: 1,
-                    next_header: en302636_4_1::NextAfterBasic::CommonHeader,
-                    reserved: 0x00,
-                    lifetime: en302636_4_1::Lifetime(26),
-                    remaining_hop_limit: 1
-                },
+                basic: en302636_4_1::BasicHeader::try_new(
+                    1,
+                    en302636_4_1::NextAfterBasic::CommonHeader,
+                    en302636_4_1::Lifetime(26),
+                    1
+                )
+                .unwrap(),
                 common: en302636_4_1::CommonHeader {
                     next_header: en302636_4_1::NextAfterCommon::Any,
                     reserved_1: u4::from_u8(0x00),
                     header_type_and_subtype: en302636_4_1::HeaderType::Beacon,
-                    traffic_class: en302636_4_1::TrafficClass {
-                        store_carry_forward: false,
-                        channel_offload: false,
-                        traffic_class_id: 3
-                    },
+                    traffic_class: en302636_4_1::TrafficClass::try_new(false, false, 3).unwrap(),
                     flags: [false; 8],
                     payload_length: 0,
                     maximum_hop_limit: 1,
                     reserved_2: 0x00
                 },
                 extended: Some(en302636_4_1::ExtendedHeader::Beacon(en302636_4_1::Beacon {
-                    source_position_vector: en302636_4_1::LongPositionVector {
-                        gn_address: en302636_4_1::Address {
+                    source_position_vector: en302636_4_1::LongPositionVector::try_new(
+                        en302636_4_1::Address {
                             manually_configured: false,
                             station_type: en302636_4_1::StationType::RoadSideUnit,
                             reserved: u10::new(0x0000),
                             address: [0, 13, 65, 18, 54, 112]
                         },
-                        timestamp: en302636_4_1::Timestamp(1_897_856_500),
-                        latitude: 535_637_062,
-                        longitude: 99_895_661,
-                        position_accuracy: true,
-                        speed: 0,
-                        heading: 3407
-                    }
+                        en302636_4_1::Timestamp(1_897_856_500),
+                        535_637_062,
+                        99_895_661,
+                        true,
+                        0,
+                        3407
+                    )
+                    .unwrap(),
                 })),
                 payload: &[]
             },
@@ -77,24 +74,20 @@ fn unsecured_round_trip() {
         0x4d, 0x90, 0x02, 0xa8, 0x08, 0x4a, 0x7f, 0x00, 0xb8, 0x00, 0x00,
     ];
     let packet = Packet::Unsecured {
-        basic: en302636_4_1::BasicHeader {
-            version: 1,
-            next_header: en302636_4_1::NextAfterBasic::CommonHeader,
-            reserved: 0x00,
-            lifetime: en302636_4_1::Lifetime(80),
-            remaining_hop_limit: 1,
-        },
+        basic: en302636_4_1::BasicHeader::try_new(
+            1,
+            en302636_4_1::NextAfterBasic::CommonHeader,
+            en302636_4_1::Lifetime(80),
+            1,
+        )
+        .unwrap(),
         common: en302636_4_1::CommonHeader {
             next_header: en302636_4_1::NextAfterCommon::BTPB,
             reserved_1: u4::from_u8(0x00),
             header_type_and_subtype: en302636_4_1::HeaderType::TopologicallyScopedBroadcast(
                 en302636_4_1::BroadcastType::SingleHop,
             ),
-            traffic_class: en302636_4_1::TrafficClass {
-                store_carry_forward: false,
-                channel_offload: false,
-                traffic_class_id: 2,
-            },
+            traffic_class: en302636_4_1::TrafficClass::try_new(false, false, 2).unwrap(),
             flags: [false; 8],
             payload_length: 1,
             maximum_hop_limit: 1,
@@ -102,20 +95,21 @@ fn unsecured_round_trip() {
         },
         extended: Some(en302636_4_1::ExtendedHeader::SHB(
             en302636_4_1::SingleHopBroadcast {
-                source_position_vector: en302636_4_1::LongPositionVector {
-                    gn_address: en302636_4_1::Address {
+                source_position_vector: en302636_4_1::LongPositionVector::try_new(
+                    en302636_4_1::Address {
                         manually_configured: false,
                         station_type: en302636_4_1::StationType::Unknown,
                         reserved: u10::new(0x0106),
                         address: [0, 96, 224, 105, 87, 141],
                     },
-                    timestamp: en302636_4_1::Timestamp(542_947_520),
-                    latitude: 535_574_568,
-                    longitude: 99_765_648,
-                    position_accuracy: false,
-                    speed: 680,
-                    heading: 2122,
-                },
+                    en302636_4_1::Timestamp(542_947_520),
+                    535_574_568,
+                    99_765_648,
+                    false,
+                    680,
+                    2122,
+                )
+                .unwrap(),
                 media_dependent_data: [127, 0, 184, 0],
             },
         )),
