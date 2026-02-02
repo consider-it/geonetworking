@@ -3,8 +3,8 @@ extern crate alloc;
 use core::fmt::Display;
 
 use crate::{decode::BitwiseDecodable, util::write_into_vec_left_padded};
+use arbitrary_int::{traits::Integer, u10};
 use bitvec::prelude::*;
-use num::Integer;
 use num_traits::ToBytes;
 
 use super::*;
@@ -123,7 +123,7 @@ impl Encode for bool {
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "common interface")]
-fn write_as_int<I: Integer + ToBytes + Display>(
+fn write_as_int<I: num::Integer + ToBytes + Display>(
     integer: &I,
     bit_count: usize,
     output: &mut Encoder,
@@ -146,6 +146,48 @@ impl<const SIZE: usize> Encode for Bits<SIZE> {
 impl<const SIZE: usize> Encode for [u8; SIZE] {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         output.bits.extend_from_bitslice(self.view_bits::<Msb0>());
+        Ok(())
+    }
+}
+
+impl Encode for u10 {
+    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+        let value = self.as_u16();
+        let mut bv: bitvec::vec::BitVec<u8, Msb0> = BitVec::new();
+        for i in 0..10 {
+            // we need to store MSB first
+            // just creating an Lsb0 BitVec and storing LSB first didn't work
+            bv.push((value << i & 0x0200) > 0);
+        }
+
+        output.bits.extend_from_bitslice(bv.as_bitslice());
+        Ok(())
+    }
+}
+
+impl Encode for u4 {
+    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+        let value = self.as_u8();
+        let mut bv: bitvec::vec::BitVec<u8, Msb0> = BitVec::new();
+        for i in 0..4 {
+            // we need to store MSB first
+            // just creating an Lsb0 BitVec and storing LSB first didn't work
+            bv.push((value << i & 0x08) > 0);
+        }
+
+        output.bits.extend_from_bitslice(bv.as_bitslice());
+        Ok(())
+    }
+}
+
+impl Encode for [bool; 8] {
+    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+        let mut bv: bitvec::vec::BitVec<u8, Msb0> = BitVec::new();
+        for bit in self {
+            bv.push(*bit);
+        }
+
+        output.bits.extend_from_bitslice(bv.as_bitslice());
         Ok(())
     }
 }
@@ -194,7 +236,7 @@ impl Encode for BasicHeader {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.version, 4, output)?;
         self.next_header.encode(output)?;
-        self.reserved.encode(output)?;
+        write_as_int(&self.reserved, 8, output)?;
         self.lifetime.encode(output)?;
         write_as_int(&self.remaining_hop_limit, 8, output)
     }
@@ -266,7 +308,7 @@ impl Encode for CommonHeader {
         self.flags.encode(output)?;
         write_as_int(&self.payload_length, 16, output)?;
         write_as_int(&self.maximum_hop_limit, 8, output)?;
-        self.reserved_2.encode(output)
+        write_as_int(&self.reserved_2, 8, output)
     }
 }
 
@@ -317,7 +359,7 @@ impl Encode for Beacon {
 impl Encode for LSRequest {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
-        self.reserved.encode(output)?;
+        write_as_int(&self.reserved, 16, output)?;
         self.source_position_vector.encode(output)?;
         self.request_gn_address.encode(output)
     }
@@ -326,7 +368,7 @@ impl Encode for LSRequest {
 impl Encode for LSReply {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
-        self.reserved.encode(output)?;
+        write_as_int(&self.reserved, 16, output)?;
         self.source_position_vector.encode(output)?;
         self.destination_position_vector.encode(output)
     }
