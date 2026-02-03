@@ -280,7 +280,7 @@ fn ecdsa_brainpool_p256_r1(
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
         EccP256CurvePoint::UncompressedP256(EccP256CurvePointUncompressedP256 { x, y }) => {
-            let encoded = bp256::r1::EncodedPoint::from_affine_coordinates(
+            let encoded = bp256::r1::Sec1Point::from_affine_coordinates(
                 &bp256::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
                         "Invalid verifying key X length: {err:?}"
@@ -293,7 +293,7 @@ fn ecdsa_brainpool_p256_r1(
                 })?,
                 false,
             );
-            VerifyingKey::from_encoded_point(&encoded)
+            VerifyingKey::from_sec1_point(&encoded)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
         _ => Err(ValidationError::InvalidInput(
@@ -367,7 +367,7 @@ fn ecdsa_brainpool_p384_r1(
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
         EccP384CurvePoint::UncompressedP384(EccP384CurvePointUncompressedP384 { x, y }) => {
-            let encoded = bp384::r1::EncodedPoint::from_affine_coordinates(
+            let encoded = bp384::r1::Sec1Point::from_affine_coordinates(
                 &bp384::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
                         "Invalid verifying key X length: {err:?}"
@@ -380,7 +380,7 @@ fn ecdsa_brainpool_p384_r1(
                 })?,
                 false,
             );
-            VerifyingKey::from_encoded_point(&encoded)
+            VerifyingKey::from_sec1_point(&encoded)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
         _ => Err(ValidationError::InvalidInput(
@@ -454,7 +454,7 @@ fn ecdsa_nist_p256(
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
         EccP256CurvePoint::UncompressedP256(EccP256CurvePointUncompressedP256 { x, y }) => {
-            let encoded = p256::EncodedPoint::from_affine_coordinates(
+            let encoded = p256::Sec1Point::from_affine_coordinates(
                 &p256::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
                         "Invalid verifying key X length: {err:?}"
@@ -467,7 +467,7 @@ fn ecdsa_nist_p256(
                 })?,
                 false,
             );
-            VerifyingKey::from_encoded_point(&encoded)
+            VerifyingKey::from_sec1_point(&encoded)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
         _ => Err(ValidationError::InvalidInput(
@@ -541,7 +541,7 @@ fn ecdsa_nist_p384(
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
         EccP384CurvePoint::UncompressedP384(EccP384CurvePointUncompressedP384 { x, y }) => {
-            let encoded = p384::EncodedPoint::from_affine_coordinates(
+            let encoded = p384::Sec1Point::from_affine_coordinates(
                 &p384::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
                         "Invalid verifying key X length: {err:?}"
@@ -554,7 +554,7 @@ fn ecdsa_nist_p384(
                 })?,
                 false,
             );
-            VerifyingKey::from_encoded_point(&encoded)
+            VerifyingKey::from_sec1_point(&encoded)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
         _ => Err(ValidationError::InvalidInput(
