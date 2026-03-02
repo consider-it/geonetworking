@@ -11,7 +11,6 @@ use {
 };
 
 use arbitrary_int::{i15, traits::Integer, u4, u6};
-use bitvec::prelude::*;
 
 mod decode;
 mod encode;
@@ -27,9 +26,6 @@ pub use validate::{Validate, ValidationError, ValidationResult};
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
-
-#[derive(Clone, PartialEq)]
-pub struct Bits<const SIZE: usize>(pub BitVec<u8, Msb0>);
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
