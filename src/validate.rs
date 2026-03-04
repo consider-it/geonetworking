@@ -23,6 +23,9 @@ pub trait Validate {
     /// - `Ok(ValidationResult::Failure { reason: String })` if a check failed
     /// - `Ok(ValidationResult::NotApplicable { info: &'static str })` if no validation checks were run
     /// - `Err(ValidationError)` if an internal error occured during validation
+    ///
+    /// #### Errors
+    /// Returns validation error details when message is invalid
     fn validate(&self) -> Result<ValidationResult, ValidationError>;
 }
 

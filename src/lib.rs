@@ -143,7 +143,7 @@ impl<'p> Packet<'p> {
                     secured.data_payload().map(|p| &p[8 + 48..])
                 }
             },
-            _ => None,
+            Packet::Unsecured { .. } => None,
         }
     }
 
