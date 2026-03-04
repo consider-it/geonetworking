@@ -1,12 +1,10 @@
 extern crate alloc;
 
-use core::fmt::Display;
+use arbitrary_int::{traits::Integer, u10};
 
-use crate::{decode::BitwiseDecodable, util::write_into_vec_left_padded};
-use bitvec::prelude::*;
-use num::Integer;
 use num_traits::ToBytes;
 
+#[allow(clippy::wildcard_imports)]
 use super::*;
 
 #[derive(Debug)]
@@ -31,41 +29,27 @@ impl EncodeError {
 
 #[derive(Debug, Default)]
 pub struct Encoder {
-    bits: BitVec<u8, Msb0>,
+    bytes: Vec<u8>,
 }
 
 impl Encoder {
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            bits: bitvec![u8, Msb0;],
-        }
+        Self::default()
     }
 }
 
 impl From<Encoder> for alloc::vec::Vec<u8> {
     fn from(val: Encoder) -> Self {
-        let mut vec = alloc::vec![];
-        write_into_vec_left_padded(val.bits.bitwise(), &mut vec);
-        vec
-    }
-}
-
-impl From<Encoder> for bytes::Bytes {
-    fn from(val: Encoder) -> Self {
-        <Encoder as core::convert::Into<alloc::vec::Vec<u8>>>::into(val).into()
-    }
-}
-
-impl From<Encoder> for BitVec<u8, Msb0> {
-    fn from(val: Encoder) -> Self {
-        val.bits
+        val.bytes
     }
 }
 
 pub trait Encode {
+    #[allow(clippy::missing_errors_doc, reason = "no docs present")]
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError>;
 
+    #[allow(clippy::missing_errors_doc, reason = "no docs present")]
     fn encode_to_vec(&self) -> Result<Vec<u8>, EncodeError> {
         let mut encoder = Encoder::new();
         self.encode(&mut encoder)?;
@@ -73,6 +57,7 @@ pub trait Encode {
     }
 
     #[cfg(feature = "json")]
+    #[allow(clippy::missing_errors_doc, reason = "no docs present")]
     fn encode_to_json(&self) -> Result<alloc::string::String, EncodeError>
     where
         Self: Sized + Serialize,
@@ -82,88 +67,190 @@ pub trait Encode {
     }
 }
 
-impl Encode for bool {
+trait BitwiseWrite {
+    fn write_bitwise(&self, bit_count: usize, output: &mut Vec<bool>);
+}
+
+macro_rules! write_int_bitwise {
+    ($typ:ty, $max_bits:expr) => {
+        impl BitwiseWrite for $typ {
+            fn write_bitwise(&self, bit_count: usize, output: &mut Vec<bool>) {
+                for idx in (0..bit_count).rev() {
+                    let bit = ((self >> idx) & 0x01) == 1;
+                    output.push(bit)
+                }
+            }
+        }
+    };
+}
+
+write_int_bitwise!(u8, 8);
+write_int_bitwise!(u16, 16);
+write_int_bitwise!(i16, 16);
+write_int_bitwise!(u32, 32);
+write_int_bitwise!(i32, 32);
+
+trait BitwiseEncode {
+    fn encode_bitwise(&self, output: &mut Vec<bool>);
+}
+
+impl BitwiseEncode for bool {
+    fn encode_bitwise(&self, output: &mut Vec<bool>) {
+        output.push(*self);
+    }
+}
+
+macro_rules! encode_int {
+    ($typ:ty) => {
+        impl Encode for $typ {
+            fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+                let bytes = self.to_be_bytes();
+                output.bytes.extend_from_slice(&bytes);
+                Ok(())
+            }
+        }
+    };
+}
+
+encode_int!(u16);
+encode_int!(i16);
+encode_int!(u32);
+encode_int!(i32);
+
+impl Encode for u8 {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        output.bits.push(*self);
+        output.bytes.push(*self);
         Ok(())
     }
 }
 
-#[allow(clippy::unnecessary_wraps, reason = "common interface")]
-fn write_as_int<I: Integer + ToBytes + Display>(
-    integer: &I,
-    bit_count: usize,
-    output: &mut Encoder,
-) -> Result<(), EncodeError> {
-    let bytes = integer.to_be_bytes();
-    let bits = bytes.as_bits::<Msb0>();
-    output
-        .bits
-        .extend_from_bitslice(&bits[(bits.len() - bit_count)..bits.len()]);
-    Ok(())
+impl BitwiseEncode for u10 {
+    fn encode_bitwise(&self, output: &mut Vec<bool>) {
+        self.as_u16().write_bitwise(10, output);
+    }
 }
 
-impl<const SIZE: usize> Encode for Bits<SIZE> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        output.bits.extend_from_bitslice(&self.0);
-        Ok(())
+impl BitwiseEncode for u4 {
+    fn encode_bitwise(&self, output: &mut Vec<bool>) {
+        self.as_u8().write_bitwise(4, output);
+    }
+}
+
+impl BitwiseEncode for i15 {
+    fn encode_bitwise(&self, output: &mut Vec<bool>) {
+        self.as_i16().write_bitwise(15, output);
+    }
+}
+
+impl BitwiseEncode for u6 {
+    fn encode_bitwise(&self, output: &mut Vec<bool>) {
+        self.as_u8().write_bitwise(6, output);
     }
 }
 
 impl<const SIZE: usize> Encode for [u8; SIZE] {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        output.bits.extend_from_bitslice(self.view_bits::<Msb0>());
+        output.bytes.extend_from_slice(self);
         Ok(())
+    }
+}
+
+impl Encode for [bool; 8] {
+    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+        let byte = (u8::from(self[0]) << 7)
+            + (u8::from(self[1]) << 6)
+            + (u8::from(self[2]) << 5)
+            + (u8::from(self[3]) << 4)
+            + (u8::from(self[4]) << 3)
+            + (u8::from(self[5]) << 2)
+            + (u8::from(self[6]) << 1)
+            + (u8::from(self[7]));
+
+        output.bytes.push(byte);
+        Ok(())
+    }
+}
+
+impl Encode for Vec<bool> {
+    /// Encode a bool-vector which is a multiple of 8
+    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+        if self.len().is_multiple_of(8) {
+            for bits in self.chunks(8) {
+                // expect shouldn't be reachable since we checked the length to be a multiple of 8
+                let bits: [bool; 8] = bits
+                    .try_into()
+                    .expect("Array chunk suddenly returned different size");
+                bits.encode(output)?;
+            }
+
+            Ok(())
+        } else {
+            Err(EncodeError::Common(alloc::format!(
+                "Can't encode {} bits to bytes (only multiples of 8 allowed)",
+                self.len()
+            )))
+        }
     }
 }
 
 impl Encode for &'_ [u8] {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        output.bits.extend_from_bitslice(self.as_bits::<Msb0>());
+        output.bytes.extend_from_slice(self);
         Ok(())
     }
 }
 
 impl Encode for Lifetime {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&self.0, 8, output)
+        self.0.encode(output)
     }
 }
 
 impl Encode for Timestamp {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&self.0, 32, output)
+        self.0.encode(output)
     }
 }
 
-impl Encode for StationType {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&(*self as u8), 5, output)
+impl BitwiseEncode for StationType {
+    fn encode_bitwise(&self, output: &mut Vec<bool>) {
+        let val = *self as u8;
+        val.write_bitwise(5, output);
     }
 }
 
 impl Encode for Address {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        self.manually_configured.encode(output)?;
-        self.station_type.encode(output)?;
-        self.reserved.encode(output)?;
+        let mut bv = vec![];
+        self.manually_configured.encode_bitwise(&mut bv); // 1 bit
+        self.station_type.encode_bitwise(&mut bv); // 5 bit
+        self.reserved.encode_bitwise(&mut bv); // 10 bit
+        bv.encode(output)?;
+
         self.address.encode(output)
     }
 }
 
-impl Encode for NextAfterBasic {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&(*self as u8), 4, output)
+impl BitwiseEncode for NextAfterBasic {
+    fn encode_bitwise(&self, output: &mut Vec<bool>) {
+        let val = *self as u8;
+        val.write_bitwise(4, output);
     }
 }
 
 impl Encode for BasicHeader {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&self.version, 4, output)?;
-        self.next_header.encode(output)?;
+        let mut bv = vec![];
+        self.version.encode_bitwise(&mut bv); // 4 bit
+        self.next_header.encode_bitwise(&mut bv); // 4 bit
+
+        // we can safely assume 8 bits since we added them before
+        let bits: [bool; 8] = bv.try_into().expect("Bit vector suddenly not 8 bits");
+        bits.encode(output)?;
+
         self.reserved.encode(output)?;
         self.lifetime.encode(output)?;
-        write_as_int(&self.remaining_hop_limit, 8, output)
+        self.remaining_hop_limit.encode(output)
     }
 }
 
@@ -171,11 +258,15 @@ impl Encode for LongPositionVector {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.gn_address.encode(output)?;
         self.timestamp.encode(output)?;
-        write_as_int(&self.latitude, 32, output)?;
-        write_as_int(&self.longitude, 32, output)?;
-        self.position_accuracy.encode(output)?;
-        write_as_int(&self.speed, 15, output)?;
-        write_as_int(&self.heading, 16, output)
+        self.latitude.encode(output)?;
+        self.longitude.encode(output)?;
+
+        let mut bv = vec![];
+        self.position_accuracy.encode_bitwise(&mut bv); // 1 bit
+        self.speed.encode_bitwise(&mut bv); // 15 bits
+        bv.encode(output)?;
+
+        self.heading.encode(output)
     }
 }
 
@@ -183,29 +274,35 @@ impl Encode for ShortPositionVector {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.gn_address.encode(output)?;
         self.timestamp.encode(output)?;
-        write_as_int(&self.latitude, 32, output)?;
-        write_as_int(&self.longitude, 32, output)
+        self.latitude.encode(output)?;
+        self.longitude.encode(output)
     }
 }
 
 impl Encode for TrafficClass {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        self.store_carry_forward.encode(output)?;
-        self.channel_offload.encode(output)?;
-        write_as_int(&self.traffic_class_id, 6, output)
+        let mut bv = vec![];
+        self.store_carry_forward.encode_bitwise(&mut bv); // 1 bit
+        self.channel_offload.encode_bitwise(&mut bv); // 1 bit
+        self.traffic_class_id.encode_bitwise(&mut bv); // 6 bit
+
+        // we can safely assume 8 bits since we added them before
+        let bits: [bool; 8] = bv.try_into().expect("Bit vector suddenly not 8 bits");
+        bits.encode(output)
     }
 }
 
-impl Encode for NextAfterCommon {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&(*self as u8), 4, output)
+impl BitwiseEncode for NextAfterCommon {
+    fn encode_bitwise(&self, output: &mut Vec<bool>) {
+        let val = *self as u8;
+        val.write_bitwise(4, output);
     }
 }
 
 impl Encode for HeaderType {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         let (ty, subty) = match self {
-            HeaderType::Any => (0, 0),
+            HeaderType::Any => (0u8, 0u8),
             HeaderType::Beacon => (1, 0),
             HeaderType::GeoUnicast => (2, 0),
             HeaderType::GeoAnycast(AreaType::Circular) => (3, 0),
@@ -219,41 +316,56 @@ impl Encode for HeaderType {
             HeaderType::LocationService(LocationServiceType::Request) => (6, 0),
             HeaderType::LocationService(_) => (6, 1),
         };
-        write_as_int(&ty, 4, output)?;
-        write_as_int(&subty, 4, output)
+
+        let mut bv = vec![];
+        ty.write_bitwise(4, &mut bv);
+        subty.write_bitwise(4, &mut bv);
+
+        // we can safely assume 8 bits since we added them before
+        let bits: [bool; 8] = bv.try_into().expect("Bit vector suddenly not 8 bits");
+        bits.encode(output)
     }
 }
 
 impl Encode for CommonHeader {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        self.next_header.encode(output)?;
-        self.reserved_1.encode(output)?;
+        {
+            let mut bv = vec![];
+
+            self.next_header.encode_bitwise(&mut bv); // 4 bit
+            self.reserved_1.encode_bitwise(&mut bv); // 4 bit
+
+            // we can safely assume 8 bits since we added them before
+            let bits: [bool; 8] = bv.try_into().expect("Bit vector suddenly not 8 bits");
+            bits.encode(output)?;
+        }
+
         self.header_type_and_subtype.encode(output)?;
         self.traffic_class.encode(output)?;
         self.flags.encode(output)?;
-        write_as_int(&self.payload_length, 16, output)?;
-        write_as_int(&self.maximum_hop_limit, 8, output)?;
+        self.payload_length.encode(output)?;
+        self.maximum_hop_limit.encode(output)?;
         self.reserved_2.encode(output)
     }
 }
 
 impl Encode for GeoAnycast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&self.sequence_number, 16, output)?;
+        self.sequence_number.encode(output)?;
         self.reserved_1.encode(output)?;
         self.source_position_vector.encode(output)?;
-        write_as_int(&self.geo_area_position_latitude, 32, output)?;
-        write_as_int(&self.geo_area_position_longitude, 32, output)?;
-        write_as_int(&self.distance_a, 16, output)?;
-        write_as_int(&self.distance_b, 16, output)?;
-        write_as_int(&self.angle, 16, output)?;
+        self.geo_area_position_latitude.encode(output)?;
+        self.geo_area_position_longitude.encode(output)?;
+        self.distance_a.encode(output)?;
+        self.distance_b.encode(output)?;
+        self.angle.encode(output)?;
         self.reserved_2.encode(output)
     }
 }
 
 impl Encode for GeoUnicast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&self.sequence_number, 16, output)?;
+        self.sequence_number.encode(output)?;
         self.reserved.encode(output)?;
         self.source_position_vector.encode(output)?;
         self.destination_position_vector.encode(output)
@@ -262,7 +374,7 @@ impl Encode for GeoUnicast {
 
 impl Encode for TopologicallyScopedBroadcast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&self.sequence_number, 16, output)?;
+        self.sequence_number.encode(output)?;
         self.reserved.encode(output)?;
         self.source_position_vector.encode(output)
     }
@@ -283,7 +395,7 @@ impl Encode for Beacon {
 
 impl Encode for LSRequest {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&self.sequence_number, 16, output)?;
+        self.sequence_number.encode(output)?;
         self.reserved.encode(output)?;
         self.source_position_vector.encode(output)?;
         self.request_gn_address.encode(output)
@@ -292,7 +404,7 @@ impl Encode for LSRequest {
 
 impl Encode for LSReply {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        write_as_int(&self.sequence_number, 16, output)?;
+        self.sequence_number.encode(output)?;
         self.reserved.encode(output)?;
         self.source_position_vector.encode(output)?;
         self.destination_position_vector.encode(output)
@@ -336,20 +448,18 @@ impl Encode for Packet<'_> {
     }
 }
 
-// ::::::::::: :::::::::: :::::::::: ::::::::::        :::   ::::::::   :::::::   ::::::::       ::::::::
-//     :+:     :+:        :+:        :+:             :+:+:  :+:    :+: :+:   :+: :+:    :+:     :+:    :+:
-//     +:+     +:+        +:+        +:+               +:+  +:+        +:+  :+:+ +:+    +:+           +:+
-//     +#+     +#++:++#   +#++:++#   +#++:++#          +#+  +#++:++#+  +#+ + +:+  +#++:++#+         +#+
-//     +#+     +#+        +#+        +#+               +#+  +#+    +#+ +#+#  +#+        +#+       +#+
-//     #+#     #+#        #+#        #+#               #+#  #+#    #+# #+#   #+# #+#    #+# #+#  #+#
-// ########### ########## ########## ##########      ####### ########   #######   ########  ### ##########
+// =====================================================
+// ETSI TS 103 097/ IEEE 1609.2
+// =====================================================
 
 #[allow(clippy::unnecessary_wraps, reason = "common interface")]
 fn encode_oer_length(length: usize, output: &mut Encoder) -> Result<(), EncodeError> {
     match length {
         len if len < 128 => {
             #[allow(clippy::cast_possible_truncation)]
-            output.bits.extend_from_raw_slice(&[len as u8]);
+            let value = len as u8;
+
+            output.bytes.push(value);
             Ok(())
         }
         len => {
@@ -359,16 +469,16 @@ fn encode_oer_length(length: usize, output: &mut Encoder) -> Result<(), EncodeEr
                 length_bytes = &length_bytes[1..];
             }
             #[allow(clippy::cast_possible_truncation)]
-            output
-                .bits
-                .extend_from_raw_slice(&[(length_bytes.len() + 128) as u8]);
-            output.bits.extend_from_raw_slice(length_bytes);
+            let len_byte = 0x80 | (length_bytes.len() as u8);
+
+            output.bytes.push(len_byte);
+            output.bytes.extend_from_slice(length_bytes);
             Ok(())
         }
     }
 }
 
-fn encode_oer_integer<I: Integer + ToBytes>(
+fn encode_oer_integer<I: num::Integer + ToBytes>(
     min: Option<i128>,
     max: Option<i128>,
     value: &I,
@@ -376,9 +486,7 @@ fn encode_oer_integer<I: Integer + ToBytes>(
 ) -> Result<(), EncodeError> {
     match (min, max) {
         (Some(_), Some(_)) => {
-            output
-                .bits
-                .extend_from_raw_slice(value.to_be_bytes().as_ref());
+            output.bytes.extend_from_slice(value.to_be_bytes().as_ref());
             Ok(())
         }
         (Some(min), _) if min >= 0 => {
@@ -387,8 +495,9 @@ fn encode_oer_integer<I: Integer + ToBytes>(
             while bytes.len() > 1 && bytes[0] == 0 {
                 bytes = &bytes[1..];
             }
+
             encode_oer_length(bytes.len(), output)?;
-            output.bits.extend_from_raw_slice(bytes);
+            output.bytes.extend_from_slice(bytes);
             Ok(())
         }
         _ => Err(EncodeError::Unsupported(
@@ -409,61 +518,62 @@ fn encode_oer_octetstring(
 ) -> Result<(), EncodeError> {
     match (min, max) {
         (Some(min), Some(max)) if min == max => {
-            output.bits.extend_from_raw_slice(value);
+            output.bytes.extend_from_slice(value);
             Ok(())
         }
         _ => {
             encode_oer_length(value.len(), output)?;
-            output.bits.extend_from_raw_slice(value);
+            output.bytes.extend_from_slice(value);
             Ok(())
         }
     }
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "common interface")]
-fn encode_oer_fixed_bitstring(
-    value: &BitVec<u8, Msb0>,
-    output: &mut Encoder,
-) -> Result<(), EncodeError> {
-    output.bits.extend_from_bitslice(value);
-    for _ in 0..(8 - value.len() % 8) {
-        output.bits.push(false);
-    }
+fn encode_oer_fixed_bitstring(value: &[bool], output: &mut Encoder) -> Result<(), EncodeError> {
+    let mut bv = value.to_vec();
+    bv.extend_from_slice(&vec![false; util::bitstring_padding_bits(bv.len())]); // add padding to multiples of 8
+    bv.encode(output)?;
+
     Ok(())
 }
 
+// ASN.1 OER "bitstring" values and the "extension addition presence bitmap"
 fn encode_oer_varlength_bitstring(value: &[bool], output: &mut Encoder) -> Result<(), EncodeError> {
-    encode_oer_length(Integer::div_ceil(&value.len(), &8usize) + 1, output)?;
-    #[allow(clippy::cast_possible_truncation)]
-    let unused_bits = 8 - value.len() % 8;
+    encode_oer_length(util::bitstring_buffer_size(value.len()) + 1, output)?;
+
+    let unused_bits = util::bitstring_padding_bits(value.len());
+
+    // Note: using integer encoding is not 100% correct, but leads to same result in this case
     #[allow(clippy::cast_possible_truncation)]
     encode_oer_integer(Some(0), Some(8), &(unused_bits as u8), output)?;
-    for bit in value {
-        output.bits.push(*bit);
-    }
-    for _ in 0..unused_bits {
-        output.bits.push(false);
-    }
+
+    let mut bv = value.to_vec();
+    bv.extend_from_slice(&vec![false; util::bitstring_padding_bits(bv.len())]); // add padding to multiples of 8
+    bv.encode(output)?;
+
     Ok(())
 }
 
+/// Build ASN.1 SEQUENCE preamble
+///
+/// Extension bit is optional
+#[allow(clippy::unnecessary_wraps, reason = "common interface")]
 fn encode_extension_and_optional_bitmap(
-    is_extended: bool,
+    extension: Option<bool>,
     bitmap: &[bool],
     output: &mut Encoder,
 ) -> Result<(), EncodeError> {
-    output.bits.push(is_extended);
-    for bit in bitmap {
-        output.bits.push(*bit);
+    let mut bv = vec![];
+
+    if let Some(is_extended) = extension {
+        bv.push(is_extended);
     }
-    if bitmap.len() > 7 {
-        return Err(EncodeError::Unsupported(
-            "Optional bitmaps longer than 7 bits are unsupported!".into(),
-        ));
-    }
-    for _ in 0..(7 - bitmap.len()) {
-        output.bits.push(false);
-    }
+
+    bv.extend_from_slice(bitmap);
+    bv.extend_from_slice(&vec![false; util::bitstring_padding_bits(bv.len())]); // add padding to multiples of 8
+    bv.encode(output)?;
+
     Ok(())
 }
 
@@ -479,6 +589,12 @@ fn encode_oer_tag(tag: u8, output: &mut Encoder) -> Result<(), EncodeError> {
 fn encode_oer_open_type<T: Encode>(value: &T, output: &mut Encoder) -> Result<(), EncodeError> {
     let bytes = value.encode_to_vec()?;
     encode_oer_octetstring(Some(0), None, &bytes, output)
+}
+
+impl<const SIZE: usize> Encode for BitString<SIZE> {
+    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+        encode_oer_fixed_bitstring(&self.0, output)
+    }
 }
 
 macro_rules! encode_int {
@@ -503,13 +619,9 @@ encode_int!(Psid, Some(0), None);
 
 impl Encode for CertificateBase<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_fixed_bitstring(
-            &self
-                .signature
-                .as_ref()
-                .map_or(bitvec![u8, Msb0; 0], |_| bitvec![u8, Msb0; 1]),
-            output,
-        )?;
+        let bitmap = [self.signature.is_some()];
+        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+
         self.version.encode(output)?;
         self.r_type.encode(output)?;
         self.issuer.encode(output)?;
@@ -590,7 +702,8 @@ impl Encode for ToBeSignedCertificate<'_> {
             self.can_request_rollover.is_some(),
             self.encryption_key.is_some(),
         ];
-        encode_extension_and_optional_bitmap(is_extended, &bitmap, output)?;
+        encode_extension_and_optional_bitmap(Some(is_extended), &bitmap, output)?;
+
         self.id.encode(output)?;
         self.craca_id.encode(output)?;
         self.crl_series.encode(output)?;
@@ -625,12 +738,9 @@ impl Encode for ToBeSignedCertificate<'_> {
         } else {
             Ok(())
         }?;
-        self.flags.as_ref().map_or(Ok(()), |flags| {
-            let mut encoder = Encoder::new();
-            encode_oer_fixed_bitstring(&flags.0, &mut encoder).and_then(|()| {
-                encode_oer_octetstring(Some(0), None, &Into::<Vec<u8>>::into(encoder), output)
-            })
-        })?;
+        self.flags
+            .as_ref()
+            .map_or(Ok(()), |flags| encode_oer_open_type(flags, output))?;
         self.app_extensions
             .as_ref()
             .map_or(Ok(()), |app_ext| encode_oer_open_type(app_ext, output))?;
@@ -736,9 +846,11 @@ impl Encode for PsidGroupPermissions<'_> {
         let bitmap = [
             self.min_chain_length == 1,
             self.chain_length_range == 0,
-            self.ee_type == EndEntityType(crate::bits!(1, 0, 0, 0, 0, 0, 0, 0)),
+            self.ee_type
+                == EndEntityType::from([true, false, false, false, false, false, false, false]),
         ];
-        encode_oer_fixed_bitstring(&bitmap.iter().collect::<BitVec<u8, Msb0>>(), output)?;
+        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+
         self.subject_permissions.encode(output)?;
         if bitmap[0] {
             encode_oer_integer(Some(0), None, &self.min_chain_length, output)
@@ -761,16 +873,15 @@ impl Encode for PsidGroupPermissions<'_> {
 
 impl Encode for EndEntityType {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_fixed_bitstring(&self.0 .0, output)
+        self.0.encode(output)
     }
 }
 
 impl Encode for PsidSsp<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self.ssp {
-            Some(_) => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 1], output),
-            None => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 0], output),
-        }?;
+        let bitmap = [self.ssp.is_some()];
+        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+
         self.psid.encode(output)?;
         self.ssp.as_ref().map_or(Ok(()), |ssp| ssp.encode(output))
     }
@@ -778,10 +889,9 @@ impl Encode for PsidSsp<'_> {
 
 impl Encode for PsidSspRange<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self.ssp_range {
-            Some(_) => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 1], output),
-            None => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 0], output),
-        }?;
+        let bitmap = [self.ssp_range.is_some()];
+        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+
         self.psid.encode(output)?;
         self.ssp_range
             .as_ref()
@@ -1075,10 +1185,9 @@ impl Encode for Hostname {
 
 impl Encode for LinkageData<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self.group_linkage_value {
-            Some(_) => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 1], output),
-            None => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 0], output),
-        }?;
+        let bitmap = [self.group_linkage_value.is_some()];
+        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+
         self.i_cert.encode(output)?;
         self.linkage_value.encode(output)?;
         self.group_linkage_value
@@ -1220,7 +1329,8 @@ impl Encode for AnonymousContributedExtensionBlockExtns<'_> {
 impl Encode for SignedDataPayload<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         let bitmap = [self.data.is_some(), self.ext_data_hash.is_some()];
-        encode_extension_and_optional_bitmap(self.omitted.is_some(), &bitmap, output)?;
+        encode_extension_and_optional_bitmap(Some(self.omitted.is_some()), &bitmap, output)?;
+
         self.data
             .as_ref()
             .map_or(Ok(()), |data| data.encode(output))?;
@@ -1260,7 +1370,8 @@ impl Encode for HeaderInfo<'_> {
             self.missing_crl_identifier.is_some(),
             self.encryption_key.is_some(),
         ];
-        encode_extension_and_optional_bitmap(is_extended, &bitmap, output)?;
+        encode_extension_and_optional_bitmap(Some(is_extended), &bitmap, output)?;
+
         self.psid.encode(output)?;
         self.generation_time
             .as_ref()
@@ -1309,7 +1420,8 @@ impl Encode for HeaderInfo<'_> {
 
 impl Encode for MissingCrlIdentifier<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_extension_and_optional_bitmap(false, &[], output)?;
+        encode_extension_and_optional_bitmap(Some(false), &[], output)?;
+
         self.craca_id.encode(output)?;
         self.crl_series.encode(output)
     }
@@ -1345,5 +1457,70 @@ mod tests {
             &[0, 0, 0, 32],
             <encode::Encoder as std::convert::Into<Vec<u8>>>::into(encoder).as_slice()
         );
+    }
+
+    #[test]
+    fn encodes_oer_bitstring() {
+        let mut encoder = Encoder::new();
+        encode_oer_fixed_bitstring(&[true], &mut encoder).unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[0x80], output.as_slice());
+
+        let mut encoder = Encoder::new();
+        encode_oer_fixed_bitstring(
+            &[true, false, false, false, false, false, false, false],
+            &mut encoder,
+        )
+        .unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[0x80], output.as_slice());
+
+        let mut encoder = Encoder::new();
+        encode_oer_fixed_bitstring(
+            &[
+                true, false, false, false, false, false, false, false, false, true,
+            ],
+            &mut encoder,
+        )
+        .unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[0x80, 0x40], output.as_slice());
+
+        let mut encoder = Encoder::new();
+        encode_oer_varlength_bitstring(&[true, false], &mut encoder).unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[2, 6, 0x80], output.as_slice());
+
+        let mut encoder = Encoder::new();
+        encode_oer_varlength_bitstring(
+            &[true, false, false, false, false, false, false, false],
+            &mut encoder,
+        )
+        .unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[2, 0, 0x80], output.as_slice());
+
+        let mut encoder = Encoder::new();
+        encode_oer_varlength_bitstring(
+            &[
+                true, false, false, false, false, false, false, false, false, true,
+            ],
+            &mut encoder,
+        )
+        .unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[3, 6, 0x80, 0x40], output.as_slice());
+
+        let mut encoder = Encoder::new();
+        encode_oer_varlength_bitstring(
+            &[
+                true, false, false, false, false, false, false, false, false, true, false, false,
+                false, false, true, false,
+            ],
+            &mut encoder,
+        )
+        .unwrap();
+        let output: Vec<u8> = encoder.into();
+        assert_eq!(&[3, 0, 0x80, 0x42], output.as_slice());
     }
 }
