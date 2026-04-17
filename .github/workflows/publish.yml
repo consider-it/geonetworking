@@ -1,0 +1,35 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_TERM_VERBOSE: true
+
+jobs:
+  publish:
+    name: Publish Crate
+    runs-on:
+      - ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC token exchange
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          lfs: true
+      - name: Give GitHub Actions access to private repos
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.WORKFLOW_PULL_KEY }}
+
+      - name: Authenticate to crates.io
+        uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+      - name: Publish rust crate to crates.io
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
