@@ -29,47 +29,52 @@ pub struct Decoded<T: Debug + PartialEq> {
     pub decoded: T,
 }
 
+/// Decoder for individual fields of the GeoNetworking header from binary data
+///
+/// This trait is implemented for all higher-order fields of the GeoNetworking header:
+///
+///  - [`Packet`]
+///  - [`BasicHeader`]
+///  - [`CommonHeader`]
+///  - [`Ieee1609Dot2Data`] (a.k.a. Secured Header)
+///  - [`GeoUnicast`]
+///  - [`TopologicallyScopedBroadcast`]
+///  - [`SingleHopBroadcast`]
+///  - [`GeoBroadcast`]
+///  - [`GeoAnycast`]
+///  - [`Beacon`]
+///  - [`LSRequest`]
+///  - [`LSReply`]
+///
+/// # Example
+/// ```rust
+/// use geonetworking::*;
+/// let data: &'static [u8] = &[
+///   0x12, 0x00, 0x15, 0x01, 0x03, 0x81, 0x00, 0x40, 0x03, 0x80, 0x82, 0x02, 0x7c, 0x20,
+///   0x51, 0x01, 0x00, 0x02, 0x58, 0x01, 0x00, 0x12, 0x52, 0x00, 0x00, 0x3c, 0x00, 0x04,
+///   0xe5, 0x48, 0x10, 0xc7, 0x2e, 0x71, 0x25, 0xab, 0x00, 0x1f, 0xeb, 0xef, 0x74, 0x05,
+///   0xf2, 0xaf, 0x27, 0x80, 0x00, 0x00, 0x00,
+/// ];
+/// let result = BasicHeader::decode(data).unwrap();
+/// assert_eq!(
+///   result,
+///   Decoded {
+///     bytes_consumed: 4,
+///     decoded: BasicHeader {
+///         version: 1,
+///         next_header: NextAfterBasic::SecuredPacket,
+///         reserved: bits!(0;8),
+///         lifetime: Lifetime(21),
+///         remaining_hop_limit: 1
+///     }
+///   }
+/// );
+/// ```
 pub trait Decode<'s>: Sized + Debug + PartialEq {
-    /// Decoder trait for decoding the individual fields of the GeoNetworking header
-    /// Takes binary data as input.
-    /// The `Decoder` trait is implemented for all higher-order fields of the
-    /// GeoNetworking header:
-    ///  - `Packet`
-    ///  - `BasicHeader`
-    ///  - `CommonHeader`
-    ///  - `Ieee1609Dot2Data` (a.k.a. Secured Header)
-    ///  - `GeoUnicast`
-    ///  - `TopologicallyScopedBroadcast`
-    ///  - `SingleHopBroadcast`
-    ///  - `GeoBroadcast`
-    ///  - `GeoAnycast`
-    ///  - `Beacon`
-    ///  - `LSRequest`
-    ///  - `LSReply`
-    /// ### Usage
-    /// ```rust
-    /// # use geonetworking::*;
-    /// let data: &'static [u8] = &[
-    ///   0x12, 0x00, 0x15, 0x01, 0x03, 0x81, 0x00, 0x40, 0x03, 0x80, 0x82, 0x02, 0x7c, 0x20,
-    ///   0x51, 0x01, 0x00, 0x02, 0x58, 0x01, 0x00, 0x12, 0x52, 0x00, 0x00, 0x3c, 0x00, 0x04,
-    ///   0xe5, 0x48, 0x10, 0xc7, 0x2e, 0x71, 0x25, 0xab, 0x00, 0x1f, 0xeb, 0xef, 0x74, 0x05,
-    ///   0xf2, 0xaf, 0x27, 0x80, 0x00, 0x00, 0x00,
-    /// ];
-    /// result = BasicHeader::decode(data).unwrap();
-    /// assert_eq!(
-    ///   result,
-    ///   Decoded {
-    ///     bytes_consumed: 4,
-    ///     decoded: BasicHeader {
-    ///         version: 1,
-    ///         next_header: NextAfterBasic::SecuredPacket,
-    ///         reserved: crate::bits!(0;8),
-    ///         lifetime: Lifetime(21),
-    ///         remaining_hop_limit: 1
-    ///     }
-    ///   }
-    /// );
-    /// ```
+    /// Decodes the data type from a binary buffer
+    ///
+    /// # Errors
+    /// Returns a [`DecodeError`] when parsing has failed
     fn decode<'input: 's, I: Into<&'input [u8]>>(
         input: I,
     ) -> Result<Decoded<Self>, DecodeError<&'input [u8]>>;
@@ -120,22 +125,27 @@ pub struct UnsecuredHeader {
 
 impl UnsecuredHeader {
     #[cfg(feature = "json")]
-    /// Tries to deserialize an unsecured GeoNetworking header
-    /// from JSON.
+    /// Tries to deserialize an unsecured GeoNetworking header from JSON.
     /// ### Usage
     /// ```
     /// # use geonetworking::*;
     /// let json_header = r#"{"basic":{"version":1,"next_header":"CommonHeader","reserved":[false,false,false,false,false,false,false,false],"lifetime":80,"remaining_hop_limit":1},"secured":null,"common":{"next_header":"BTPB","reserved_1":[false,false,false,false],"header_type_and_subtype":{"TopologicallyScopedBroadcast":"SingleHop"},"traffic_class":{"store_carry_forward":false,"channel_offload":false,"traffic_class_id":2},"flags":[false,false,false,false,false,false,false,false],"payload_length":8,"maximum_hop_limit":1,"reserved_2":[false,false,false,false,false,false,false,false]},"extended":{"SHB":{"source_position_vector":{"gn_address":{"manually_configured":false,"station_type":"Unknown","reserved":[false,true,false,false,false,false,false,true,true,false],"address":[0,96,224,105,87,141]},"timestamp":542947520,"latitude":535574568,"longitude":99765648,"position_accuracy":false,"speed":680,"heading":2122},"media_dependent_data":[127,0,184,0]}}}"#;
     /// let payload: &'static [u8] = &[0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03];
     /// let unsecured_header = UnsecuredHeader::from_json(json_header).unwrap();
-    /// let unsecured_packet: Packet = unsecured_header.with_payload(payload);
+    /// let unsecured_packet: Packet = unsecured_header.with_payload(payload).expect("REASON");
     /// ```
+    ///
+    /// # Errors
+    /// Returns a [`DecodeError`] when parsing failed
     pub fn from_json(json: &str) -> Result<Self, DecodeError<&str>> {
         serde_json::from_str(json).map_err(|e| DecodeError::Json(alloc::format!("{e:?}")))
     }
 
     /// Converts the `UnsecuredHeader` helper struct into a regular `Packet::Unsecured`.
     /// Takes a payload of the length specified in the GeoNetworking's Common Header.
+    ///
+    /// # Errors
+    /// Returns an [`EncodeError`] when parsing failed
     pub fn with_payload(self, payload: &[u8]) -> Result<Packet<'_>, EncodeError> {
         if self.common.payload_length as usize == payload.len() {
             Ok(Packet::Unsecured {
@@ -2762,6 +2772,7 @@ impl<'s> InternalDecode<'s> for CertificateBase<'s> {
 }
 
 impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
+    #[allow(clippy::too_many_lines)]
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,

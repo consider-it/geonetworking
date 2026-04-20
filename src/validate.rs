@@ -12,19 +12,24 @@ use ecdsa::{
 use num::Integer;
 use sha2::{Digest, Sha256, Sha384};
 
+/// Packet validation
 pub trait Validate {
-    ///  The `Validate` trait exposes a `validate` method that checks whether the implementing type is valid.
-    /// `validate` runs the following checks:
+    /// Checks whether the implementing type is valid.
+    ///
+    /// This method shall run the following checks:
+    ///
     /// - The signature of a secured packet matches the certificate contained in the IEEE 1609.2 header
-    /// - *WIP* The packet conforms to IEEE 1609.2 2016
-    /// - *WIP* The packet conforms to ETSI TS 103 097 V2.1.1
-    /// #### Returns
+    /// - (*not implemented yet*: The packet conforms to IEEE 1609.2 2016)
+    /// - (*not implemented yet*: The packet conforms to ETSI TS 103 097 V2.1.1)
+    ///
+    /// # Returns
+    ///
     /// - `Ok(ValidationResult::Success)` if all checks passed successful
     /// - `Ok(ValidationResult::Failure { reason: String })` if a check failed
     /// - `Ok(ValidationResult::NotApplicable { info: &'static str })` if no validation checks were run
     /// - `Err(ValidationError)` if an internal error occured during validation
     ///
-    /// #### Errors
+    /// # Errors
     /// Returns validation error details when message is invalid
     fn validate(&self) -> Result<ValidationResult, ValidationError>;
 }
