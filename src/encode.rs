@@ -157,25 +157,25 @@ impl Encode for &'_ [u8] {
     }
 }
 
-impl Encode for Lifetime {
+impl Encode for en302636_4_1::Lifetime {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.0, 8, output)
     }
 }
 
-impl Encode for Timestamp {
+impl Encode for en302636_4_1::Timestamp {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.0, 32, output)
     }
 }
 
-impl Encode for StationType {
+impl Encode for en302636_4_1::StationType {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&(*self as u8), 5, output)
     }
 }
 
-impl Encode for Address {
+impl Encode for en302636_4_1::Address {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.manually_configured.encode(output)?;
         self.station_type.encode(output)?;
@@ -184,13 +184,13 @@ impl Encode for Address {
     }
 }
 
-impl Encode for NextAfterBasic {
+impl Encode for en302636_4_1::NextAfterBasic {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&(*self as u8), 4, output)
     }
 }
 
-impl Encode for BasicHeader {
+impl Encode for en302636_4_1::BasicHeader {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.version, 4, output)?;
         self.next_header.encode(output)?;
@@ -200,7 +200,7 @@ impl Encode for BasicHeader {
     }
 }
 
-impl Encode for LongPositionVector {
+impl Encode for en302636_4_1::LongPositionVector {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.gn_address.encode(output)?;
         self.timestamp.encode(output)?;
@@ -212,7 +212,7 @@ impl Encode for LongPositionVector {
     }
 }
 
-impl Encode for ShortPositionVector {
+impl Encode for en302636_4_1::ShortPositionVector {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.gn_address.encode(output)?;
         self.timestamp.encode(output)?;
@@ -221,7 +221,7 @@ impl Encode for ShortPositionVector {
     }
 }
 
-impl Encode for TrafficClass {
+impl Encode for en302636_4_1::TrafficClass {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.store_carry_forward.encode(output)?;
         self.channel_offload.encode(output)?;
@@ -229,35 +229,39 @@ impl Encode for TrafficClass {
     }
 }
 
-impl Encode for NextAfterCommon {
+impl Encode for en302636_4_1::NextAfterCommon {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&(*self as u8), 4, output)
     }
 }
 
-impl Encode for HeaderType {
+impl Encode for en302636_4_1::HeaderType {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         let (ty, subty) = match self {
-            HeaderType::Any => (0, 0),
-            HeaderType::Beacon => (1, 0),
-            HeaderType::GeoUnicast => (2, 0),
-            HeaderType::GeoAnycast(AreaType::Circular) => (3, 0),
-            HeaderType::GeoAnycast(AreaType::Rectangular) => (3, 1),
-            HeaderType::GeoAnycast(_) => (3, 2),
-            HeaderType::GeoBroadcast(AreaType::Circular) => (4, 0),
-            HeaderType::GeoBroadcast(AreaType::Rectangular) => (4, 1),
-            HeaderType::GeoBroadcast(_) => (4, 2),
-            HeaderType::TopologicallyScopedBroadcast(BroadcastType::SingleHop) => (5, 0),
-            HeaderType::TopologicallyScopedBroadcast(_) => (5, 1),
-            HeaderType::LocationService(LocationServiceType::Request) => (6, 0),
-            HeaderType::LocationService(_) => (6, 1),
+            en302636_4_1::HeaderType::Any => (0, 0),
+            en302636_4_1::HeaderType::Beacon => (1, 0),
+            en302636_4_1::HeaderType::GeoUnicast => (2, 0),
+            en302636_4_1::HeaderType::GeoAnycast(en302636_4_1::AreaType::Circular) => (3, 0),
+            en302636_4_1::HeaderType::GeoAnycast(en302636_4_1::AreaType::Rectangular) => (3, 1),
+            en302636_4_1::HeaderType::GeoAnycast(_) => (3, 2),
+            en302636_4_1::HeaderType::GeoBroadcast(en302636_4_1::AreaType::Circular) => (4, 0),
+            en302636_4_1::HeaderType::GeoBroadcast(en302636_4_1::AreaType::Rectangular) => (4, 1),
+            en302636_4_1::HeaderType::GeoBroadcast(_) => (4, 2),
+            en302636_4_1::HeaderType::TopologicallyScopedBroadcast(
+                en302636_4_1::BroadcastType::SingleHop,
+            ) => (5, 0),
+            en302636_4_1::HeaderType::TopologicallyScopedBroadcast(_) => (5, 1),
+            en302636_4_1::HeaderType::LocationService(
+                en302636_4_1::LocationServiceType::Request,
+            ) => (6, 0),
+            en302636_4_1::HeaderType::LocationService(_) => (6, 1),
         };
         write_as_int(&ty, 4, output)?;
         write_as_int(&subty, 4, output)
     }
 }
 
-impl Encode for CommonHeader {
+impl Encode for en302636_4_1::CommonHeader {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.next_header.encode(output)?;
         self.reserved_1.encode(output)?;
@@ -270,7 +274,7 @@ impl Encode for CommonHeader {
     }
 }
 
-impl Encode for GeoAnycast {
+impl Encode for en302636_4_1::GeoAnycast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
         self.reserved_1.encode(output)?;
@@ -284,7 +288,7 @@ impl Encode for GeoAnycast {
     }
 }
 
-impl Encode for GeoUnicast {
+impl Encode for en302636_4_1::GeoUnicast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
         self.reserved.encode(output)?;
@@ -293,7 +297,7 @@ impl Encode for GeoUnicast {
     }
 }
 
-impl Encode for TopologicallyScopedBroadcast {
+impl Encode for en302636_4_1::TopologicallyScopedBroadcast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
         self.reserved.encode(output)?;
@@ -301,20 +305,20 @@ impl Encode for TopologicallyScopedBroadcast {
     }
 }
 
-impl Encode for SingleHopBroadcast {
+impl Encode for en302636_4_1::SingleHopBroadcast {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.source_position_vector.encode(output)?;
         self.media_dependent_data.encode(output)
     }
 }
 
-impl Encode for Beacon {
+impl Encode for en302636_4_1::Beacon {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.source_position_vector.encode(output)
     }
 }
 
-impl Encode for LSRequest {
+impl Encode for en302636_4_1::LSRequest {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
         self.reserved.encode(output)?;
@@ -323,7 +327,7 @@ impl Encode for LSRequest {
     }
 }
 
-impl Encode for LSReply {
+impl Encode for en302636_4_1::LSReply {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         write_as_int(&self.sequence_number, 16, output)?;
         self.reserved.encode(output)?;
@@ -332,17 +336,17 @@ impl Encode for LSReply {
     }
 }
 
-impl Encode for Option<ExtendedHeader> {
+impl Encode for Option<en302636_4_1::ExtendedHeader> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            Some(ExtendedHeader::Beacon(b)) => b.encode(output),
-            Some(ExtendedHeader::GAC(gac)) => gac.encode(output),
-            Some(ExtendedHeader::GBC(gbc)) => gbc.encode(output),
-            Some(ExtendedHeader::GUC(guc)) => guc.encode(output),
-            Some(ExtendedHeader::LSReply(lsr)) => lsr.encode(output),
-            Some(ExtendedHeader::LSRequest(lsr)) => lsr.encode(output),
-            Some(ExtendedHeader::SHB(shb)) => shb.encode(output),
-            Some(ExtendedHeader::TSB(tsb)) => tsb.encode(output),
+            Some(en302636_4_1::ExtendedHeader::Beacon(b)) => b.encode(output),
+            Some(en302636_4_1::ExtendedHeader::GAC(gac)) => gac.encode(output),
+            Some(en302636_4_1::ExtendedHeader::GBC(gbc)) => gbc.encode(output),
+            Some(en302636_4_1::ExtendedHeader::GUC(guc)) => guc.encode(output),
+            Some(en302636_4_1::ExtendedHeader::LSReply(lsr)) => lsr.encode(output),
+            Some(en302636_4_1::ExtendedHeader::LSRequest(lsr)) => lsr.encode(output),
+            Some(en302636_4_1::ExtendedHeader::SHB(shb)) => shb.encode(output),
+            Some(en302636_4_1::ExtendedHeader::TSB(tsb)) => tsb.encode(output),
             None => Ok(()),
         }
     }
@@ -524,17 +528,25 @@ macro_rules! encode_int {
     };
 }
 
-encode_int!(Latitude, Some(-900_000_000), Some(900_000_001));
-encode_int!(Longitude, Some(-1_799_999_999), Some(1_800_000_001));
-encode_int!(PduFunctionalType, Some(0), Some(255));
-encode_int!(HeaderInfoContributorId, Some(0), Some(255));
-encode_int!(Uint8, Some(0), Some(255));
-encode_int!(Uint16, Some(0), Some(65535));
-encode_int!(Uint32, Some(0), Some(4_294_967_295));
-encode_int!(ExtId, Some(0), Some(255));
-encode_int!(Psid, Some(0), None);
+encode_int!(
+    ieee1609dot2::Latitude,
+    Some(-900_000_000),
+    Some(900_000_001)
+);
+encode_int!(
+    ieee1609dot2::Longitude,
+    Some(-1_799_999_999),
+    Some(1_800_000_001)
+);
+encode_int!(ieee1609dot2::PduFunctionalType, Some(0), Some(255));
+encode_int!(ieee1609dot2::HeaderInfoContributorId, Some(0), Some(255));
+encode_int!(ieee1609dot2::Uint8, Some(0), Some(255));
+encode_int!(ieee1609dot2::Uint16, Some(0), Some(65535));
+encode_int!(ieee1609dot2::Uint32, Some(0), Some(4_294_967_295));
+encode_int!(ieee1609dot2::ExtId, Some(0), Some(255));
+encode_int!(ieee1609dot2::Psid, Some(0), None);
 
-impl Encode for CertificateBase<'_> {
+impl Encode for ieee1609dot2::CertificateBase<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_fixed_bitstring(
             &self
@@ -564,43 +576,43 @@ macro_rules! encode_octets {
     };
 }
 
-encode_octets!(LinkageValue<'_>, Some(9), Some(9));
-encode_octets!(HashedId3<'_>, Some(3), Some(3));
-encode_octets!(HashedId8<'_>, Some(8), Some(8));
-encode_octets!(SubjectAssurance<'_>, Some(1), Some(1));
-encode_octets!(BitmapSsp<'_>, Some(0), Some(31));
-encode_octets!(Opaque<'_>, Some(0), None);
-encode_octets!(HashedId32<'_>, Some(32), Some(32));
-encode_octets!(HashedId48<'_>, Some(48), Some(48));
+encode_octets!(ieee1609dot2::LinkageValue<'_>, Some(9), Some(9));
+encode_octets!(ieee1609dot2::HashedId3<'_>, Some(3), Some(3));
+encode_octets!(ieee1609dot2::HashedId8<'_>, Some(8), Some(8));
+encode_octets!(ieee1609dot2::SubjectAssurance<'_>, Some(1), Some(1));
+encode_octets!(ieee1609dot2::BitmapSsp<'_>, Some(0), Some(31));
+encode_octets!(ieee1609dot2::Opaque<'_>, Some(0), None);
+encode_octets!(ieee1609dot2::HashedId32<'_>, Some(32), Some(32));
+encode_octets!(ieee1609dot2::HashedId48<'_>, Some(48), Some(48));
 
-impl Encode for CertificateType {
+impl Encode for ieee1609dot2::CertificateType {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_enumerated(*self as u8, output)
     }
 }
 
-impl Encode for HashAlgorithm {
+impl Encode for ieee1609dot2::HashAlgorithm {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_enumerated(*self as u8, output)
     }
 }
 
-impl Encode for IssuerIdentifier<'_> {
+impl Encode for ieee1609dot2::IssuerIdentifier<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            IssuerIdentifier::Sha256AndDigest(inner) => {
+            Self::Sha256AndDigest(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            IssuerIdentifier::RsSelf(inner) => {
+            Self::RsSelf(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
-            IssuerIdentifier::Sha384AndDigest(inner) => {
+            Self::Sha384AndDigest(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_open_type(inner, output)
             }
-            IssuerIdentifier::Sm3AndDigest(inner) => {
+            Self::Sm3AndDigest(inner) => {
                 encode_oer_tag(3, output)?;
                 encode_oer_open_type(inner, output)
             }
@@ -608,7 +620,7 @@ impl Encode for IssuerIdentifier<'_> {
     }
 }
 
-impl Encode for ToBeSignedCertificate<'_> {
+impl Encode for ieee1609dot2::ToBeSignedCertificate<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         let is_extended = self.flags.is_some()
             || self.app_extensions.is_some()
@@ -677,59 +689,59 @@ impl Encode for ToBeSignedCertificate<'_> {
     }
 }
 
-impl Encode for AppExtension<'_> {
+impl Encode for ieee1609dot2::AppExtension<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.id.encode(output)?;
         encode_oer_octetstring(Some(0), None, self.content, output)
     }
 }
 
-impl Encode for CertIssueExtensionPermissions<'_> {
+impl Encode for ieee1609dot2::CertIssueExtensionPermissions<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            CertIssueExtensionPermissions::Specific(inner) => {
+            Self::Specific(inner) => {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(0), None, inner, output)
             }
-            CertIssueExtensionPermissions::All(()) => encode_oer_tag(1, output),
+            Self::All(()) => encode_oer_tag(1, output),
         }
     }
 }
 
-impl Encode for CertRequestExtensionPermissions<'_> {
+impl Encode for ieee1609dot2::CertRequestExtensionPermissions<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            CertRequestExtensionPermissions::Content(inner) => {
+            Self::Content(inner) => {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(0), None, inner, output)
             }
-            CertRequestExtensionPermissions::All(()) => encode_oer_tag(1, output),
+            Self::All(()) => encode_oer_tag(1, output),
         }
     }
 }
 
-impl Encode for CertIssueExtension<'_> {
+impl Encode for ieee1609dot2::CertIssueExtension<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.id.encode(output)?;
         self.permissions.encode(output)
     }
 }
 
-impl Encode for CertRequestExtension<'_> {
+impl Encode for ieee1609dot2::CertRequestExtension<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.id.encode(output)?;
         self.permissions.encode(output)
     }
 }
 
-impl Encode for VerificationKeyIndicator<'_> {
+impl Encode for ieee1609dot2::VerificationKeyIndicator<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            VerificationKeyIndicator::VerificationKey(inner) => {
+            Self::VerificationKey(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            VerificationKeyIndicator::ReconstructionValue(inner) => {
+            Self::ReconstructionValue(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
@@ -737,26 +749,26 @@ impl Encode for VerificationKeyIndicator<'_> {
     }
 }
 
-impl Encode for PublicVerificationKey<'_> {
+impl Encode for ieee1609dot2::PublicVerificationKey<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            PublicVerificationKey::EcdsaNistP256(inner) => {
+            Self::EcdsaNistP256(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            PublicVerificationKey::EcdsaBrainpoolP256r1(inner) => {
+            Self::EcdsaBrainpoolP256r1(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
-            PublicVerificationKey::EcdsaBrainpoolP384r1(inner) => {
+            Self::EcdsaBrainpoolP384r1(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_open_type(inner, output)
             }
-            PublicVerificationKey::EcdsaNistP384(inner) => {
+            Self::EcdsaNistP384(inner) => {
                 encode_oer_tag(3, output)?;
                 encode_oer_open_type(inner, output)
             }
-            PublicVerificationKey::EcsigSm2(inner) => {
+            Self::EcsigSm2(inner) => {
                 encode_oer_tag(4, output)?;
                 encode_oer_open_type(inner, output)
             }
@@ -764,12 +776,12 @@ impl Encode for PublicVerificationKey<'_> {
     }
 }
 
-impl Encode for PsidGroupPermissions<'_> {
+impl Encode for ieee1609dot2::PsidGroupPermissions<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         let bitmap = [
             self.min_chain_length == 1,
             self.chain_length_range == 0,
-            self.ee_type == EndEntityType(crate::bits!(1, 0, 0, 0, 0, 0, 0, 0)),
+            self.ee_type == ieee1609dot2::EndEntityType(crate::bits!(1, 0, 0, 0, 0, 0, 0, 0)),
         ];
         encode_oer_fixed_bitstring(&bitmap.iter().collect::<BitVec<u8, Msb0>>(), output)?;
         self.subject_permissions.encode(output)?;
@@ -792,13 +804,13 @@ impl Encode for PsidGroupPermissions<'_> {
     }
 }
 
-impl Encode for EndEntityType {
+impl Encode for ieee1609dot2::EndEntityType {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_fixed_bitstring(&self.0 .0, output)
     }
 }
 
-impl Encode for PsidSsp<'_> {
+impl Encode for ieee1609dot2::PsidSsp<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self.ssp {
             Some(_) => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 1], output),
@@ -809,7 +821,7 @@ impl Encode for PsidSsp<'_> {
     }
 }
 
-impl Encode for PsidSspRange<'_> {
+impl Encode for ieee1609dot2::PsidSspRange<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self.ssp_range {
             Some(_) => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 1], output),
@@ -822,22 +834,22 @@ impl Encode for PsidSspRange<'_> {
     }
 }
 
-impl Encode for BitmapSspRange<'_> {
+impl Encode for ieee1609dot2::BitmapSspRange<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(1), Some(32), self.ssp_value, output)?;
         encode_oer_octetstring(Some(1), Some(32), self.ssp_bitmask, output)
     }
 }
 
-impl Encode for SspRange<'_> {
+impl Encode for ieee1609dot2::SspRange<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            SspRange::Opaque(inner) => {
+            Self::Opaque(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            SspRange::All(()) => encode_oer_tag(1, output),
-            SspRange::BitmapSspRange(inner) => {
+            Self::All(()) => encode_oer_tag(1, output),
+            Self::BitmapSspRange(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_open_type(inner, output)
             }
@@ -845,26 +857,26 @@ impl Encode for SspRange<'_> {
     }
 }
 
-impl Encode for SubjectPermissions<'_> {
+impl Encode for ieee1609dot2::SubjectPermissions<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            SubjectPermissions::Explicit(inner) => {
+            Self::Explicit(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            SubjectPermissions::All(()) => encode_oer_tag(1, output),
+            Self::All(()) => encode_oer_tag(1, output),
         }
     }
 }
 
-impl Encode for ServiceSpecificPermissions<'_> {
+impl Encode for ieee1609dot2::ServiceSpecificPermissions<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            ServiceSpecificPermissions::Opaque(inner) => {
+            Self::Opaque(inner) => {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(0), None, inner, output)
             }
-            ServiceSpecificPermissions::BitmapSsp(inner) => {
+            Self::BitmapSsp(inner) => {
                 encode_oer_tag(1, output)?;
                 encode_oer_open_type(inner, output)
             }
@@ -872,18 +884,18 @@ impl Encode for ServiceSpecificPermissions<'_> {
     }
 }
 
-impl Encode for BasePublicEncryptionKey<'_> {
+impl Encode for ieee1609dot2::BasePublicEncryptionKey<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            BasePublicEncryptionKey::EciesNistP256(inner) => {
+            Self::EciesNistP256(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            BasePublicEncryptionKey::EciesBrainpoolP256r1(inner) => {
+            Self::EciesBrainpoolP256r1(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
-            BasePublicEncryptionKey::EcencSm2(inner) => {
+            Self::EcencSm2(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_open_type(inner, output)
             }
@@ -891,23 +903,23 @@ impl Encode for BasePublicEncryptionKey<'_> {
     }
 }
 
-impl Encode for EccP256CurvePoint<'_> {
+impl Encode for ieee1609dot2::EccP256CurvePoint<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            EccP256CurvePoint::XOnly(inner) => {
+            Self::XOnly(inner) => {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(32), Some(32), inner, output)
             }
-            EccP256CurvePoint::Fill(()) => encode_oer_tag(1, output),
-            EccP256CurvePoint::CompressedY0(inner) => {
+            Self::Fill(()) => encode_oer_tag(1, output),
+            Self::CompressedY0(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_octetstring(Some(32), Some(32), inner, output)
             }
-            EccP256CurvePoint::CompressedY1(inner) => {
+            Self::CompressedY1(inner) => {
                 encode_oer_tag(3, output)?;
                 encode_oer_octetstring(Some(32), Some(32), inner, output)
             }
-            EccP256CurvePoint::UncompressedP256(inner) => {
+            Self::UncompressedP256(inner) => {
                 encode_oer_tag(4, output)?;
                 inner.encode(output)
             }
@@ -915,23 +927,23 @@ impl Encode for EccP256CurvePoint<'_> {
     }
 }
 
-impl Encode for EccP384CurvePoint<'_> {
+impl Encode for ieee1609dot2::EccP384CurvePoint<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            EccP384CurvePoint::XOnly(inner) => {
+            Self::XOnly(inner) => {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(48), Some(48), inner, output)
             }
-            EccP384CurvePoint::Fill(()) => encode_oer_tag(1, output),
-            EccP384CurvePoint::CompressedY0(inner) => {
+            Self::Fill(()) => encode_oer_tag(1, output),
+            Self::CompressedY0(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_octetstring(Some(48), Some(48), inner, output)
             }
-            EccP384CurvePoint::CompressedY1(inner) => {
+            Self::CompressedY1(inner) => {
                 encode_oer_tag(3, output)?;
                 encode_oer_octetstring(Some(48), Some(48), inner, output)
             }
-            EccP384CurvePoint::UncompressedP384(inner) => {
+            Self::UncompressedP384(inner) => {
                 encode_oer_tag(4, output)?;
                 inner.encode(output)
             }
@@ -953,23 +965,23 @@ macro_rules! encode_sequence_of {
     };
 }
 
-encode_sequence_of!(SequenceOfUint16);
-encode_sequence_of!(SequenceOfUint8);
-encode_sequence_of!(SequenceOfRegionAndSubregions);
-encode_sequence_of!(SequenceOfRectangularRegion);
-encode_sequence_of!(SequenceOfIdentifiedRegion);
-encode_sequence_of!(PolygonalRegion);
-encode_sequence_of!(SequenceOfPsidSspRange<'_>);
-encode_sequence_of!(SequenceOfPsid);
-encode_sequence_of!(SequenceOfPsidSsp<'_>);
-encode_sequence_of!(SequenceOfOctetString<'_>);
-encode_sequence_of!(SequenceOfPsidGroupPermissions<'_>);
-encode_sequence_of!(SequenceOfAppExtensions<'_>);
-encode_sequence_of!(SequenceOfCertIssueExtensions<'_>);
-encode_sequence_of!(SequenceOfCertRequestExtensions<'_>);
-encode_sequence_of!(SequenceOfHashedId3<'_>);
-encode_sequence_of!(ContributedExtensionBlocks<'_>);
-encode_sequence_of!(ContributedExtensionBlockExtns<'_>);
+encode_sequence_of!(ieee1609dot2::SequenceOfUint16);
+encode_sequence_of!(ieee1609dot2::SequenceOfUint8);
+encode_sequence_of!(ieee1609dot2::SequenceOfRegionAndSubregions);
+encode_sequence_of!(ieee1609dot2::SequenceOfRectangularRegion);
+encode_sequence_of!(ieee1609dot2::SequenceOfIdentifiedRegion);
+encode_sequence_of!(ieee1609dot2::PolygonalRegion);
+encode_sequence_of!(ieee1609dot2::SequenceOfPsidSspRange<'_>);
+encode_sequence_of!(ieee1609dot2::SequenceOfPsid);
+encode_sequence_of!(ieee1609dot2::SequenceOfPsidSsp<'_>);
+encode_sequence_of!(ieee1609dot2::SequenceOfOctetString<'_>);
+encode_sequence_of!(ieee1609dot2::SequenceOfPsidGroupPermissions<'_>);
+encode_sequence_of!(ieee1609dot2::SequenceOfAppExtensions<'_>);
+encode_sequence_of!(ieee1609dot2::SequenceOfCertIssueExtensions<'_>);
+encode_sequence_of!(ieee1609dot2::SequenceOfCertRequestExtensions<'_>);
+encode_sequence_of!(ieee1609dot2::SequenceOfHashedId3<'_>);
+encode_sequence_of!(ieee1609dot2::ContributedExtensionBlocks<'_>);
+encode_sequence_of!(ieee1609dot2::ContributedExtensionBlockExtns<'_>);
 
 macro_rules! encode_sequence {
     ($typ:ty, $( $field:ident ),*) => {
@@ -984,41 +996,57 @@ macro_rules! encode_sequence {
     };
 }
 
-encode_sequence!(ValidityPeriod, start, duration);
-encode_sequence!(CountryAndRegions, country_only, regions);
-encode_sequence!(RegionAndSubregions, region, subregions);
-encode_sequence!(CountryAndSubregions, country_only, region_and_subregions);
-encode_sequence!(ThreeDLocation, latitude, longitude, elevation);
-encode_sequence!(TwoDLocation, latitude, longitude);
-encode_sequence!(RectangularRegion, north_west, south_east);
-encode_sequence!(CircularRegion, center, radius);
-encode_sequence!(PublicEncryptionKey<'_>, supported_symm_alg, public_key);
-encode_sequence!(ToBeSignedData<'_>, payload, header_info);
-encode_sequence!(Ieee1609Dot2Data<'_>, protocol_version, content);
-encode_sequence!(ContributedExtensionBlock<'_>, contributor_id, extns);
+encode_sequence!(ieee1609dot2::ValidityPeriod, start, duration);
+encode_sequence!(ieee1609dot2::CountryAndRegions, country_only, regions);
+encode_sequence!(ieee1609dot2::RegionAndSubregions, region, subregions);
+encode_sequence!(
+    ieee1609dot2::CountryAndSubregions,
+    country_only,
+    region_and_subregions
+);
+encode_sequence!(ieee1609dot2::ThreeDLocation, latitude, longitude, elevation);
+encode_sequence!(ieee1609dot2::TwoDLocation, latitude, longitude);
+encode_sequence!(ieee1609dot2::RectangularRegion, north_west, south_east);
+encode_sequence!(ieee1609dot2::CircularRegion, center, radius);
+encode_sequence!(
+    ieee1609dot2::PublicEncryptionKey<'_>,
+    supported_symm_alg,
+    public_key
+);
+encode_sequence!(ieee1609dot2::ToBeSignedData<'_>, payload, header_info);
+encode_sequence!(
+    ieee1609dot2::Ieee1609Dot2Data<'_>,
+    protocol_version,
+    content
+);
+encode_sequence!(
+    ieee1609dot2::ContributedExtensionBlock<'_>,
+    contributor_id,
+    extns
+);
 
-impl Encode for SymmAlgorithm {
+impl Encode for ieee1609dot2::SymmAlgorithm {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_enumerated(*self as u8, output)
     }
 }
 
-impl Encode for GeographicRegion {
+impl Encode for ieee1609dot2::GeographicRegion {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            GeographicRegion::CircularRegion(inner) => {
+            Self::CircularRegion(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            GeographicRegion::RectangularRegion(inner) => {
+            Self::RectangularRegion(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
-            GeographicRegion::PolygonalRegion(inner) => {
+            Self::PolygonalRegion(inner) => {
                 encode_oer_tag(2, output)?;
                 inner.encode(output)
             }
-            GeographicRegion::IdentifiedRegion(inner) => {
+            Self::IdentifiedRegion(inner) => {
                 encode_oer_tag(3, output)?;
                 inner.encode(output)
             }
@@ -1026,18 +1054,18 @@ impl Encode for GeographicRegion {
     }
 }
 
-impl Encode for IdentifiedRegion {
+impl Encode for ieee1609dot2::IdentifiedRegion {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            IdentifiedRegion::CountryOnly(inner) => {
+            Self::CountryOnly(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            IdentifiedRegion::CountryAndRegions(inner) => {
+            Self::CountryAndRegions(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
-            IdentifiedRegion::CountryAndSubregions(inner) => {
+            Self::CountryAndSubregions(inner) => {
                 encode_oer_tag(2, output)?;
                 inner.encode(output)
             }
@@ -1045,34 +1073,34 @@ impl Encode for IdentifiedRegion {
     }
 }
 
-impl Encode for Duration {
+impl Encode for ieee1609dot2::Duration {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            Duration::Microseconds(inner) => {
+            Self::Microseconds(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            Duration::Milliseconds(inner) => {
+            Self::Milliseconds(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
-            Duration::Seconds(inner) => {
+            Self::Seconds(inner) => {
                 encode_oer_tag(2, output)?;
                 inner.encode(output)
             }
-            Duration::Minutes(inner) => {
+            Self::Minutes(inner) => {
                 encode_oer_tag(3, output)?;
                 inner.encode(output)
             }
-            Duration::Hours(inner) => {
+            Self::Hours(inner) => {
                 encode_oer_tag(4, output)?;
                 inner.encode(output)
             }
-            Duration::SixtyHours(inner) => {
+            Self::SixtyHours(inner) => {
                 encode_oer_tag(5, output)?;
                 inner.encode(output)
             }
-            Duration::Years(inner) => {
+            Self::Years(inner) => {
                 encode_oer_tag(6, output)?;
                 inner.encode(output)
             }
@@ -1080,33 +1108,33 @@ impl Encode for Duration {
     }
 }
 
-impl Encode for CertificateId<'_> {
+impl Encode for ieee1609dot2::CertificateId<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            CertificateId::LinkageData(inner) => {
+            Self::LinkageData(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            CertificateId::Name(inner) => {
+            Self::Name(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
-            CertificateId::BinaryId(inner) => {
+            Self::BinaryId(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_octetstring(Some(1), Some(64), inner, output)
             }
-            CertificateId::None(()) => encode_oer_tag(3, output),
+            Self::None(()) => encode_oer_tag(3, output),
         }
     }
 }
 
-impl Encode for Hostname {
+impl Encode for ieee1609dot2::Hostname {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(0), Some(255), self.0.as_bytes(), output)
     }
 }
 
-impl Encode for LinkageData<'_> {
+impl Encode for ieee1609dot2::LinkageData<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self.group_linkage_value {
             Some(_) => encode_oer_fixed_bitstring(&bitvec![u8, Msb0; 1], output),
@@ -1120,68 +1148,68 @@ impl Encode for LinkageData<'_> {
     }
 }
 
-impl Encode for GroupLinkageValue<'_> {
+impl Encode for ieee1609dot2::GroupLinkageValue<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(4), Some(4), self.j_value, output)?;
         encode_oer_octetstring(Some(9), Some(9), self.value, output)
     }
 }
 
-impl Encode for EccP256CurvePointUncompressedP256<'_> {
+impl Encode for ieee1609dot2::EccP256CurvePointUncompressedP256<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(32), Some(32), self.x, output)?;
         encode_oer_octetstring(Some(32), Some(32), self.y, output)
     }
 }
 
-impl Encode for EccP384CurvePointUncompressedP384<'_> {
+impl Encode for ieee1609dot2::EccP384CurvePointUncompressedP384<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(48), Some(48), self.x, output)?;
         encode_oer_octetstring(Some(48), Some(48), self.y, output)
     }
 }
 
-impl Encode for EcsigP256Signature<'_> {
+impl Encode for ieee1609dot2::EcsigP256Signature<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(32), Some(32), self.r_sig, output)?;
         encode_oer_octetstring(Some(32), Some(32), self.s_sig, output)
     }
 }
 
-impl Encode for EcdsaP256Signature<'_> {
+impl Encode for ieee1609dot2::EcdsaP256Signature<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.r_sig.encode(output)?;
         encode_oer_octetstring(Some(32), Some(32), self.s_sig, output)
     }
 }
 
-impl Encode for EcdsaP384Signature<'_> {
+impl Encode for ieee1609dot2::EcdsaP384Signature<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         self.r_sig.encode(output)?;
         encode_oer_octetstring(Some(48), Some(48), self.s_sig, output)
     }
 }
 
-impl Encode for Signature<'_> {
+impl Encode for ieee1609dot2::Signature<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            Signature::EcdsaNistP256Signature(inner) => {
+            Self::EcdsaNistP256Signature(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            Signature::EcdsaBrainpoolP256r1Signature(inner) => {
+            Self::EcdsaBrainpoolP256r1Signature(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
-            Signature::EcdsaBrainpoolP384r1Signature(inner) => {
+            Self::EcdsaBrainpoolP384r1Signature(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_open_type(inner, output)
             }
-            Signature::EcdsaNistP384Signature(inner) => {
+            Self::EcdsaNistP384Signature(inner) => {
                 encode_oer_tag(3, output)?;
                 encode_oer_open_type(inner, output)
             }
-            Signature::Sm2Signature(inner) => {
+            Self::Sm2Signature(inner) => {
                 encode_oer_tag(4, output)?;
                 encode_oer_open_type(inner, output)
             }
@@ -1189,18 +1217,18 @@ impl Encode for Signature<'_> {
     }
 }
 
-impl Encode for HashedData<'_> {
+impl Encode for ieee1609dot2::HashedData<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            HashedData::Sha256HashedData(inner) => {
+            Self::Sha256HashedData(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            HashedData::Sha384HashedData(inner) => {
+            Self::Sha384HashedData(inner) => {
                 encode_oer_tag(1, output)?;
                 encode_oer_open_type(inner, output)
             }
-            HashedData::Sm3HashedData(inner) => {
+            Self::Sm3HashedData(inner) => {
                 encode_oer_tag(2, output)?;
                 encode_oer_open_type(inner, output)
             }
@@ -1208,14 +1236,14 @@ impl Encode for HashedData<'_> {
     }
 }
 
-impl Encode for EncryptionKey<'_> {
+impl Encode for ieee1609dot2::EncryptionKey<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            EncryptionKey::Public(inner) => {
+            Self::Public(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
-            EncryptionKey::Symmetric(inner) => {
+            Self::Symmetric(inner) => {
                 encode_oer_tag(1, output)?;
                 inner.encode(output)
             }
@@ -1223,14 +1251,14 @@ impl Encode for EncryptionKey<'_> {
     }
 }
 
-impl Encode for SymmetricEncryptionKey<'_> {
+impl Encode for ieee1609dot2::SymmetricEncryptionKey<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            SymmetricEncryptionKey::Aes128Ccm(inner) => {
+            Self::Aes128Ccm(inner) => {
                 encode_oer_tag(0, output)?;
                 encode_oer_octetstring(Some(16), Some(16), inner, output)
             }
-            SymmetricEncryptionKey::Sm4Ccm(inner) => {
+            Self::Sm4Ccm(inner) => {
                 encode_oer_tag(1, output)?;
                 let mut encoder = Encoder::new();
                 encode_oer_octetstring(Some(16), Some(16), inner, &mut encoder)?;
@@ -1244,13 +1272,13 @@ impl Encode for SymmetricEncryptionKey<'_> {
     }
 }
 
-impl Encode for AnonymousContributedExtensionBlockExtns<'_> {
+impl Encode for ieee1609dot2::AnonymousContributedExtensionBlockExtns<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_oer_octetstring(Some(0), None, self.0, output)
     }
 }
 
-impl Encode for SignedDataPayload<'_> {
+impl Encode for ieee1609dot2::SignedDataPayload<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         let bitmap = [self.data.is_some(), self.ext_data_hash.is_some()];
         encode_extension_and_optional_bitmap(self.omitted.is_some(), &bitmap, output)?;
@@ -1265,10 +1293,10 @@ impl Encode for SignedDataPayload<'_> {
     }
 }
 
-impl Encode for Ieee1609Dot2Content<'_> {
+impl Encode for ieee1609dot2::Ieee1609Dot2Content<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         match self {
-            Ieee1609Dot2Content::UnsecuredData(inner) => {
+            ieee1609dot2::Ieee1609Dot2Content::UnsecuredData(inner) => {
                 encode_oer_tag(0, output)?;
                 inner.encode(output)
             }
@@ -1277,9 +1305,13 @@ impl Encode for Ieee1609Dot2Content<'_> {
     }
 }
 
-encode_int!(Uint64, Some(0), Some(18_446_744_073_709_551_615));
+encode_int!(
+    ieee1609dot2::Uint64,
+    Some(0),
+    Some(18_446_744_073_709_551_615)
+);
 
-impl Encode for HeaderInfo<'_> {
+impl Encode for ieee1609dot2::HeaderInfo<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         let is_extended = self.inline_p2pcd_request.is_some()
             || self.requested_certificate.is_some()
@@ -1340,7 +1372,7 @@ impl Encode for HeaderInfo<'_> {
     }
 }
 
-impl Encode for MissingCrlIdentifier<'_> {
+impl Encode for ieee1609dot2::MissingCrlIdentifier<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
         encode_extension_and_optional_bitmap(false, &[], output)?;
         self.craca_id.encode(output)?;
@@ -1361,7 +1393,7 @@ mod tests {
             <encode::Encoder as std::convert::Into<Vec<u8>>>::into(encoder).as_slice()
         );
         let mut encoder = Encoder::new();
-        Uint8(3).encode(&mut encoder).unwrap();
+        ieee1609dot2::Uint8(3).encode(&mut encoder).unwrap();
         assert_eq!(
             &[3],
             <encode::Encoder as std::convert::Into<Vec<u8>>>::into(encoder).as_slice()
@@ -1373,7 +1405,9 @@ mod tests {
             <encode::Encoder as std::convert::Into<Vec<u8>>>::into(encoder).as_slice()
         );
         let mut encoder = Encoder::new();
-        NinetyDegreeInt(32).encode(&mut encoder).unwrap();
+        ieee1609dot2::NinetyDegreeInt(32)
+            .encode(&mut encoder)
+            .unwrap();
         assert_eq!(
             &[0, 0, 0, 32],
             <encode::Encoder as std::convert::Into<Vec<u8>>>::into(encoder).as_slice()
