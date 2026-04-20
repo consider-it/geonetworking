@@ -1,5 +1,7 @@
 extern crate alloc;
 
+#[cfg(not(feature = "validate"))]
+use alloc::vec;
 use bitvec::prelude::*;
 use nom::{
     bytes::streaming::take,
