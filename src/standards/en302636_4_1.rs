@@ -891,4 +891,19 @@ mod tests {
         assert!(make_heading(360.1).is_err());
         assert!(make_heading(-1.).is_err());
     }
+
+    #[test]
+    fn gets_lifetime_base() {
+        assert_eq!(Lifetime(127).base(), 3);
+        assert_eq!(Lifetime(126).base(), 2);
+        assert_eq!(Lifetime(125).base(), 1);
+    }
+
+    #[test]
+    fn gets_lifetime_multiplier() {
+        assert_eq!(Lifetime(5).multiplier(), 1);
+        assert_eq!(Lifetime(9).multiplier(), 2);
+        assert_eq!(Lifetime(125).multiplier(), 31);
+        assert_eq!(Lifetime(255).multiplier(), 63);
+    }
 }
