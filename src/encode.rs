@@ -627,871 +627,871 @@ fn encode_oer_open_type<T: Encode>(value: &T, output: &mut Encoder) -> Result<()
     encode_oer_octetstring(Some(0), None, &bytes, output)
 }
 
-impl<const SIZE: usize> Encode for ieee1609dot2::BitString<SIZE> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_fixed_bitstring(&self.0, output)
-    }
-}
+// impl<const SIZE: usize> Encode for ieee1609dot2::BitString<SIZE> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_fixed_bitstring(&self.0, output)
+//     }
+// }
 
-macro_rules! encode_int {
-    ($typ:ty, $min:expr, $max:expr) => {
-        impl Encode for $typ {
-            fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-                encode_oer_integer($min, $max, &self.0, output)
-            }
-        }
-    };
-}
+// macro_rules! encode_int {
+//     ($typ:ty, $min:expr, $max:expr) => {
+//         impl Encode for $typ {
+//             fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//                 encode_oer_integer($min, $max, &self.0, output)
+//             }
+//         }
+//     };
+// }
 
-encode_int!(
-    ieee1609dot2::Latitude,
-    Some(-900_000_000),
-    Some(900_000_001)
-);
-encode_int!(
-    ieee1609dot2::Longitude,
-    Some(-1_799_999_999),
-    Some(1_800_000_001)
-);
-encode_int!(ieee1609dot2::PduFunctionalType, Some(0), Some(255));
-encode_int!(ieee1609dot2::HeaderInfoContributorId, Some(0), Some(255));
-encode_int!(ieee1609dot2::Uint8, Some(0), Some(255));
-encode_int!(ieee1609dot2::Uint16, Some(0), Some(65535));
-encode_int!(ieee1609dot2::Uint32, Some(0), Some(4_294_967_295));
-encode_int!(ieee1609dot2::ExtId, Some(0), Some(255));
-encode_int!(ieee1609dot2::Psid, Some(0), None);
+// encode_int!(
+//     ieee1609dot2::Latitude,
+//     Some(-900_000_000),
+//     Some(900_000_001)
+// );
+// encode_int!(
+//     ieee1609dot2::Longitude,
+//     Some(-1_799_999_999),
+//     Some(1_800_000_001)
+// );
+// encode_int!(ieee1609dot2::PduFunctionalType, Some(0), Some(255));
+// encode_int!(ieee1609dot2::HeaderInfoContributorId, Some(0), Some(255));
+// encode_int!(ieee1609dot2::Uint8, Some(0), Some(255));
+// encode_int!(ieee1609dot2::Uint16, Some(0), Some(65535));
+// encode_int!(ieee1609dot2::Uint32, Some(0), Some(4_294_967_295));
+// encode_int!(ieee1609dot2::ExtId, Some(0), Some(255));
+// encode_int!(ieee1609dot2::Psid, Some(0), None);
 
-impl Encode for ieee1609dot2::CertificateBase<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        let bitmap = [self.signature.is_some()];
-        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+// impl Encode for ieee1609dot2::CertificateBase<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         let bitmap = [self.signature.is_some()];
+//         encode_extension_and_optional_bitmap(None, &bitmap, output)?;
 
-        self.version.encode(output)?;
-        self.r_type.encode(output)?;
-        self.issuer.encode(output)?;
-        self.to_be_signed.encode(output)?;
-        if let Some(sig) = &self.signature {
-            sig.encode(output)?;
-        }
-        Ok(())
-    }
-}
+//         self.version.encode(output)?;
+//         self.r_type.encode(output)?;
+//         self.issuer.encode(output)?;
+//         self.to_be_signed.encode(output)?;
+//         if let Some(sig) = &self.signature {
+//             sig.encode(output)?;
+//         }
+//         Ok(())
+//     }
+// }
 
-macro_rules! encode_octets {
-    ($typ:ty, $min:expr, $max:expr) => {
-        impl Encode for $typ {
-            fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-                encode_oer_octetstring($min, $max, self.0, output)
-            }
-        }
-    };
-}
+// macro_rules! encode_octets {
+//     ($typ:ty, $min:expr, $max:expr) => {
+//         impl Encode for $typ {
+//             fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//                 encode_oer_octetstring($min, $max, self.0, output)
+//             }
+//         }
+//     };
+// }
 
-encode_octets!(ieee1609dot2::LinkageValue<'_>, Some(9), Some(9));
-encode_octets!(ieee1609dot2::HashedId3<'_>, Some(3), Some(3));
-encode_octets!(ieee1609dot2::HashedId8<'_>, Some(8), Some(8));
-encode_octets!(ieee1609dot2::SubjectAssurance<'_>, Some(1), Some(1));
-encode_octets!(ieee1609dot2::BitmapSsp<'_>, Some(0), Some(31));
-encode_octets!(ieee1609dot2::Opaque<'_>, Some(0), None);
-encode_octets!(ieee1609dot2::HashedId32<'_>, Some(32), Some(32));
-encode_octets!(ieee1609dot2::HashedId48<'_>, Some(48), Some(48));
+// encode_octets!(ieee1609dot2::LinkageValue<'_>, Some(9), Some(9));
+// encode_octets!(ieee1609dot2::HashedId3<'_>, Some(3), Some(3));
+// encode_octets!(ieee1609dot2::HashedId8<'_>, Some(8), Some(8));
+// encode_octets!(ieee1609dot2::SubjectAssurance<'_>, Some(1), Some(1));
+// encode_octets!(ieee1609dot2::BitmapSsp<'_>, Some(0), Some(31));
+// encode_octets!(ieee1609dot2::Opaque<'_>, Some(0), None);
+// encode_octets!(ieee1609dot2::HashedId32<'_>, Some(32), Some(32));
+// encode_octets!(ieee1609dot2::HashedId48<'_>, Some(48), Some(48));
 
-impl Encode for ieee1609dot2::CertificateType {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_enumerated(*self as u8, output)
-    }
-}
+// impl Encode for ieee1609dot2::CertificateType {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_enumerated(*self as u8, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::HashAlgorithm {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_enumerated(*self as u8, output)
-    }
-}
+// impl Encode for ieee1609dot2::HashAlgorithm {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_enumerated(*self as u8, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::IssuerIdentifier<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Sha256AndDigest(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::RsSelf(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-            Self::Sha384AndDigest(inner) => {
-                encode_oer_tag(2, output)?;
-                encode_oer_open_type(inner, output)
-            }
-            Self::Sm3AndDigest(inner) => {
-                encode_oer_tag(3, output)?;
-                encode_oer_open_type(inner, output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::IssuerIdentifier<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Sha256AndDigest(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::RsSelf(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::Sha384AndDigest(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//             Self::Sm3AndDigest(inner) => {
+//                 encode_oer_tag(3, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::ToBeSignedCertificate<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        let is_extended = self.flags.is_some()
-            || self.app_extensions.is_some()
-            || self.cert_issue_extensions.is_some()
-            || self.cert_request_extension.is_some();
-        let bitmap = [
-            self.region.is_some(),
-            self.assurance_level.is_some(),
-            self.app_permissions.is_some(),
-            self.cert_issue_permissions.is_some(),
-            self.cert_request_permissions.is_some(),
-            self.can_request_rollover.is_some(),
-            self.encryption_key.is_some(),
-        ];
-        encode_extension_and_optional_bitmap(Some(is_extended), &bitmap, output)?;
+// impl Encode for ieee1609dot2::ToBeSignedCertificate<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         let is_extended = self.flags.is_some()
+//             || self.app_extensions.is_some()
+//             || self.cert_issue_extensions.is_some()
+//             || self.cert_request_extension.is_some();
+//         let bitmap = [
+//             self.region.is_some(),
+//             self.assurance_level.is_some(),
+//             self.app_permissions.is_some(),
+//             self.cert_issue_permissions.is_some(),
+//             self.cert_request_permissions.is_some(),
+//             self.can_request_rollover.is_some(),
+//             self.encryption_key.is_some(),
+//         ];
+//         encode_extension_and_optional_bitmap(Some(is_extended), &bitmap, output)?;
 
-        self.id.encode(output)?;
-        self.craca_id.encode(output)?;
-        self.crl_series.encode(output)?;
-        self.validity_period.encode(output)?;
-        self.region
-            .as_ref()
-            .map_or(Ok(()), |reg| reg.encode(output))?;
-        self.assurance_level
-            .as_ref()
-            .map_or(Ok(()), |sub_ass| sub_ass.encode(output))?;
-        self.app_permissions
-            .as_ref()
-            .map_or(Ok(()), |app_perm| app_perm.encode(output))?;
-        self.cert_issue_permissions
-            .as_ref()
-            .map_or(Ok(()), |cert_issue_perm| cert_issue_perm.encode(output))?;
-        self.cert_request_permissions
-            .as_ref()
-            .map_or(Ok(()), |cert_request_perm| cert_request_perm.encode(output))?;
-        self.encryption_key
-            .as_ref()
-            .map_or(Ok(()), |enc_key| enc_key.encode(output))?;
-        self.verify_key_indicator.encode(output)?;
-        let ext_bitmap = [
-            self.flags.is_some(),
-            self.app_extensions.is_some(),
-            self.cert_issue_extensions.is_some(),
-            self.cert_request_extension.is_some(),
-        ];
-        if is_extended {
-            encode_oer_varlength_bitstring(&ext_bitmap, output)
-        } else {
-            Ok(())
-        }?;
-        self.flags
-            .as_ref()
-            .map_or(Ok(()), |flags| encode_oer_open_type(flags, output))?;
-        self.app_extensions
-            .as_ref()
-            .map_or(Ok(()), |app_ext| encode_oer_open_type(app_ext, output))?;
-        self.cert_issue_extensions
-            .as_ref()
-            .map_or(Ok(()), |cert_ext| encode_oer_open_type(cert_ext, output))?;
-        self.cert_request_extension
-            .as_ref()
-            .map_or(Ok(()), |cert_ext| encode_oer_open_type(cert_ext, output))?;
-        Ok(())
-    }
-}
+//         self.id.encode(output)?;
+//         self.craca_id.encode(output)?;
+//         self.crl_series.encode(output)?;
+//         self.validity_period.encode(output)?;
+//         self.region
+//             .as_ref()
+//             .map_or(Ok(()), |reg| reg.encode(output))?;
+//         self.assurance_level
+//             .as_ref()
+//             .map_or(Ok(()), |sub_ass| sub_ass.encode(output))?;
+//         self.app_permissions
+//             .as_ref()
+//             .map_or(Ok(()), |app_perm| app_perm.encode(output))?;
+//         self.cert_issue_permissions
+//             .as_ref()
+//             .map_or(Ok(()), |cert_issue_perm| cert_issue_perm.encode(output))?;
+//         self.cert_request_permissions
+//             .as_ref()
+//             .map_or(Ok(()), |cert_request_perm| cert_request_perm.encode(output))?;
+//         self.encryption_key
+//             .as_ref()
+//             .map_or(Ok(()), |enc_key| enc_key.encode(output))?;
+//         self.verify_key_indicator.encode(output)?;
+//         let ext_bitmap = [
+//             self.flags.is_some(),
+//             self.app_extensions.is_some(),
+//             self.cert_issue_extensions.is_some(),
+//             self.cert_request_extension.is_some(),
+//         ];
+//         if is_extended {
+//             encode_oer_varlength_bitstring(&ext_bitmap, output)
+//         } else {
+//             Ok(())
+//         }?;
+//         self.flags
+//             .as_ref()
+//             .map_or(Ok(()), |flags| encode_oer_open_type(flags, output))?;
+//         self.app_extensions
+//             .as_ref()
+//             .map_or(Ok(()), |app_ext| encode_oer_open_type(app_ext, output))?;
+//         self.cert_issue_extensions
+//             .as_ref()
+//             .map_or(Ok(()), |cert_ext| encode_oer_open_type(cert_ext, output))?;
+//         self.cert_request_extension
+//             .as_ref()
+//             .map_or(Ok(()), |cert_ext| encode_oer_open_type(cert_ext, output))?;
+//         Ok(())
+//     }
+// }
 
-impl Encode for ieee1609dot2::AppExtension<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        self.id.encode(output)?;
-        encode_oer_octetstring(Some(0), None, self.content, output)
-    }
-}
+// impl Encode for ieee1609dot2::AppExtension<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         self.id.encode(output)?;
+//         encode_oer_octetstring(Some(0), None, self.content, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::CertIssueExtensionPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Specific(inner) => {
-                encode_oer_tag(0, output)?;
-                encode_oer_octetstring(Some(0), None, inner, output)
-            }
-            Self::All(()) => encode_oer_tag(1, output),
-        }
-    }
-}
+// impl Encode for ieee1609dot2::CertIssueExtensionPermissions<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Specific(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 encode_oer_octetstring(Some(0), None, inner, output)
+//             }
+//             Self::All(()) => encode_oer_tag(1, output),
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::CertRequestExtensionPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Content(inner) => {
-                encode_oer_tag(0, output)?;
-                encode_oer_octetstring(Some(0), None, inner, output)
-            }
-            Self::All(()) => encode_oer_tag(1, output),
-        }
-    }
-}
+// impl Encode for ieee1609dot2::CertRequestExtensionPermissions<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Content(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 encode_oer_octetstring(Some(0), None, inner, output)
+//             }
+//             Self::All(()) => encode_oer_tag(1, output),
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::CertIssueExtension<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        self.id.encode(output)?;
-        self.permissions.encode(output)
-    }
-}
+// impl Encode for ieee1609dot2::CertIssueExtension<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         self.id.encode(output)?;
+//         self.permissions.encode(output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::CertRequestExtension<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        self.id.encode(output)?;
-        self.permissions.encode(output)
-    }
-}
+// impl Encode for ieee1609dot2::CertRequestExtension<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         self.id.encode(output)?;
+//         self.permissions.encode(output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::VerificationKeyIndicator<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::VerificationKey(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::ReconstructionValue(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::VerificationKeyIndicator<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::VerificationKey(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::ReconstructionValue(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::PublicVerificationKey<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::EcdsaNistP256(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::EcdsaBrainpoolP256r1(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-            Self::EcdsaBrainpoolP384r1(inner) => {
-                encode_oer_tag(2, output)?;
-                encode_oer_open_type(inner, output)
-            }
-            Self::EcdsaNistP384(inner) => {
-                encode_oer_tag(3, output)?;
-                encode_oer_open_type(inner, output)
-            }
-            Self::EcsigSm2(inner) => {
-                encode_oer_tag(4, output)?;
-                encode_oer_open_type(inner, output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::PublicVerificationKey<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::EcdsaNistP256(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::EcdsaBrainpoolP256r1(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::EcdsaBrainpoolP384r1(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//             Self::EcdsaNistP384(inner) => {
+//                 encode_oer_tag(3, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//             Self::EcsigSm2(inner) => {
+//                 encode_oer_tag(4, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::PsidGroupPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        let bitmap = [
-            self.min_chain_length == 1,
-            self.chain_length_range == 0,
-            self.ee_type
-                == ieee1609dot2::EndEntityType::from([
-                    true, false, false, false, false, false, false, false,
-                ]),
-        ];
-        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+// impl Encode for ieee1609dot2::PsidGroupPermissions<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         let bitmap = [
+//             self.min_chain_length == 1,
+//             self.chain_length_range == 0,
+//             self.ee_type
+//                 == ieee1609dot2::EndEntityType::from([
+//                     true, false, false, false, false, false, false, false,
+//                 ]),
+//         ];
+//         encode_extension_and_optional_bitmap(None, &bitmap, output)?;
 
-        self.subject_permissions.encode(output)?;
-        if bitmap[0] {
-            encode_oer_integer(Some(0), None, &self.min_chain_length, output)
-        } else {
-            Ok(())
-        }?;
-        if bitmap[1] {
-            encode_oer_integer(Some(0), None, &self.chain_length_range, output)
-        } else {
-            Ok(())
-        }?;
-        if bitmap[0] {
-            self.ee_type.encode(output)
-        } else {
-            Ok(())
-        }?;
-        Ok(())
-    }
-}
+//         self.subject_permissions.encode(output)?;
+//         if bitmap[0] {
+//             encode_oer_integer(Some(0), None, &self.min_chain_length, output)
+//         } else {
+//             Ok(())
+//         }?;
+//         if bitmap[1] {
+//             encode_oer_integer(Some(0), None, &self.chain_length_range, output)
+//         } else {
+//             Ok(())
+//         }?;
+//         if bitmap[0] {
+//             self.ee_type.encode(output)
+//         } else {
+//             Ok(())
+//         }?;
+//         Ok(())
+//     }
+// }
 
-impl Encode for ieee1609dot2::EndEntityType {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        self.0.encode(output)
-    }
-}
+// impl Encode for ieee1609dot2::EndEntityType {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         self.0.encode(output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::PsidSsp<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        let bitmap = [self.ssp.is_some()];
-        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+// impl Encode for ieee1609dot2::PsidSsp<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         let bitmap = [self.ssp.is_some()];
+//         encode_extension_and_optional_bitmap(None, &bitmap, output)?;
 
-        self.psid.encode(output)?;
-        self.ssp.as_ref().map_or(Ok(()), |ssp| ssp.encode(output))
-    }
-}
+//         self.psid.encode(output)?;
+//         self.ssp.as_ref().map_or(Ok(()), |ssp| ssp.encode(output))
+//     }
+// }
 
-impl Encode for ieee1609dot2::PsidSspRange<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        let bitmap = [self.ssp_range.is_some()];
-        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+// impl Encode for ieee1609dot2::PsidSspRange<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         let bitmap = [self.ssp_range.is_some()];
+//         encode_extension_and_optional_bitmap(None, &bitmap, output)?;
 
-        self.psid.encode(output)?;
-        self.ssp_range
-            .as_ref()
-            .map_or(Ok(()), |ssp| ssp.encode(output))
-    }
-}
+//         self.psid.encode(output)?;
+//         self.ssp_range
+//             .as_ref()
+//             .map_or(Ok(()), |ssp| ssp.encode(output))
+//     }
+// }
 
-impl Encode for ieee1609dot2::BitmapSspRange<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_octetstring(Some(1), Some(32), self.ssp_value, output)?;
-        encode_oer_octetstring(Some(1), Some(32), self.ssp_bitmask, output)
-    }
-}
+// impl Encode for ieee1609dot2::BitmapSspRange<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_octetstring(Some(1), Some(32), self.ssp_value, output)?;
+//         encode_oer_octetstring(Some(1), Some(32), self.ssp_bitmask, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::SspRange<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Opaque(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::All(()) => encode_oer_tag(1, output),
-            Self::BitmapSspRange(inner) => {
-                encode_oer_tag(2, output)?;
-                encode_oer_open_type(inner, output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::SspRange<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Opaque(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::All(()) => encode_oer_tag(1, output),
+//             Self::BitmapSspRange(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::SubjectPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Explicit(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::All(()) => encode_oer_tag(1, output),
-        }
-    }
-}
+// impl Encode for ieee1609dot2::SubjectPermissions<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Explicit(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::All(()) => encode_oer_tag(1, output),
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::ServiceSpecificPermissions<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Opaque(inner) => {
-                encode_oer_tag(0, output)?;
-                encode_oer_octetstring(Some(0), None, inner, output)
-            }
-            Self::BitmapSsp(inner) => {
-                encode_oer_tag(1, output)?;
-                encode_oer_open_type(inner, output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::ServiceSpecificPermissions<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Opaque(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 encode_oer_octetstring(Some(0), None, inner, output)
+//             }
+//             Self::BitmapSsp(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::BasePublicEncryptionKey<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::EciesNistP256(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::EciesBrainpoolP256r1(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-            Self::EcencSm2(inner) => {
-                encode_oer_tag(2, output)?;
-                encode_oer_open_type(inner, output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::BasePublicEncryptionKey<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::EciesNistP256(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::EciesBrainpoolP256r1(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::EcencSm2(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::EccP256CurvePoint<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::XOnly(inner) => {
-                encode_oer_tag(0, output)?;
-                encode_oer_octetstring(Some(32), Some(32), inner, output)
-            }
-            Self::Fill(()) => encode_oer_tag(1, output),
-            Self::CompressedY0(inner) => {
-                encode_oer_tag(2, output)?;
-                encode_oer_octetstring(Some(32), Some(32), inner, output)
-            }
-            Self::CompressedY1(inner) => {
-                encode_oer_tag(3, output)?;
-                encode_oer_octetstring(Some(32), Some(32), inner, output)
-            }
-            Self::UncompressedP256(inner) => {
-                encode_oer_tag(4, output)?;
-                inner.encode(output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::EccP256CurvePoint<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::XOnly(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 encode_oer_octetstring(Some(32), Some(32), inner, output)
+//             }
+//             Self::Fill(()) => encode_oer_tag(1, output),
+//             Self::CompressedY0(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 encode_oer_octetstring(Some(32), Some(32), inner, output)
+//             }
+//             Self::CompressedY1(inner) => {
+//                 encode_oer_tag(3, output)?;
+//                 encode_oer_octetstring(Some(32), Some(32), inner, output)
+//             }
+//             Self::UncompressedP256(inner) => {
+//                 encode_oer_tag(4, output)?;
+//                 inner.encode(output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::EccP384CurvePoint<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::XOnly(inner) => {
-                encode_oer_tag(0, output)?;
-                encode_oer_octetstring(Some(48), Some(48), inner, output)
-            }
-            Self::Fill(()) => encode_oer_tag(1, output),
-            Self::CompressedY0(inner) => {
-                encode_oer_tag(2, output)?;
-                encode_oer_octetstring(Some(48), Some(48), inner, output)
-            }
-            Self::CompressedY1(inner) => {
-                encode_oer_tag(3, output)?;
-                encode_oer_octetstring(Some(48), Some(48), inner, output)
-            }
-            Self::UncompressedP384(inner) => {
-                encode_oer_tag(4, output)?;
-                inner.encode(output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::EccP384CurvePoint<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::XOnly(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 encode_oer_octetstring(Some(48), Some(48), inner, output)
+//             }
+//             Self::Fill(()) => encode_oer_tag(1, output),
+//             Self::CompressedY0(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 encode_oer_octetstring(Some(48), Some(48), inner, output)
+//             }
+//             Self::CompressedY1(inner) => {
+//                 encode_oer_tag(3, output)?;
+//                 encode_oer_octetstring(Some(48), Some(48), inner, output)
+//             }
+//             Self::UncompressedP384(inner) => {
+//                 encode_oer_tag(4, output)?;
+//                 inner.encode(output)
+//             }
+//         }
+//     }
+// }
 
-macro_rules! encode_sequence_of {
-    ($typ:ty) => {
-        impl Encode for $typ {
-            fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-                encode_oer_integer(Some(0), None, &self.0.len(), output)?;
-                for inner in &self.0 {
-                    inner.encode(output)?;
-                }
-                Ok(())
-            }
-        }
-    };
-}
+// macro_rules! encode_sequence_of {
+//     ($typ:ty) => {
+//         impl Encode for $typ {
+//             fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//                 encode_oer_integer(Some(0), None, &self.0.len(), output)?;
+//                 for inner in &self.0 {
+//                     inner.encode(output)?;
+//                 }
+//                 Ok(())
+//             }
+//         }
+//     };
+// }
 
-encode_sequence_of!(ieee1609dot2::SequenceOfUint16);
-encode_sequence_of!(ieee1609dot2::SequenceOfUint8);
-encode_sequence_of!(ieee1609dot2::SequenceOfRegionAndSubregions);
-encode_sequence_of!(ieee1609dot2::SequenceOfRectangularRegion);
-encode_sequence_of!(ieee1609dot2::SequenceOfIdentifiedRegion);
-encode_sequence_of!(ieee1609dot2::PolygonalRegion);
-encode_sequence_of!(ieee1609dot2::SequenceOfPsidSspRange<'_>);
-encode_sequence_of!(ieee1609dot2::SequenceOfPsid);
-encode_sequence_of!(ieee1609dot2::SequenceOfPsidSsp<'_>);
-encode_sequence_of!(ieee1609dot2::SequenceOfOctetString<'_>);
-encode_sequence_of!(ieee1609dot2::SequenceOfPsidGroupPermissions<'_>);
-encode_sequence_of!(ieee1609dot2::SequenceOfAppExtensions<'_>);
-encode_sequence_of!(ieee1609dot2::SequenceOfCertIssueExtensions<'_>);
-encode_sequence_of!(ieee1609dot2::SequenceOfCertRequestExtensions<'_>);
-encode_sequence_of!(ieee1609dot2::SequenceOfHashedId3<'_>);
-encode_sequence_of!(ieee1609dot2::ContributedExtensionBlocks<'_>);
-encode_sequence_of!(ieee1609dot2::ContributedExtensionBlockExtns<'_>);
+// encode_sequence_of!(ieee1609dot2::SequenceOfUint16);
+// encode_sequence_of!(ieee1609dot2::SequenceOfUint8);
+// encode_sequence_of!(ieee1609dot2::SequenceOfRegionAndSubregions);
+// encode_sequence_of!(ieee1609dot2::SequenceOfRectangularRegion);
+// encode_sequence_of!(ieee1609dot2::SequenceOfIdentifiedRegion);
+// encode_sequence_of!(ieee1609dot2::PolygonalRegion);
+// encode_sequence_of!(ieee1609dot2::SequenceOfPsidSspRange<'_>);
+// encode_sequence_of!(ieee1609dot2::SequenceOfPsid);
+// encode_sequence_of!(ieee1609dot2::SequenceOfPsidSsp<'_>);
+// encode_sequence_of!(ieee1609dot2::SequenceOfOctetString<'_>);
+// encode_sequence_of!(ieee1609dot2::SequenceOfPsidGroupPermissions<'_>);
+// encode_sequence_of!(ieee1609dot2::SequenceOfAppExtensions<'_>);
+// encode_sequence_of!(ieee1609dot2::SequenceOfCertIssueExtensions<'_>);
+// encode_sequence_of!(ieee1609dot2::SequenceOfCertRequestExtensions<'_>);
+// encode_sequence_of!(ieee1609dot2::SequenceOfHashedId3<'_>);
+// encode_sequence_of!(ieee1609dot2::ContributedExtensionBlocks<'_>);
+// encode_sequence_of!(ieee1609dot2::ContributedExtensionBlockExtns<'_>);
 
-macro_rules! encode_sequence {
-    ($typ:ty, $( $field:ident ),*) => {
-        impl Encode for $typ {
-            fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-                $(
-                    self.$field.encode(output)?;
-                )*
-                Ok(())
-            }
-        }
-    };
-}
+// macro_rules! encode_sequence {
+//     ($typ:ty, $( $field:ident ),*) => {
+//         impl Encode for $typ {
+//             fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//                 $(
+//                     self.$field.encode(output)?;
+//                 )*
+//                 Ok(())
+//             }
+//         }
+//     };
+// }
 
-encode_sequence!(ieee1609dot2::ValidityPeriod, start, duration);
-encode_sequence!(ieee1609dot2::CountryAndRegions, country_only, regions);
-encode_sequence!(ieee1609dot2::RegionAndSubregions, region, subregions);
-encode_sequence!(
-    ieee1609dot2::CountryAndSubregions,
-    country_only,
-    region_and_subregions
-);
-encode_sequence!(ieee1609dot2::ThreeDLocation, latitude, longitude, elevation);
-encode_sequence!(ieee1609dot2::TwoDLocation, latitude, longitude);
-encode_sequence!(ieee1609dot2::RectangularRegion, north_west, south_east);
-encode_sequence!(ieee1609dot2::CircularRegion, center, radius);
-encode_sequence!(
-    ieee1609dot2::PublicEncryptionKey<'_>,
-    supported_symm_alg,
-    public_key
-);
-encode_sequence!(ieee1609dot2::ToBeSignedData<'_>, payload, header_info);
-encode_sequence!(
-    ieee1609dot2::Ieee1609Dot2Data<'_>,
-    protocol_version,
-    content
-);
-encode_sequence!(
-    ieee1609dot2::ContributedExtensionBlock<'_>,
-    contributor_id,
-    extns
-);
+// encode_sequence!(ieee1609dot2::ValidityPeriod, start, duration);
+// encode_sequence!(ieee1609dot2::CountryAndRegions, country_only, regions);
+// encode_sequence!(ieee1609dot2::RegionAndSubregions, region, subregions);
+// encode_sequence!(
+//     ieee1609dot2::CountryAndSubregions,
+//     country_only,
+//     region_and_subregions
+// );
+// encode_sequence!(ieee1609dot2::ThreeDLocation, latitude, longitude, elevation);
+// encode_sequence!(ieee1609dot2::TwoDLocation, latitude, longitude);
+// encode_sequence!(ieee1609dot2::RectangularRegion, north_west, south_east);
+// encode_sequence!(ieee1609dot2::CircularRegion, center, radius);
+// encode_sequence!(
+//     ieee1609dot2::PublicEncryptionKey<'_>,
+//     supported_symm_alg,
+//     public_key
+// );
+// encode_sequence!(ieee1609dot2::ToBeSignedData<'_>, payload, header_info);
+// encode_sequence!(
+//     ieee1609dot2::Ieee1609Dot2Data<'_>,
+//     protocol_version,
+//     content
+// );
+// encode_sequence!(
+//     ieee1609dot2::ContributedExtensionBlock<'_>,
+//     contributor_id,
+//     extns
+// );
 
-impl Encode for ieee1609dot2::SymmAlgorithm {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_enumerated(*self as u8, output)
-    }
-}
+// impl Encode for ieee1609dot2::SymmAlgorithm {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_enumerated(*self as u8, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::GeographicRegion {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::CircularRegion(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::RectangularRegion(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-            Self::PolygonalRegion(inner) => {
-                encode_oer_tag(2, output)?;
-                inner.encode(output)
-            }
-            Self::IdentifiedRegion(inner) => {
-                encode_oer_tag(3, output)?;
-                inner.encode(output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::GeographicRegion {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::CircularRegion(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::RectangularRegion(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::PolygonalRegion(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::IdentifiedRegion(inner) => {
+//                 encode_oer_tag(3, output)?;
+//                 inner.encode(output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::IdentifiedRegion {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::CountryOnly(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::CountryAndRegions(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-            Self::CountryAndSubregions(inner) => {
-                encode_oer_tag(2, output)?;
-                inner.encode(output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::IdentifiedRegion {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::CountryOnly(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::CountryAndRegions(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::CountryAndSubregions(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 inner.encode(output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::Duration {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Microseconds(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::Milliseconds(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-            Self::Seconds(inner) => {
-                encode_oer_tag(2, output)?;
-                inner.encode(output)
-            }
-            Self::Minutes(inner) => {
-                encode_oer_tag(3, output)?;
-                inner.encode(output)
-            }
-            Self::Hours(inner) => {
-                encode_oer_tag(4, output)?;
-                inner.encode(output)
-            }
-            Self::SixtyHours(inner) => {
-                encode_oer_tag(5, output)?;
-                inner.encode(output)
-            }
-            Self::Years(inner) => {
-                encode_oer_tag(6, output)?;
-                inner.encode(output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::Duration {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Microseconds(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::Milliseconds(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::Seconds(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::Minutes(inner) => {
+//                 encode_oer_tag(3, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::Hours(inner) => {
+//                 encode_oer_tag(4, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::SixtyHours(inner) => {
+//                 encode_oer_tag(5, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::Years(inner) => {
+//                 encode_oer_tag(6, output)?;
+//                 inner.encode(output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::CertificateId<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::LinkageData(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::Name(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-            Self::BinaryId(inner) => {
-                encode_oer_tag(2, output)?;
-                encode_oer_octetstring(Some(1), Some(64), inner, output)
-            }
-            Self::None(()) => encode_oer_tag(3, output),
-        }
-    }
-}
+// impl Encode for ieee1609dot2::CertificateId<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::LinkageData(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::Name(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::BinaryId(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 encode_oer_octetstring(Some(1), Some(64), inner, output)
+//             }
+//             Self::None(()) => encode_oer_tag(3, output),
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::Hostname {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_octetstring(Some(0), Some(255), self.0.as_bytes(), output)
-    }
-}
+// impl Encode for ieee1609dot2::Hostname {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_octetstring(Some(0), Some(255), self.0.as_bytes(), output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::LinkageData<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        let bitmap = [self.group_linkage_value.is_some()];
-        encode_extension_and_optional_bitmap(None, &bitmap, output)?;
+// impl Encode for ieee1609dot2::LinkageData<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         let bitmap = [self.group_linkage_value.is_some()];
+//         encode_extension_and_optional_bitmap(None, &bitmap, output)?;
 
-        self.i_cert.encode(output)?;
-        self.linkage_value.encode(output)?;
-        self.group_linkage_value
-            .as_ref()
-            .map_or(Ok(()), |glv| glv.encode(output))
-    }
-}
+//         self.i_cert.encode(output)?;
+//         self.linkage_value.encode(output)?;
+//         self.group_linkage_value
+//             .as_ref()
+//             .map_or(Ok(()), |glv| glv.encode(output))
+//     }
+// }
 
-impl Encode for ieee1609dot2::GroupLinkageValue<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_octetstring(Some(4), Some(4), self.j_value, output)?;
-        encode_oer_octetstring(Some(9), Some(9), self.value, output)
-    }
-}
+// impl Encode for ieee1609dot2::GroupLinkageValue<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_octetstring(Some(4), Some(4), self.j_value, output)?;
+//         encode_oer_octetstring(Some(9), Some(9), self.value, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::EccP256CurvePointUncompressedP256<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_octetstring(Some(32), Some(32), self.x, output)?;
-        encode_oer_octetstring(Some(32), Some(32), self.y, output)
-    }
-}
+// impl Encode for ieee1609dot2::EccP256CurvePointUncompressedP256 {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_octetstring(Some(32), Some(32), self.x, output)?;
+//         encode_oer_octetstring(Some(32), Some(32), self.y, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::EccP384CurvePointUncompressedP384<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_octetstring(Some(48), Some(48), self.x, output)?;
-        encode_oer_octetstring(Some(48), Some(48), self.y, output)
-    }
-}
+// impl Encode for ieee1609dot2::EccP384CurvePointUncompressedP384 {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_octetstring(Some(48), Some(48), self.x, output)?;
+//         encode_oer_octetstring(Some(48), Some(48), self.y, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::EcsigP256Signature<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_octetstring(Some(32), Some(32), self.r_sig, output)?;
-        encode_oer_octetstring(Some(32), Some(32), self.s_sig, output)
-    }
-}
+// impl Encode for ieee1609dot2::EcsigP256Signature {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_octetstring(Some(32), Some(32), self.r_sig, output)?;
+//         encode_oer_octetstring(Some(32), Some(32), self.s_sig, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::EcdsaP256Signature<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        self.r_sig.encode(output)?;
-        encode_oer_octetstring(Some(32), Some(32), self.s_sig, output)
-    }
-}
+// impl Encode for ieee1609dot2::EcdsaP256Signature {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         self.r_sig.encode(output)?;
+//         encode_oer_octetstring(Some(32), Some(32), self.s_sig, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::EcdsaP384Signature<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        self.r_sig.encode(output)?;
-        encode_oer_octetstring(Some(48), Some(48), self.s_sig, output)
-    }
-}
+// impl Encode for ieee1609dot2::EcdsaP384Signature {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         self.r_sig.encode(output)?;
+//         encode_oer_octetstring(Some(48), Some(48), self.s_sig, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::Signature<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::EcdsaNistP256Signature(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::EcdsaBrainpoolP256r1Signature(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-            Self::EcdsaBrainpoolP384r1Signature(inner) => {
-                encode_oer_tag(2, output)?;
-                encode_oer_open_type(inner, output)
-            }
-            Self::EcdsaNistP384Signature(inner) => {
-                encode_oer_tag(3, output)?;
-                encode_oer_open_type(inner, output)
-            }
-            Self::Sm2Signature(inner) => {
-                encode_oer_tag(4, output)?;
-                encode_oer_open_type(inner, output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::Signature<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::EcdsaNistP256Signature(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::EcdsaBrainpoolP256r1Signature(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::EcdsaBrainpoolP384r1Signature(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//             Self::EcdsaNistP384Signature(inner) => {
+//                 encode_oer_tag(3, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//             Self::Sm2Signature(inner) => {
+//                 encode_oer_tag(4, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::HashedData<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Sha256HashedData(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::Sha384HashedData(inner) => {
-                encode_oer_tag(1, output)?;
-                encode_oer_open_type(inner, output)
-            }
-            Self::Sm3HashedData(inner) => {
-                encode_oer_tag(2, output)?;
-                encode_oer_open_type(inner, output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::HashedData {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Sha256HashedData(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::Sha384HashedData(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//             Self::Sm3HashedData(inner) => {
+//                 encode_oer_tag(2, output)?;
+//                 encode_oer_open_type(inner, output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::EncryptionKey<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Public(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            Self::Symmetric(inner) => {
-                encode_oer_tag(1, output)?;
-                inner.encode(output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::EncryptionKey {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Public(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             Self::Symmetric(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 inner.encode(output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::SymmetricEncryptionKey<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            Self::Aes128Ccm(inner) => {
-                encode_oer_tag(0, output)?;
-                encode_oer_octetstring(Some(16), Some(16), inner, output)
-            }
-            Self::Sm4Ccm(inner) => {
-                encode_oer_tag(1, output)?;
-                let mut encoder = Encoder::new();
-                encode_oer_octetstring(Some(16), Some(16), inner, &mut encoder)?;
-                #[cfg(not(feature = "validate"))]
-                let inner_encoded: Vec<u8> = encoder.into();
-                #[cfg(feature = "validate")]
-                let inner_encoded: alloc::vec::Vec<u8> = encoder.into();
-                encode_oer_octetstring(Some(0), None, inner_encoded.as_slice(), output)
-            }
-        }
-    }
-}
+// impl Encode for ieee1609dot2::SymmetricEncryptionKey<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             Self::Aes128Ccm(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 encode_oer_octetstring(Some(16), Some(16), inner, output)
+//             }
+//             Self::Sm4Ccm(inner) => {
+//                 encode_oer_tag(1, output)?;
+//                 let mut encoder = Encoder::new();
+//                 encode_oer_octetstring(Some(16), Some(16), inner, &mut encoder)?;
+//                 #[cfg(not(feature = "validate"))]
+//                 let inner_encoded: Vec<u8> = encoder.into();
+//                 #[cfg(feature = "validate")]
+//                 let inner_encoded: alloc::vec::Vec<u8> = encoder.into();
+//                 encode_oer_octetstring(Some(0), None, inner_encoded.as_slice(), output)
+//             }
+//         }
+//     }
+// }
 
-impl Encode for ieee1609dot2::AnonymousContributedExtensionBlockExtns<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_oer_octetstring(Some(0), None, self.0, output)
-    }
-}
+// impl Encode for ieee1609dot2::AnonymousContributedExtensionBlockExtns<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_oer_octetstring(Some(0), None, self.0, output)
+//     }
+// }
 
-impl Encode for ieee1609dot2::SignedDataPayload<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        let bitmap = [self.data.is_some(), self.ext_data_hash.is_some()];
-        encode_extension_and_optional_bitmap(Some(self.omitted.is_some()), &bitmap, output)?;
+// impl Encode for ieee1609dot2::SignedDataPayload<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         let bitmap = [self.data.is_some(), self.ext_data_hash.is_some()];
+//         encode_extension_and_optional_bitmap(Some(self.omitted.is_some()), &bitmap, output)?;
 
-        self.data
-            .as_ref()
-            .map_or(Ok(()), |data| data.encode(output))?;
-        self.ext_data_hash
-            .as_ref()
-            .map_or(Ok(()), |hash| hash.encode(output))?;
-        self.omitted
-            .map_or(Ok(()), |()| encode_oer_varlength_bitstring(&[true], output))
-    }
-}
+//         self.data
+//             .as_ref()
+//             .map_or(Ok(()), |data| data.encode(output))?;
+//         self.ext_data_hash
+//             .as_ref()
+//             .map_or(Ok(()), |hash| hash.encode(output))?;
+//         self.omitted
+//             .map_or(Ok(()), |()| encode_oer_varlength_bitstring(&[true], output))
+//     }
+// }
 
-impl Encode for ieee1609dot2::Ieee1609Dot2Content<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        match self {
-            ieee1609dot2::Ieee1609Dot2Content::UnsecuredData(inner) => {
-                encode_oer_tag(0, output)?;
-                inner.encode(output)
-            }
-            _ => todo!(),
-        }
-    }
-}
+// impl Encode for ieee1609dot2::Ieee1609Dot2Content<'_> {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         match self {
+//             ieee1609dot2::Ieee1609Dot2Content::UnsecuredData(inner) => {
+//                 encode_oer_tag(0, output)?;
+//                 inner.encode(output)
+//             }
+//             _ => todo!(),
+//         }
+//     }
+// }
 
-encode_int!(
-    ieee1609dot2::Uint64,
-    Some(0),
-    Some(18_446_744_073_709_551_615)
-);
+// encode_int!(
+//     ieee1609dot2::Uint64,
+//     Some(0),
+//     Some(18_446_744_073_709_551_615)
+// );
 
-impl Encode for ieee1609dot2::HeaderInfo<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        let is_extended = self.inline_p2pcd_request.is_some()
-            || self.requested_certificate.is_some()
-            || self.pdu_functional_type.is_some()
-            || self.contributed_extensions.is_some();
-        let bitmap = [
-            self.generation_time.is_some(),
-            self.expiry_time.is_some(),
-            self.generation_location.is_some(),
-            self.p2pcd_learning_request.is_some(),
-            self.missing_crl_identifier.is_some(),
-            self.encryption_key.is_some(),
-        ];
-        encode_extension_and_optional_bitmap(Some(is_extended), &bitmap, output)?;
+// impl Encode for ieee1609dot2::HeaderInfo {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         let is_extended = self.inline_p2pcd_request.is_some()
+//             || self.requested_certificate.is_some()
+//             || self.pdu_functional_type.is_some()
+//             || self.contributed_extensions.is_some();
+//         let bitmap = [
+//             self.generation_time.is_some(),
+//             self.expiry_time.is_some(),
+//             self.generation_location.is_some(),
+//             self.p2pcd_learning_request.is_some(),
+//             self.missing_crl_identifier.is_some(),
+//             self.encryption_key.is_some(),
+//         ];
+//         encode_extension_and_optional_bitmap(Some(is_extended), &bitmap, output)?;
 
-        self.psid.encode(output)?;
-        self.generation_time
-            .as_ref()
-            .map_or(Ok(()), |time| time.encode(output))?;
-        self.expiry_time
-            .as_ref()
-            .map_or(Ok(()), |time| time.encode(output))?;
-        self.generation_location
-            .as_ref()
-            .map_or(Ok(()), |location| location.encode(output))?;
-        self.p2pcd_learning_request
-            .as_ref()
-            .map_or(Ok(()), |id| id.encode(output))?;
-        self.missing_crl_identifier
-            .as_ref()
-            .map_or(Ok(()), |id| id.encode(output))?;
-        self.encryption_key
-            .as_ref()
-            .map_or(Ok(()), |enc_key| enc_key.encode(output))?;
-        let ext_bitmap = [
-            self.inline_p2pcd_request.is_some(),
-            self.requested_certificate.is_some(),
-            self.pdu_functional_type.is_some(),
-            self.contributed_extensions.is_some(),
-        ];
-        if is_extended {
-            encode_oer_varlength_bitstring(&ext_bitmap, output)
-        } else {
-            Ok(())
-        }?;
-        self.inline_p2pcd_request
-            .as_ref()
-            .map_or(Ok(()), |request| encode_oer_open_type(request, output))?;
-        self.requested_certificate
-            .as_ref()
-            .map_or(Ok(()), |cert| encode_oer_open_type(cert, output))?;
-        self.pdu_functional_type
-            .as_ref()
-            .map_or(Ok(()), |ty| encode_oer_open_type(ty, output))?;
-        self.contributed_extensions
-            .as_ref()
-            .map_or(Ok(()), |ext| encode_oer_open_type(ext, output))?;
-        Ok(())
-    }
-}
+//         self.psid.encode(output)?;
+//         self.generation_time
+//             .as_ref()
+//             .map_or(Ok(()), |time| time.encode(output))?;
+//         self.expiry_time
+//             .as_ref()
+//             .map_or(Ok(()), |time| time.encode(output))?;
+//         self.generation_location
+//             .as_ref()
+//             .map_or(Ok(()), |location| location.encode(output))?;
+//         self.p2pcd_learning_request
+//             .as_ref()
+//             .map_or(Ok(()), |id| id.encode(output))?;
+//         self.missing_crl_identifier
+//             .as_ref()
+//             .map_or(Ok(()), |id| id.encode(output))?;
+//         self.encryption_key
+//             .as_ref()
+//             .map_or(Ok(()), |enc_key| enc_key.encode(output))?;
+//         let ext_bitmap = [
+//             self.inline_p2pcd_request.is_some(),
+//             self.requested_certificate.is_some(),
+//             self.pdu_functional_type.is_some(),
+//             self.contributed_extensions.is_some(),
+//         ];
+//         if is_extended {
+//             encode_oer_varlength_bitstring(&ext_bitmap, output)
+//         } else {
+//             Ok(())
+//         }?;
+//         self.inline_p2pcd_request
+//             .as_ref()
+//             .map_or(Ok(()), |request| encode_oer_open_type(request, output))?;
+//         self.requested_certificate
+//             .as_ref()
+//             .map_or(Ok(()), |cert| encode_oer_open_type(cert, output))?;
+//         self.pdu_functional_type
+//             .as_ref()
+//             .map_or(Ok(()), |ty| encode_oer_open_type(ty, output))?;
+//         self.contributed_extensions
+//             .as_ref()
+//             .map_or(Ok(()), |ext| encode_oer_open_type(ext, output))?;
+//         Ok(())
+//     }
+// }
 
-impl Encode for ieee1609dot2::MissingCrlIdentifier<'_> {
-    fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        encode_extension_and_optional_bitmap(Some(false), &[], output)?;
+// impl Encode for ieee1609dot2::MissingCrlIdentifier {
+//     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
+//         encode_extension_and_optional_bitmap(Some(false), &[], output)?;
 
-        self.craca_id.encode(output)?;
-        self.crl_series.encode(output)
-    }
-}
+//         self.craca_id.encode(output)?;
+//         self.crl_series.encode(output)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
