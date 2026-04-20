@@ -1,12 +1,25 @@
-## [unreleased]
+## [0.3.0-rc.3] - 2026-04-20
 
 ### 🚀 Features
 
 - *(ci)* Add publishing workflow
 
+### 🐛 Bug Fixes
+
+- *(ci)* Remove irrelevant step from job
+
+### 🚜 Refactor
+
+- Move message types from standard to own module
+
 ### 📚 Documentation
 
 - *(validate)* Follow clippy recommendation
+- Refactor and extend rust docs
+
+### ⚙️ Miscellaneous Tasks
+
+- Generate first changelog
 ## [0.3.0-rc.2] - 2026-02-03
 
 ### ⚙️ Miscellaneous Tasks
