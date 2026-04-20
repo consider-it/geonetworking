@@ -346,3 +346,23 @@ pub struct LSReply {
     /// Short Position Vector containing the position of the destination
     pub destination_position_vector: ShortPositionVector,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gets_lifetime_base() {
+        assert_eq!(Lifetime(127).base(), 3);
+        assert_eq!(Lifetime(126).base(), 2);
+        assert_eq!(Lifetime(125).base(), 1);
+    }
+
+    #[test]
+    fn gets_lifetime_multiplier() {
+        assert_eq!(Lifetime(5).multiplier(), 1);
+        assert_eq!(Lifetime(9).multiplier(), 2);
+        assert_eq!(Lifetime(125).multiplier(), 31);
+        assert_eq!(Lifetime(255).multiplier(), 63);
+    }
+}
