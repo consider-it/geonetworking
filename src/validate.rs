@@ -1,9 +1,3 @@
-use crate::{
-    Certificate, EccP256CurvePoint, EccP256CurvePointUncompressedP256, EccP384CurvePoint,
-    EccP384CurvePointUncompressedP384, EcdsaP256Signature, EcdsaP384Signature, EcsigP256Signature,
-    EncodeError, HeaderInfo, Ieee1609Dot2Content, Ieee1609Dot2Data, Packet, PublicVerificationKey,
-    Signature, SignedData, SignerIdentifier, Uint8, VerificationKeyIndicator,
-};
 use ecdsa::{
     elliptic_curve::{point::DecompressPoint, subtle::Choice},
     signature::Verifier,
@@ -11,6 +5,8 @@ use ecdsa::{
 };
 use num::Integer;
 use sha2::{Digest, Sha256, Sha384};
+
+use crate::{ieee1609dot2, EncodeError, Packet};
 
 /// Packet validation
 pub trait Validate {
@@ -54,9 +50,9 @@ impl From<EncodeError> for ValidationError {
     }
 }
 
-impl Validate for Ieee1609Dot2Data<'_> {
+impl Validate for ieee1609dot2::Ieee1609Dot2Data<'_> {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
-        if self.protocol_version != Uint8(3) {
+        if self.protocol_version != ieee1609dot2::Uint8(3) {
             return Ok(ValidationResult::Failure {
                 reason: format!(
                     "Protocol version of IEEE 1609.2 data must be 3. Found {}",
@@ -68,14 +64,14 @@ impl Validate for Ieee1609Dot2Data<'_> {
     }
 }
 
-impl Validate for Ieee1609Dot2Content<'_> {
+impl Validate for ieee1609dot2::Ieee1609Dot2Content<'_> {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         match self {
-            Ieee1609Dot2Content::UnsecuredData(_) => todo!(),
-            Ieee1609Dot2Content::SignedData(s) => s.validate(),
-            Ieee1609Dot2Content::EncryptedData(_) => todo!(),
-            Ieee1609Dot2Content::SignedCertificateRequest(_) => todo!(),
-            Ieee1609Dot2Content::SignedX509CertificateRequest(_) => todo!(),
+            Self::UnsecuredData(_) => todo!(),
+            Self::SignedData(s) => s.validate(),
+            Self::EncryptedData(_) => todo!(),
+            Self::SignedCertificateRequest(_) => todo!(),
+            Self::SignedX509CertificateRequest(_) => todo!(),
         }
     }
 }
@@ -93,15 +89,15 @@ macro_rules! validate_and_continue {
 impl Validate for Packet<'_> {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         match self {
-            Packet::Unsecured { .. } => Ok(ValidationResult::NotApplicable {
+            Self::Unsecured { .. } => Ok(ValidationResult::NotApplicable {
                 info: "Unsecured GeoNetworking packets are not validated.",
             }),
-            Packet::Secured { secured, .. } => secured.validate(),
+            Self::Secured { secured, .. } => secured.validate(),
         }
     }
 }
 
-impl Validate for SignedData<'_> {
+impl Validate for ieee1609dot2::SignedData<'_> {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         let data = self.tbs_data.raw;
 
@@ -109,17 +105,17 @@ impl Validate for SignedData<'_> {
         validate_and_continue!(&self.signer);
 
         let (verifying_key, encoded_certificate) = match &self.signer {
-            SignerIdentifier::Certificate(c) => {
+            ieee1609dot2::SignerIdentifier::Certificate(c) => {
                 let certificate = c.0.first().ok_or(ValidationError::InvalidInput(
                     "Certificate list is empty!".into(),
                 ))?;
                 (&certificate.to_be_signed.verify_key_indicator, certificate.raw)
             }
-            SignerIdentifier::Digest(_) => {
+            ieee1609dot2::SignerIdentifier::Digest(_) => {
                 // TODO: Support digest lookup
                 return Err(ValidationError::Unsupported("Certificate retrieval by digest is unsupported!".into()))
             },
-            SignerIdentifier::RsSelf(()) => {
+            ieee1609dot2::SignerIdentifier::RsSelf(()) => {
                 return Ok(ValidationResult::Failure {
                     reason: "Violates ETSI TS 103 097: Signer Identifier must be of type Digest or Certificate!".into(),
                 })
@@ -128,32 +124,47 @@ impl Validate for SignedData<'_> {
 
         match (&self.signature, verifying_key) {
             (
-                Signature::EcdsaNistP256Signature(EcdsaP256Signature { r_sig, s_sig }),
-                VerificationKeyIndicator::VerificationKey(PublicVerificationKey::EcdsaNistP256(
-                    key,
-                )),
+                ieee1609dot2::Signature::EcdsaNistP256Signature(ieee1609dot2::EcdsaP256Signature {
+                    r_sig,
+                    s_sig,
+                }),
+                ieee1609dot2::VerificationKeyIndicator::VerificationKey(
+                    ieee1609dot2::PublicVerificationKey::EcdsaNistP256(key),
+                ),
             ) => ecdsa_nist_p256(r_sig, s_sig, key, data, Some(encoded_certificate)),
             (
-                Signature::EcdsaBrainpoolP256r1Signature(EcdsaP256Signature { r_sig, s_sig }),
-                VerificationKeyIndicator::VerificationKey(
-                    PublicVerificationKey::EcdsaBrainpoolP256r1(key),
+                ieee1609dot2::Signature::EcdsaBrainpoolP256r1Signature(
+                    ieee1609dot2::EcdsaP256Signature { r_sig, s_sig },
+                ),
+                ieee1609dot2::VerificationKeyIndicator::VerificationKey(
+                    ieee1609dot2::PublicVerificationKey::EcdsaBrainpoolP256r1(key),
                 ),
             ) => ecdsa_brainpool_p256_r1(r_sig, s_sig, key, data, Some(encoded_certificate)),
             (
-                Signature::EcdsaBrainpoolP384r1Signature(EcdsaP384Signature { r_sig, s_sig }),
-                VerificationKeyIndicator::VerificationKey(
-                    PublicVerificationKey::EcdsaBrainpoolP384r1(key),
+                ieee1609dot2::Signature::EcdsaBrainpoolP384r1Signature(
+                    ieee1609dot2::EcdsaP384Signature { r_sig, s_sig },
+                ),
+                ieee1609dot2::VerificationKeyIndicator::VerificationKey(
+                    ieee1609dot2::PublicVerificationKey::EcdsaBrainpoolP384r1(key),
                 ),
             ) => ecdsa_brainpool_p384_r1(r_sig, s_sig, key, data, Some(encoded_certificate)),
             (
-                Signature::EcdsaNistP384Signature(EcdsaP384Signature { r_sig, s_sig }),
-                VerificationKeyIndicator::VerificationKey(PublicVerificationKey::EcdsaNistP384(
-                    key,
-                )),
+                ieee1609dot2::Signature::EcdsaNistP384Signature(ieee1609dot2::EcdsaP384Signature {
+                    r_sig,
+                    s_sig,
+                }),
+                ieee1609dot2::VerificationKeyIndicator::VerificationKey(
+                    ieee1609dot2::PublicVerificationKey::EcdsaNistP384(key),
+                ),
             ) => ecdsa_nist_p384(r_sig, s_sig, key, data, Some(encoded_certificate)),
             (
-                Signature::Sm2Signature(EcsigP256Signature { r_sig, s_sig }),
-                VerificationKeyIndicator::VerificationKey(PublicVerificationKey::EcsigSm2(key)),
+                ieee1609dot2::Signature::Sm2Signature(ieee1609dot2::EcsigP256Signature {
+                    r_sig,
+                    s_sig,
+                }),
+                ieee1609dot2::VerificationKeyIndicator::VerificationKey(
+                    ieee1609dot2::PublicVerificationKey::EcsigSm2(key),
+                ),
             ) => ecdsa_sm2(r_sig, s_sig, key, data, Some(encoded_certificate)),
             _ => Ok(ValidationResult::Failure {
                 reason: format!(
@@ -165,28 +176,28 @@ impl Validate for SignedData<'_> {
     }
 }
 
-impl Validate for SignerIdentifier<'_> {
+impl Validate for ieee1609dot2::SignerIdentifier<'_> {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         match self {
-            SignerIdentifier::Digest(_) => Ok(ValidationResult::Success),
-            SignerIdentifier::Certificate(c) if c.0.len() == 1 => Ok(ValidationResult::Success),
-            SignerIdentifier::Certificate(_) => Ok(ValidationResult::Failure {
+            Self::Digest(_) => Ok(ValidationResult::Success),
+            Self::Certificate(c) if c.0.len() == 1 => Ok(ValidationResult::Success),
+            Self::Certificate(_) => Ok(ValidationResult::Failure {
                 reason: "Exactly one certificate must be included!".into(),
             }),
-            SignerIdentifier::RsSelf(()) => Ok(ValidationResult::Failure {
+            Self::RsSelf(()) => Ok(ValidationResult::Failure {
                 reason: "Violates ETSI TS 103 097: Signer Identifier must be of type Digest or Certificate!".into(),
             }),
         }
     }
 }
 
-impl Validate for Certificate<'_> {
+impl Validate for ieee1609dot2::Certificate<'_> {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         Ok(ValidationResult::Success)
     }
 }
 
-impl Validate for HeaderInfo<'_> {
+impl Validate for ieee1609dot2::HeaderInfo<'_> {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         match (self.expiry_time.as_ref(), self.generation_time.as_ref()) {
             (Some(exp), Some(gen)) if gen <= exp => {
@@ -234,22 +245,24 @@ fn sm3(data: &[u8]) -> Vec<u8> {
 }
 
 fn ecdsa_brainpool_p256_r1(
-    r: &EccP256CurvePoint,
+    r: &ieee1609dot2::EccP256CurvePoint,
     s: &[u8],
-    curve_point: &EccP256CurvePoint,
+    curve_point: &ieee1609dot2::EccP256CurvePoint,
     msg: &[u8],
     encoded_certificate: Option<&[u8]>,
 ) -> Result<ValidationResult, ValidationError> {
     let r_unwrapped = match r {
-        EccP256CurvePoint::Fill(()) => {
+        ieee1609dot2::EccP256CurvePoint::Fill(()) => {
             return Ok(ValidationResult::Failure {
                 reason: "R value of signature is not given!".into(),
             })
         }
-        EccP256CurvePoint::XOnly(x)
-        | EccP256CurvePoint::CompressedY0(x)
-        | EccP256CurvePoint::CompressedY1(x)
-        | EccP256CurvePoint::UncompressedP256(EccP256CurvePointUncompressedP256 { x, .. }) => x,
+        ieee1609dot2::EccP256CurvePoint::XOnly(x)
+        | ieee1609dot2::EccP256CurvePoint::CompressedY0(x)
+        | ieee1609dot2::EccP256CurvePoint::CompressedY1(x)
+        | ieee1609dot2::EccP256CurvePoint::UncompressedP256(
+            ieee1609dot2::EccP256CurvePointUncompressedP256 { x, .. },
+        ) => x,
     };
 
     let signature = ecdsa::Signature::<bp256::BrainpoolP256r1>::from_scalars(
@@ -261,7 +274,7 @@ fn ecdsa_brainpool_p256_r1(
     .unwrap();
 
     let verifying_key = match curve_point {
-        EccP256CurvePoint::CompressedY0(x) => {
+        ieee1609dot2::EccP256CurvePoint::CompressedY0(x) => {
             let affine = bp256::r1::AffinePoint::decompress(
                 &bp256::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -274,7 +287,7 @@ fn ecdsa_brainpool_p256_r1(
             VerifyingKey::from_affine(affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP256CurvePoint::CompressedY1(x) => {
+        ieee1609dot2::EccP256CurvePoint::CompressedY1(x) => {
             let affine = bp256::r1::AffinePoint::decompress(
                 &bp256::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -287,7 +300,9 @@ fn ecdsa_brainpool_p256_r1(
             VerifyingKey::from_affine(affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP256CurvePoint::UncompressedP256(EccP256CurvePointUncompressedP256 { x, y }) => {
+        ieee1609dot2::EccP256CurvePoint::UncompressedP256(
+            ieee1609dot2::EccP256CurvePointUncompressedP256 { x, y },
+        ) => {
             let encoded = bp256::r1::Sec1Point::from_affine_coordinates(
                 &bp256::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -321,22 +336,24 @@ fn ecdsa_brainpool_p256_r1(
 }
 
 fn ecdsa_brainpool_p384_r1(
-    r: &EccP384CurvePoint,
+    r: &ieee1609dot2::EccP384CurvePoint,
     s: &[u8],
-    curve_point: &EccP384CurvePoint,
+    curve_point: &ieee1609dot2::EccP384CurvePoint,
     msg: &[u8],
     encoded_certificate: Option<&[u8]>,
 ) -> Result<ValidationResult, ValidationError> {
     let r_unwrapped = match r {
-        EccP384CurvePoint::Fill(()) => {
+        ieee1609dot2::EccP384CurvePoint::Fill(()) => {
             return Ok(ValidationResult::Failure {
                 reason: "R value of signature is not given!".into(),
             })
         }
-        EccP384CurvePoint::XOnly(x)
-        | EccP384CurvePoint::CompressedY0(x)
-        | EccP384CurvePoint::CompressedY1(x)
-        | EccP384CurvePoint::UncompressedP384(EccP384CurvePointUncompressedP384 { x, .. }) => x,
+        ieee1609dot2::EccP384CurvePoint::XOnly(x)
+        | ieee1609dot2::EccP384CurvePoint::CompressedY0(x)
+        | ieee1609dot2::EccP384CurvePoint::CompressedY1(x)
+        | ieee1609dot2::EccP384CurvePoint::UncompressedP384(
+            ieee1609dot2::EccP384CurvePointUncompressedP384 { x, .. },
+        ) => x,
     };
 
     let signature = ecdsa::Signature::<bp384::BrainpoolP384r1>::from_scalars(
@@ -348,7 +365,7 @@ fn ecdsa_brainpool_p384_r1(
     .unwrap();
 
     let verifying_key = match curve_point {
-        EccP384CurvePoint::CompressedY0(x) => {
+        ieee1609dot2::EccP384CurvePoint::CompressedY0(x) => {
             let affine = bp384::r1::AffinePoint::decompress(
                 &bp384::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -361,7 +378,7 @@ fn ecdsa_brainpool_p384_r1(
             VerifyingKey::from_affine(affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP384CurvePoint::CompressedY1(x) => {
+        ieee1609dot2::EccP384CurvePoint::CompressedY1(x) => {
             let affine = bp384::r1::AffinePoint::decompress(
                 &bp384::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -374,7 +391,9 @@ fn ecdsa_brainpool_p384_r1(
             VerifyingKey::from_affine(affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP384CurvePoint::UncompressedP384(EccP384CurvePointUncompressedP384 { x, y }) => {
+        ieee1609dot2::EccP384CurvePoint::UncompressedP384(
+            ieee1609dot2::EccP384CurvePointUncompressedP384 { x, y },
+        ) => {
             let encoded = bp384::r1::Sec1Point::from_affine_coordinates(
                 &bp384::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -408,22 +427,24 @@ fn ecdsa_brainpool_p384_r1(
 }
 
 fn ecdsa_nist_p256(
-    r: &EccP256CurvePoint,
+    r: &ieee1609dot2::EccP256CurvePoint,
     s: &[u8],
-    curve_point: &EccP256CurvePoint,
+    curve_point: &ieee1609dot2::EccP256CurvePoint,
     msg: &[u8],
     encoded_certificate: Option<&[u8]>,
 ) -> Result<ValidationResult, ValidationError> {
     let r_unwrapped = match r {
-        EccP256CurvePoint::Fill(()) => {
+        ieee1609dot2::EccP256CurvePoint::Fill(()) => {
             return Ok(ValidationResult::Failure {
                 reason: "R value of signature is not given!".into(),
             })
         }
-        EccP256CurvePoint::XOnly(x)
-        | EccP256CurvePoint::CompressedY0(x)
-        | EccP256CurvePoint::CompressedY1(x)
-        | EccP256CurvePoint::UncompressedP256(EccP256CurvePointUncompressedP256 { x, .. }) => x,
+        ieee1609dot2::EccP256CurvePoint::XOnly(x)
+        | ieee1609dot2::EccP256CurvePoint::CompressedY0(x)
+        | ieee1609dot2::EccP256CurvePoint::CompressedY1(x)
+        | ieee1609dot2::EccP256CurvePoint::UncompressedP256(
+            ieee1609dot2::EccP256CurvePointUncompressedP256 { x, .. },
+        ) => x,
     };
 
     let signature = ecdsa::Signature::<p256::NistP256>::from_scalars(
@@ -435,7 +456,7 @@ fn ecdsa_nist_p256(
     .unwrap();
 
     let verifying_key = match curve_point {
-        EccP256CurvePoint::CompressedY0(x) => {
+        ieee1609dot2::EccP256CurvePoint::CompressedY0(x) => {
             let affine = p256::AffinePoint::decompress(
                 &p256::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -448,7 +469,7 @@ fn ecdsa_nist_p256(
             VerifyingKey::from_affine(affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP256CurvePoint::CompressedY1(x) => {
+        ieee1609dot2::EccP256CurvePoint::CompressedY1(x) => {
             let affine = p256::AffinePoint::decompress(
                 &p256::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -461,7 +482,9 @@ fn ecdsa_nist_p256(
             VerifyingKey::from_affine(affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP256CurvePoint::UncompressedP256(EccP256CurvePointUncompressedP256 { x, y }) => {
+        ieee1609dot2::EccP256CurvePoint::UncompressedP256(
+            ieee1609dot2::EccP256CurvePointUncompressedP256 { x, y },
+        ) => {
             let encoded = p256::Sec1Point::from_affine_coordinates(
                 &p256::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -495,22 +518,24 @@ fn ecdsa_nist_p256(
 }
 
 fn ecdsa_nist_p384(
-    r: &EccP384CurvePoint,
+    r: &ieee1609dot2::EccP384CurvePoint,
     s: &[u8],
-    curve_point: &EccP384CurvePoint,
+    curve_point: &ieee1609dot2::EccP384CurvePoint,
     msg: &[u8],
     encoded_certificate: Option<&[u8]>,
 ) -> Result<ValidationResult, ValidationError> {
     let r_unwrapped = match r {
-        EccP384CurvePoint::Fill(()) => {
+        ieee1609dot2::EccP384CurvePoint::Fill(()) => {
             return Ok(ValidationResult::Failure {
                 reason: "R value of signature is not given!".into(),
             })
         }
-        EccP384CurvePoint::XOnly(x)
-        | EccP384CurvePoint::CompressedY0(x)
-        | EccP384CurvePoint::CompressedY1(x)
-        | EccP384CurvePoint::UncompressedP384(EccP384CurvePointUncompressedP384 { x, .. }) => x,
+        ieee1609dot2::EccP384CurvePoint::XOnly(x)
+        | ieee1609dot2::EccP384CurvePoint::CompressedY0(x)
+        | ieee1609dot2::EccP384CurvePoint::CompressedY1(x)
+        | ieee1609dot2::EccP384CurvePoint::UncompressedP384(
+            ieee1609dot2::EccP384CurvePointUncompressedP384 { x, .. },
+        ) => x,
     };
 
     let signature = ecdsa::Signature::<p384::NistP384>::from_scalars(
@@ -522,7 +547,7 @@ fn ecdsa_nist_p384(
     .unwrap();
 
     let verifying_key = match curve_point {
-        EccP384CurvePoint::CompressedY0(x) => {
+        ieee1609dot2::EccP384CurvePoint::CompressedY0(x) => {
             let affine = p384::AffinePoint::decompress(
                 &p384::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -535,7 +560,7 @@ fn ecdsa_nist_p384(
             VerifyingKey::from_affine(affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP384CurvePoint::CompressedY1(x) => {
+        ieee1609dot2::EccP384CurvePoint::CompressedY1(x) => {
             let affine = p384::AffinePoint::decompress(
                 &p384::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -548,7 +573,9 @@ fn ecdsa_nist_p384(
             VerifyingKey::from_affine(affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP384CurvePoint::UncompressedP384(EccP384CurvePointUncompressedP384 { x, y }) => {
+        ieee1609dot2::EccP384CurvePoint::UncompressedP384(
+            ieee1609dot2::EccP384CurvePointUncompressedP384 { x, y },
+        ) => {
             let encoded = p384::Sec1Point::from_affine_coordinates(
                 &p384::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -584,7 +611,7 @@ fn ecdsa_nist_p384(
 fn ecdsa_sm2(
     r: &[u8],
     s: &[u8],
-    curve_point: &EccP256CurvePoint,
+    curve_point: &ieee1609dot2::EccP256CurvePoint,
     msg: &[u8],
     encoded_certificate: Option<&[u8]>,
 ) -> Result<ValidationResult, ValidationError> {
@@ -597,7 +624,7 @@ fn ecdsa_sm2(
     .unwrap();
 
     let verifying_key = match curve_point {
-        EccP256CurvePoint::CompressedY0(x) => {
+        ieee1609dot2::EccP256CurvePoint::CompressedY0(x) => {
             let affine = sm2::AffinePoint::decompress(
                 &sm2::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -610,7 +637,7 @@ fn ecdsa_sm2(
             sm2::dsa::VerifyingKey::from_affine("verifier", affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP256CurvePoint::CompressedY1(x) => {
+        ieee1609dot2::EccP256CurvePoint::CompressedY1(x) => {
             let affine = sm2::AffinePoint::decompress(
                 &sm2::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -623,7 +650,9 @@ fn ecdsa_sm2(
             sm2::dsa::VerifyingKey::from_affine("verifier", affine)
                 .map_err(|e| ValidationError::InvalidInput(format!("{e:?}")))
         }
-        EccP256CurvePoint::UncompressedP256(EccP256CurvePointUncompressedP256 { x, y }) => {
+        ieee1609dot2::EccP256CurvePoint::UncompressedP256(
+            ieee1609dot2::EccP256CurvePointUncompressedP256 { x, y },
+        ) => {
             let affine = sm2::AffinePoint::decompress(
                 &sm2::FieldBytes::try_from(*x).map_err(|err| {
                     ValidationError::InvalidInput(format!(
@@ -664,7 +693,7 @@ mod tests {
         println!(
             "{:?}",
             ecdsa_nist_p256(
-                &EccP256CurvePoint::CompressedY0(&[
+                &ieee1609dot2::EccP256CurvePoint::CompressedY0(&[
                     0x3c, 0xa4, 0x68, 0x09, 0x0a, 0xeb, 0xdd, 0x3e, 0x63, 0xaf, 0x42, 0x1a, 0x91,
                     0x10, 0x17, 0x76, 0x98, 0x9b, 0x32, 0xef, 0x64, 0xbf, 0x00, 0x5d, 0x4c, 0x10,
                     0x44, 0xd6, 0x88, 0x79, 0x49, 0x9b,
@@ -674,7 +703,7 @@ mod tests {
                     0xc1, 0xe8, 0x6a, 0x0a, 0x9c, 0xa0, 0x71, 0x2c, 0xa6, 0xd0, 0x4f, 0x93, 0x4e,
                     0x92, 0xcc, 0x99, 0x45, 0xd2, 0xe8,
                 ],
-                &EccP256CurvePoint::CompressedY0(&[
+                &ieee1609dot2::EccP256CurvePoint::CompressedY0(&[
                     0x13, 0x43, 0x08, 0xc4, 0x32, 0x4d, 0x5f, 0x47, 0xfc, 0xbe, 0x66, 0x5f, 0xb5,
                     0x5b, 0x40, 0x98, 0xb3, 0x8b, 0x9c, 0xaa, 0x48, 0x4b, 0xd4, 0x47, 0x4c, 0x6c,
                     0x52, 0x16, 0x00, 0xa7, 0x50, 0x8c,

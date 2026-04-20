@@ -36,20 +36,20 @@
 //! use geonetworking::*;
 //!
 //! let packet = Packet::Unsecured {
-//!     basic: BasicHeader {
+//!     basic: en302636_4_1::BasicHeader {
 //!         version: 1,
-//!         next_header: NextAfterBasic::CommonHeader,
+//!         next_header: en302636_4_1::NextAfterBasic::CommonHeader,
 //!         reserved: bits![0; 8],
-//!         lifetime: Lifetime(80),
+//!         lifetime: en302636_4_1::Lifetime(80),
 //!         remaining_hop_limit: 1,
 //!     },
-//!     common: CommonHeader {
-//!         next_header: NextAfterCommon::BTPB,
+//!     common: en302636_4_1::CommonHeader {
+//!         next_header: en302636_4_1::NextAfterCommon::BTPB,
 //!         reserved_1: bits![0, 0, 0, 0],
-//!         header_type_and_subtype: HeaderType::TopologicallyScopedBroadcast(
-//!             BroadcastType::SingleHop,
+//!         header_type_and_subtype: en302636_4_1::HeaderType::TopologicallyScopedBroadcast(
+//!             en302636_4_1::BroadcastType::SingleHop,
 //!         ),
-//!         traffic_class: TrafficClass {
+//!         traffic_class: en302636_4_1::TrafficClass {
 //!             store_carry_forward: false,
 //!             channel_offload: false,
 //!             traffic_class_id: 2,
@@ -59,15 +59,15 @@
 //!         maximum_hop_limit: 1,
 //!         reserved_2: bits![0, 0, 0, 0, 0, 0, 0, 0],
 //!     },
-//!     extended: Some(ExtendedHeader::SHB(SingleHopBroadcast {
-//!         source_position_vector: LongPositionVector {
-//!             gn_address: Address {
+//!     extended: Some(en302636_4_1::ExtendedHeader::SHB(en302636_4_1::SingleHopBroadcast {
+//!         source_position_vector: en302636_4_1::LongPositionVector {
+//!             gn_address: en302636_4_1::Address {
 //!                 manually_configured: false,
-//!                 station_type: StationType::Unknown,
+//!                 station_type: en302636_4_1::StationType::Unknown,
 //!                 reserved: bits![0, 1, 0, 0, 0, 0, 0, 1, 1, 0],
 //!                 address: [0, 96, 224, 105, 87, 141],
 //!             },
-//!             timestamp: Timestamp(542947520),
+//!             timestamp: en302636_4_1::Timestamp(542947520),
 //!             latitude: 535574568,
 //!             longitude: 99765648,
 //!             position_accuracy: false,
@@ -128,8 +128,8 @@ pub(crate) mod util;
 #[cfg(feature = "validate")]
 mod validate;
 
-pub use crate::standards::en302636_4_1::*;
-pub use crate::standards::ieee1609dot2::*;
+pub use crate::standards::en302636_4_1;
+pub use crate::standards::ieee1609dot2;
 pub use decode::UnsecuredHeader;
 pub use decode::{Decode, DecodeError, Decoded};
 pub use encode::{Encode, EncodeError, Encoder};
@@ -219,17 +219,17 @@ macro_rules! bits {
 /// The payload is directly present in `Unsecured` packets or needs to be retrieved using [`Self::secured_payload_after_gn`] in [`Self::Secured`]
 pub enum Packet<'input> {
     Unsecured {
-        basic: BasicHeader,
-        common: CommonHeader,
-        extended: Option<ExtendedHeader>,
+        basic: en302636_4_1::BasicHeader,
+        common: en302636_4_1::CommonHeader,
+        extended: Option<en302636_4_1::ExtendedHeader>,
         #[cfg_attr(feature = "serde", serde(borrow))]
         payload: &'input [u8],
     },
     Secured {
-        basic: BasicHeader,
-        secured: Ieee1609Dot2Data<'input>,
-        common: CommonHeader,
-        extended: Option<ExtendedHeader>,
+        basic: en302636_4_1::BasicHeader,
+        secured: ieee1609dot2::Ieee1609Dot2Data<'input>,
+        common: en302636_4_1::CommonHeader,
+        extended: Option<en302636_4_1::ExtendedHeader>,
     },
 }
 
@@ -251,21 +251,24 @@ impl<'p> Packet<'p> {
             Packet::Secured {
                 secured, common, ..
             } => match common.header_type_and_subtype {
-                HeaderType::Any => secured.data_payload().map(|p| &p[8..]),
-                HeaderType::Beacon => secured.data_payload().map(|p| &p[8 + 24..]),
-                HeaderType::GeoUnicast => secured.data_payload().map(|p| &p[8 + 36..]),
-                HeaderType::GeoAnycast(_) | HeaderType::GeoBroadcast(_) => {
-                    secured.data_payload().map(|p| &p[8 + 44..])
-                }
-                HeaderType::TopologicallyScopedBroadcast(_) => {
-                    secured.data_payload().map(|p| &p[8 + 28..])
-                }
-                HeaderType::LocationService(LocationServiceType::Request) => {
+                en302636_4_1::HeaderType::Any => secured.data_payload().map(|p| &p[8..]),
+                en302636_4_1::HeaderType::Beacon => secured.data_payload().map(|p| &p[8 + 24..]),
+                en302636_4_1::HeaderType::GeoUnicast => {
                     secured.data_payload().map(|p| &p[8 + 36..])
                 }
-                HeaderType::LocationService(LocationServiceType::Reply) => {
-                    secured.data_payload().map(|p| &p[8 + 48..])
+                en302636_4_1::HeaderType::GeoAnycast(_)
+                | en302636_4_1::HeaderType::GeoBroadcast(_) => {
+                    secured.data_payload().map(|p| &p[8 + 44..])
                 }
+                en302636_4_1::HeaderType::TopologicallyScopedBroadcast(_) => {
+                    secured.data_payload().map(|p| &p[8 + 28..])
+                }
+                en302636_4_1::HeaderType::LocationService(
+                    en302636_4_1::LocationServiceType::Request,
+                ) => secured.data_payload().map(|p| &p[8 + 36..]),
+                en302636_4_1::HeaderType::LocationService(
+                    en302636_4_1::LocationServiceType::Reply,
+                ) => secured.data_payload().map(|p| &p[8 + 48..]),
             },
             Packet::Unsecured { .. } => None,
         }
@@ -273,7 +276,7 @@ impl<'p> Packet<'p> {
 
     /// Returns a reference to the Common header regardless of Packet type
     #[must_use]
-    pub fn common(&self) -> &CommonHeader {
+    pub fn common(&self) -> &en302636_4_1::CommonHeader {
         match self {
             Packet::Unsecured { common, .. } | Packet::Secured { common, .. } => common,
         }
