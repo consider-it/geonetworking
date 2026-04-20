@@ -36,17 +36,17 @@ pub struct Decoded<T: Debug + PartialEq> {
 /// This trait is implemented for all higher-order fields of the GeoNetworking header:
 ///
 ///  - [`Packet`]
-///  - [`BasicHeader`]
-///  - [`CommonHeader`]
-///  - [`Ieee1609Dot2Data`] (a.k.a. Secured Header)
-///  - [`GeoUnicast`]
-///  - [`TopologicallyScopedBroadcast`]
-///  - [`SingleHopBroadcast`]
-///  - [`GeoBroadcast`]
-///  - [`GeoAnycast`]
-///  - [`Beacon`]
-///  - [`LSRequest`]
-///  - [`LSReply`]
+///  - [`en302636_4_1::BasicHeader`]
+///  - [`en302636_4_1::CommonHeader`]
+///  - [`ieee1609dot2::Ieee1609Dot2Data`] (a.k.a. Secured Header)
+///  - [`en302636_4_1::GeoUnicast`]
+///  - [`en302636_4_1::TopologicallyScopedBroadcast`]
+///  - [`en302636_4_1::SingleHopBroadcast`]
+///  - [`en302636_4_1::GeoBroadcast`]
+///  - [`en302636_4_1::GeoAnycast`]
+///  - [`en302636_4_1::Beacon`]
+///  - [`en302636_4_1::LSRequest`]
+///  - [`en302636_4_1::LSReply`]
 ///
 /// # Example
 /// ```rust
@@ -57,16 +57,16 @@ pub struct Decoded<T: Debug + PartialEq> {
 ///   0xe5, 0x48, 0x10, 0xc7, 0x2e, 0x71, 0x25, 0xab, 0x00, 0x1f, 0xeb, 0xef, 0x74, 0x05,
 ///   0xf2, 0xaf, 0x27, 0x80, 0x00, 0x00, 0x00,
 /// ];
-/// let result = BasicHeader::decode(data).unwrap();
+/// let result = en302636_4_1::BasicHeader::decode(data).unwrap();
 /// assert_eq!(
 ///   result,
 ///   Decoded {
 ///     bytes_consumed: 4,
-///     decoded: BasicHeader {
+///     decoded: en302636_4_1::BasicHeader {
 ///         version: 1,
-///         next_header: NextAfterBasic::SecuredPacket,
+///         next_header: en302636_4_1::NextAfterBasic::SecuredPacket,
 ///         reserved: bits!(0;8),
-///         lifetime: Lifetime(21),
+///         lifetime: en302636_4_1::Lifetime(21),
 ///         remaining_hop_limit: 1
 ///     }
 ///   }
@@ -100,18 +100,18 @@ macro_rules! decode {
 }
 
 decode!(Packet<'s>);
-decode!(BasicHeader);
-decode!(CommonHeader);
-decode!(Ieee1609Dot2Data<'s>);
-decode!(GeoUnicast);
-decode!(TopologicallyScopedBroadcast);
-decode!(SingleHopBroadcast);
-decode!(GeoBroadcast);
-decode!(Beacon);
-decode!(LSRequest);
-decode!(LSReply);
-decode!(Certificate<'s>);
-decode!(ToBeSignedData<'s>);
+decode!(en302636_4_1::BasicHeader);
+decode!(en302636_4_1::CommonHeader);
+decode!(ieee1609dot2::Ieee1609Dot2Data<'s>);
+decode!(en302636_4_1::GeoUnicast);
+decode!(en302636_4_1::TopologicallyScopedBroadcast);
+decode!(en302636_4_1::SingleHopBroadcast);
+decode!(en302636_4_1::GeoBroadcast);
+decode!(en302636_4_1::Beacon);
+decode!(en302636_4_1::LSRequest);
+decode!(en302636_4_1::LSReply);
+decode!(ieee1609dot2::Certificate<'s>);
+decode!(ieee1609dot2::ToBeSignedData<'s>);
 
 /// Helper struct for decoding unsecured GeoNetworking headers from JSON.
 /// This crate focuses on zero-copy decoding from binary packets,
@@ -120,9 +120,9 @@ decode!(ToBeSignedData<'s>);
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct UnsecuredHeader {
-    pub basic: BasicHeader,
-    pub common: CommonHeader,
-    pub extended: Option<ExtendedHeader>,
+    pub basic: en302636_4_1::BasicHeader,
+    pub common: en302636_4_1::CommonHeader,
+    pub extended: Option<en302636_4_1::ExtendedHeader>,
 }
 
 impl UnsecuredHeader {
@@ -426,14 +426,14 @@ impl<'s, const SIZE: usize> InternalDecode<'s> for [u8; SIZE] {
     }
 }
 
-impl<'s> InternalDecode<'s> for Address {
+impl<'s> InternalDecode<'s> for en302636_4_1::Address {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
         into(tuple((
             bool::decode_bitwise,
-            StationType::decode_bitwise,
+            en302636_4_1::StationType::decode_bitwise,
             Bits::<10>::decode_bitwise,
             <[u8; 6]>::decode_bitwise,
         )))(input)
@@ -451,8 +451,8 @@ impl<'s> InternalDecode<'s> for Address {
     }
 }
 
-impl From<(bool, StationType, Bits<10>, [u8; 6])> for Address {
-    fn from(value: (bool, StationType, Bits<10>, [u8; 6])) -> Self {
+impl From<(bool, en302636_4_1::StationType, Bits<10>, [u8; 6])> for en302636_4_1::Address {
+    fn from(value: (bool, en302636_4_1::StationType, Bits<10>, [u8; 6])) -> Self {
         Self {
             manually_configured: value.0,
             station_type: value.1,
@@ -462,13 +462,13 @@ impl From<(bool, StationType, Bits<10>, [u8; 6])> for Address {
     }
 }
 
-impl<'s> InternalDecode<'s> for StationType {
+impl<'s> InternalDecode<'s> for en302636_4_1::StationType {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
         map_res(read_as_uint::<u8>(5), |val| match val {
-            0 => Ok::<StationType, DecodeError<DecodeIn>>(Self::Unknown),
+            0 => Ok::<Self, DecodeError<DecodeIn>>(Self::Unknown),
             1 => Ok(Self::Pedestrian),
             2 => Ok(Self::Cyclist),
             3 => Ok(Self::Moped),
@@ -499,16 +499,16 @@ impl<'s> InternalDecode<'s> for StationType {
     }
 }
 
-impl<'s> InternalDecode<'s> for BasicHeader {
+impl<'s> InternalDecode<'s> for en302636_4_1::BasicHeader {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
         into(tuple((
             read_as_uint(4),
-            NextAfterBasic::decode_bitwise,
+            en302636_4_1::NextAfterBasic::decode_bitwise,
             Bits::<8>::decode_bitwise,
-            Lifetime::decode_bitwise,
+            en302636_4_1::Lifetime::decode_bitwise,
             read_as_uint(8),
         )))(input)
     }
@@ -525,8 +525,24 @@ impl<'s> InternalDecode<'s> for BasicHeader {
     }
 }
 
-impl From<(u8, NextAfterBasic, Bits<8>, Lifetime, u8)> for BasicHeader {
-    fn from(value: (u8, NextAfterBasic, Bits<8>, Lifetime, u8)) -> Self {
+impl
+    From<(
+        u8,
+        en302636_4_1::NextAfterBasic,
+        Bits<8>,
+        en302636_4_1::Lifetime,
+        u8,
+    )> for en302636_4_1::BasicHeader
+{
+    fn from(
+        value: (
+            u8,
+            en302636_4_1::NextAfterBasic,
+            Bits<8>,
+            en302636_4_1::Lifetime,
+            u8,
+        ),
+    ) -> Self {
         Self {
             version: value.0,
             next_header: value.1,
@@ -537,13 +553,13 @@ impl From<(u8, NextAfterBasic, Bits<8>, Lifetime, u8)> for BasicHeader {
     }
 }
 
-impl<'s> InternalDecode<'s> for NextAfterBasic {
+impl<'s> InternalDecode<'s> for en302636_4_1::NextAfterBasic {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
         map_res(read_as_uint::<u8>(4), |val| match val {
-            0 => Ok::<NextAfterBasic, DecodeError<DecodeIn>>(Self::Any),
+            0 => Ok::<Self, DecodeError<DecodeIn>>(Self::Any),
             1 => Ok(Self::CommonHeader),
             2 => Ok(Self::SecuredPacket),
             i => Err(DecodeError::EnumError(alloc::format!(
@@ -564,12 +580,12 @@ impl<'s> InternalDecode<'s> for NextAfterBasic {
     }
 }
 
-impl<'s> InternalDecode<'s> for Lifetime {
+impl<'s> InternalDecode<'s> for en302636_4_1::Lifetime {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
-        map(read_as_uint::<u8>(8), Lifetime)(input)
+        map(read_as_uint::<u8>(8), Self)(input)
     }
 
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
@@ -584,12 +600,12 @@ impl<'s> InternalDecode<'s> for Lifetime {
     }
 }
 
-impl<'s> InternalDecode<'s> for Timestamp {
+impl<'s> InternalDecode<'s> for en302636_4_1::Timestamp {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
-        map(read_as_uint::<u32>(32), Timestamp)(input)
+        map(read_as_uint::<u32>(32), Self)(input)
     }
 
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
@@ -604,14 +620,14 @@ impl<'s> InternalDecode<'s> for Timestamp {
     }
 }
 
-impl<'s> InternalDecode<'s> for LongPositionVector {
+impl<'s> InternalDecode<'s> for en302636_4_1::LongPositionVector {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
         into(tuple((
-            Address::decode_bitwise,
-            Timestamp::decode_bitwise,
+            en302636_4_1::Address::decode_bitwise,
+            en302636_4_1::Timestamp::decode_bitwise,
             i32::decode_bitwise,
             i32::decode_bitwise,
             bool::decode_bitwise,
@@ -632,8 +648,28 @@ impl<'s> InternalDecode<'s> for LongPositionVector {
     }
 }
 
-impl From<(Address, Timestamp, i32, i32, bool, i16, u16)> for LongPositionVector {
-    fn from(value: (Address, Timestamp, i32, i32, bool, i16, u16)) -> Self {
+impl
+    From<(
+        en302636_4_1::Address,
+        en302636_4_1::Timestamp,
+        i32,
+        i32,
+        bool,
+        i16,
+        u16,
+    )> for en302636_4_1::LongPositionVector
+{
+    fn from(
+        value: (
+            en302636_4_1::Address,
+            en302636_4_1::Timestamp,
+            i32,
+            i32,
+            bool,
+            i16,
+            u16,
+        ),
+    ) -> Self {
         Self {
             gn_address: value.0,
             timestamp: value.1,
@@ -646,14 +682,14 @@ impl From<(Address, Timestamp, i32, i32, bool, i16, u16)> for LongPositionVector
     }
 }
 
-impl<'s> InternalDecode<'s> for ShortPositionVector {
+impl<'s> InternalDecode<'s> for en302636_4_1::ShortPositionVector {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
         into(tuple((
-            Address::decode_bitwise,
-            Timestamp::decode_bitwise,
+            en302636_4_1::Address::decode_bitwise,
+            en302636_4_1::Timestamp::decode_bitwise,
             i32::decode_bitwise,
             i32::decode_bitwise,
         )))(input)
@@ -671,8 +707,10 @@ impl<'s> InternalDecode<'s> for ShortPositionVector {
     }
 }
 
-impl From<(Address, Timestamp, i32, i32)> for ShortPositionVector {
-    fn from(value: (Address, Timestamp, i32, i32)) -> Self {
+impl From<(en302636_4_1::Address, en302636_4_1::Timestamp, i32, i32)>
+    for en302636_4_1::ShortPositionVector
+{
+    fn from(value: (en302636_4_1::Address, en302636_4_1::Timestamp, i32, i32)) -> Self {
         Self {
             gn_address: value.0,
             timestamp: value.1,
@@ -682,7 +720,7 @@ impl From<(Address, Timestamp, i32, i32)> for ShortPositionVector {
     }
 }
 
-impl<'s> InternalDecode<'s> for TrafficClass {
+impl<'s> InternalDecode<'s> for en302636_4_1::TrafficClass {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
@@ -706,7 +744,7 @@ impl<'s> InternalDecode<'s> for TrafficClass {
     }
 }
 
-impl From<(bool, bool, u8)> for TrafficClass {
+impl From<(bool, bool, u8)> for en302636_4_1::TrafficClass {
     fn from(value: (bool, bool, u8)) -> Self {
         Self {
             store_carry_forward: value.0,
@@ -716,13 +754,13 @@ impl From<(bool, bool, u8)> for TrafficClass {
     }
 }
 
-impl<'s> InternalDecode<'s> for NextAfterCommon {
+impl<'s> InternalDecode<'s> for en302636_4_1::NextAfterCommon {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
         map_res(read_as_uint::<u8>(4), |val| match val {
-            0 => Ok::<NextAfterCommon, DecodeError<DecodeIn>>(Self::Any),
+            0 => Ok::<Self, DecodeError<DecodeIn>>(Self::Any),
             1 => Ok(Self::BTPA),
             2 => Ok(Self::BTPB),
             3 => Ok(Self::IPv6),
@@ -744,7 +782,7 @@ impl<'s> InternalDecode<'s> for NextAfterCommon {
     }
 }
 
-impl<'s> InternalDecode<'s> for HeaderType {
+impl<'s> InternalDecode<'s> for en302636_4_1::HeaderType {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
@@ -756,29 +794,37 @@ impl<'s> InternalDecode<'s> for HeaderType {
                     "No corresponding header type for value {ty} and subtype value {subtype}!"
                 ));
                 match ty {
-                    0 => Ok::<HeaderType, DecodeError<DecodeIn>>(Self::Any),
+                    0 => Ok::<Self, DecodeError<DecodeIn>>(Self::Any),
                     1 => Ok(Self::Beacon),
                     2 => Ok(Self::GeoUnicast),
                     3 => match subtype {
-                        0 => Ok(Self::GeoAnycast(AreaType::Circular)),
-                        1 => Ok(Self::GeoAnycast(AreaType::Rectangular)),
-                        2 => Ok(Self::GeoAnycast(AreaType::Ellipsoidal)),
+                        0 => Ok(Self::GeoAnycast(en302636_4_1::AreaType::Circular)),
+                        1 => Ok(Self::GeoAnycast(en302636_4_1::AreaType::Rectangular)),
+                        2 => Ok(Self::GeoAnycast(en302636_4_1::AreaType::Ellipsoidal)),
                         _ => Err(error),
                     },
                     4 => match subtype {
-                        0 => Ok(Self::GeoBroadcast(AreaType::Circular)),
-                        1 => Ok(Self::GeoBroadcast(AreaType::Rectangular)),
-                        2 => Ok(Self::GeoBroadcast(AreaType::Ellipsoidal)),
+                        0 => Ok(Self::GeoBroadcast(en302636_4_1::AreaType::Circular)),
+                        1 => Ok(Self::GeoBroadcast(en302636_4_1::AreaType::Rectangular)),
+                        2 => Ok(Self::GeoBroadcast(en302636_4_1::AreaType::Ellipsoidal)),
                         _ => Err(error),
                     },
                     5 => match subtype {
-                        0 => Ok(Self::TopologicallyScopedBroadcast(BroadcastType::SingleHop)),
-                        1 => Ok(Self::TopologicallyScopedBroadcast(BroadcastType::MultiHop)),
+                        0 => Ok(Self::TopologicallyScopedBroadcast(
+                            en302636_4_1::BroadcastType::SingleHop,
+                        )),
+                        1 => Ok(Self::TopologicallyScopedBroadcast(
+                            en302636_4_1::BroadcastType::MultiHop,
+                        )),
                         _ => Err(error),
                     },
                     6 => match subtype {
-                        0 => Ok(Self::LocationService(LocationServiceType::Request)),
-                        1 => Ok(Self::LocationService(LocationServiceType::Reply)),
+                        0 => Ok(Self::LocationService(
+                            en302636_4_1::LocationServiceType::Request,
+                        )),
+                        1 => Ok(Self::LocationService(
+                            en302636_4_1::LocationServiceType::Reply,
+                        )),
                         _ => Err(error),
                     },
                     _ => Err(error),
@@ -799,16 +845,16 @@ impl<'s> InternalDecode<'s> for HeaderType {
     }
 }
 
-impl<'s> InternalDecode<'s> for CommonHeader {
+impl<'s> InternalDecode<'s> for en302636_4_1::CommonHeader {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
         into(tuple((
-            NextAfterCommon::decode_bitwise,
+            en302636_4_1::NextAfterCommon::decode_bitwise,
             Bits::<4>::decode_bitwise,
-            HeaderType::decode_bitwise,
-            TrafficClass::decode_bitwise,
+            en302636_4_1::HeaderType::decode_bitwise,
+            en302636_4_1::TrafficClass::decode_bitwise,
             Bits::<8>::decode_bitwise,
             read_as_uint(16),
             read_as_uint(8),
@@ -830,22 +876,22 @@ impl<'s> InternalDecode<'s> for CommonHeader {
 
 impl
     From<(
-        NextAfterCommon,
+        en302636_4_1::NextAfterCommon,
         Bits<4>,
-        HeaderType,
-        TrafficClass,
+        en302636_4_1::HeaderType,
+        en302636_4_1::TrafficClass,
         Bits<8>,
         u16,
         u8,
         Bits<8>,
-    )> for CommonHeader
+    )> for en302636_4_1::CommonHeader
 {
     fn from(
         value: (
-            NextAfterCommon,
+            en302636_4_1::NextAfterCommon,
             Bits<4>,
-            HeaderType,
-            TrafficClass,
+            en302636_4_1::HeaderType,
+            en302636_4_1::TrafficClass,
             Bits<8>,
             u16,
             u8,
@@ -865,7 +911,7 @@ impl
     }
 }
 
-impl<'s> InternalDecode<'s> for GeoAnycast {
+impl<'s> InternalDecode<'s> for en302636_4_1::GeoAnycast {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
@@ -873,7 +919,7 @@ impl<'s> InternalDecode<'s> for GeoAnycast {
         into(tuple((
             read_as_uint(16),
             Bits::<16>::decode_bitwise,
-            LongPositionVector::decode_bitwise,
+            en302636_4_1::LongPositionVector::decode_bitwise,
             i32::decode_bitwise,
             i32::decode_bitwise,
             read_as_uint(16),
@@ -899,20 +945,20 @@ impl
     From<(
         u16,
         Bits<16>,
-        LongPositionVector,
+        en302636_4_1::LongPositionVector,
         i32,
         i32,
         u16,
         u16,
         u16,
         Bits<16>,
-    )> for GeoAnycast
+    )> for en302636_4_1::GeoAnycast
 {
     fn from(
         value: (
             u16,
             Bits<16>,
-            LongPositionVector,
+            en302636_4_1::LongPositionVector,
             i32,
             i32,
             u16,
@@ -935,7 +981,7 @@ impl
     }
 }
 
-impl<'s> InternalDecode<'s> for GeoUnicast {
+impl<'s> InternalDecode<'s> for en302636_4_1::GeoUnicast {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
@@ -943,8 +989,8 @@ impl<'s> InternalDecode<'s> for GeoUnicast {
         into(tuple((
             read_as_uint(16),
             Bits::<16>::decode_bitwise,
-            LongPositionVector::decode_bitwise,
-            ShortPositionVector::decode_bitwise,
+            en302636_4_1::LongPositionVector::decode_bitwise,
+            en302636_4_1::ShortPositionVector::decode_bitwise,
         )))(input)
     }
 
@@ -960,8 +1006,22 @@ impl<'s> InternalDecode<'s> for GeoUnicast {
     }
 }
 
-impl From<(u16, Bits<16>, LongPositionVector, ShortPositionVector)> for GeoUnicast {
-    fn from(value: (u16, Bits<16>, LongPositionVector, ShortPositionVector)) -> Self {
+impl
+    From<(
+        u16,
+        Bits<16>,
+        en302636_4_1::LongPositionVector,
+        en302636_4_1::ShortPositionVector,
+    )> for en302636_4_1::GeoUnicast
+{
+    fn from(
+        value: (
+            u16,
+            Bits<16>,
+            en302636_4_1::LongPositionVector,
+            en302636_4_1::ShortPositionVector,
+        ),
+    ) -> Self {
         Self {
             sequence_number: value.0,
             reserved: value.1,
@@ -971,7 +1031,7 @@ impl From<(u16, Bits<16>, LongPositionVector, ShortPositionVector)> for GeoUnica
     }
 }
 
-impl<'s> InternalDecode<'s> for TopologicallyScopedBroadcast {
+impl<'s> InternalDecode<'s> for en302636_4_1::TopologicallyScopedBroadcast {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
@@ -979,7 +1039,7 @@ impl<'s> InternalDecode<'s> for TopologicallyScopedBroadcast {
         into(tuple((
             read_as_uint(16),
             Bits::<16>::decode_bitwise,
-            LongPositionVector::decode_bitwise,
+            en302636_4_1::LongPositionVector::decode_bitwise,
         )))(input)
     }
 
@@ -995,8 +1055,10 @@ impl<'s> InternalDecode<'s> for TopologicallyScopedBroadcast {
     }
 }
 
-impl From<(u16, Bits<16>, LongPositionVector)> for TopologicallyScopedBroadcast {
-    fn from(value: (u16, Bits<16>, LongPositionVector)) -> Self {
+impl From<(u16, Bits<16>, en302636_4_1::LongPositionVector)>
+    for en302636_4_1::TopologicallyScopedBroadcast
+{
+    fn from(value: (u16, Bits<16>, en302636_4_1::LongPositionVector)) -> Self {
         Self {
             sequence_number: value.0,
             reserved: value.1,
@@ -1005,13 +1067,13 @@ impl From<(u16, Bits<16>, LongPositionVector)> for TopologicallyScopedBroadcast 
     }
 }
 
-impl<'s> InternalDecode<'s> for SingleHopBroadcast {
+impl<'s> InternalDecode<'s> for en302636_4_1::SingleHopBroadcast {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
         into(tuple((
-            LongPositionVector::decode_bitwise,
+            en302636_4_1::LongPositionVector::decode_bitwise,
             <[u8; 4]>::decode_bitwise,
         )))(input)
     }
@@ -1028,8 +1090,8 @@ impl<'s> InternalDecode<'s> for SingleHopBroadcast {
     }
 }
 
-impl From<(LongPositionVector, [u8; 4])> for SingleHopBroadcast {
-    fn from(value: (LongPositionVector, [u8; 4])) -> Self {
+impl From<(en302636_4_1::LongPositionVector, [u8; 4])> for en302636_4_1::SingleHopBroadcast {
+    fn from(value: (en302636_4_1::LongPositionVector, [u8; 4])) -> Self {
         Self {
             source_position_vector: value.0,
             media_dependent_data: value.1,
@@ -1037,12 +1099,12 @@ impl From<(LongPositionVector, [u8; 4])> for SingleHopBroadcast {
     }
 }
 
-impl<'s> InternalDecode<'s> for Beacon {
+impl<'s> InternalDecode<'s> for en302636_4_1::Beacon {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
     {
-        into(LongPositionVector::decode_bitwise)(input)
+        into(en302636_4_1::LongPositionVector::decode_bitwise)(input)
     }
 
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
@@ -1057,15 +1119,15 @@ impl<'s> InternalDecode<'s> for Beacon {
     }
 }
 
-impl From<LongPositionVector> for Beacon {
-    fn from(value: LongPositionVector) -> Self {
+impl From<en302636_4_1::LongPositionVector> for en302636_4_1::Beacon {
+    fn from(value: en302636_4_1::LongPositionVector) -> Self {
         Self {
             source_position_vector: value,
         }
     }
 }
 
-impl<'s> InternalDecode<'s> for LSRequest {
+impl<'s> InternalDecode<'s> for en302636_4_1::LSRequest {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
@@ -1073,8 +1135,8 @@ impl<'s> InternalDecode<'s> for LSRequest {
         into(tuple((
             read_as_uint(16),
             Bits::<16>::decode_bitwise,
-            LongPositionVector::decode_bitwise,
-            Address::decode_bitwise,
+            en302636_4_1::LongPositionVector::decode_bitwise,
+            en302636_4_1::Address::decode_bitwise,
         )))(input)
     }
 
@@ -1090,8 +1152,22 @@ impl<'s> InternalDecode<'s> for LSRequest {
     }
 }
 
-impl From<(u16, Bits<16>, LongPositionVector, Address)> for LSRequest {
-    fn from(value: (u16, Bits<16>, LongPositionVector, Address)) -> Self {
+impl
+    From<(
+        u16,
+        Bits<16>,
+        en302636_4_1::LongPositionVector,
+        en302636_4_1::Address,
+    )> for en302636_4_1::LSRequest
+{
+    fn from(
+        value: (
+            u16,
+            Bits<16>,
+            en302636_4_1::LongPositionVector,
+            en302636_4_1::Address,
+        ),
+    ) -> Self {
         Self {
             sequence_number: value.0,
             reserved: value.1,
@@ -1101,7 +1177,7 @@ impl From<(u16, Bits<16>, LongPositionVector, Address)> for LSRequest {
     }
 }
 
-impl<'s> InternalDecode<'s> for LSReply {
+impl<'s> InternalDecode<'s> for en302636_4_1::LSReply {
     fn decode_bitwise(input: DecodeIn<'_>) -> IResult<DecodeIn<'_>, Self>
     where
         Self: Sized,
@@ -1109,8 +1185,8 @@ impl<'s> InternalDecode<'s> for LSReply {
         into(tuple((
             read_as_uint(16),
             Bits::<16>::decode_bitwise,
-            LongPositionVector::decode_bitwise,
-            ShortPositionVector::decode_bitwise,
+            en302636_4_1::LongPositionVector::decode_bitwise,
+            en302636_4_1::ShortPositionVector::decode_bitwise,
         )))(input)
     }
 
@@ -1126,8 +1202,22 @@ impl<'s> InternalDecode<'s> for LSReply {
     }
 }
 
-impl From<(u16, Bits<16>, LongPositionVector, ShortPositionVector)> for LSReply {
-    fn from(value: (u16, Bits<16>, LongPositionVector, ShortPositionVector)) -> Self {
+impl
+    From<(
+        u16,
+        Bits<16>,
+        en302636_4_1::LongPositionVector,
+        en302636_4_1::ShortPositionVector,
+    )> for en302636_4_1::LSReply
+{
+    fn from(
+        value: (
+            u16,
+            Bits<16>,
+            en302636_4_1::LongPositionVector,
+            en302636_4_1::ShortPositionVector,
+        ),
+    ) -> Self {
         Self {
             sequence_number: value.0,
             reserved: value.1,
@@ -1147,36 +1237,47 @@ where
 }
 
 fn read_extended(
-    header_type_and_subclass: HeaderType,
+    header_type_and_subclass: en302636_4_1::HeaderType,
     input: DecodeIn<'_>,
-) -> IResult<DecodeIn<'_>, Option<ExtendedHeader>> {
+) -> IResult<DecodeIn<'_>, Option<en302636_4_1::ExtendedHeader>> {
     match header_type_and_subclass {
-        HeaderType::Any => Ok((input, None)),
-        HeaderType::Beacon => {
-            wrap_in_some(map(Beacon::decode_bitwise, ExtendedHeader::Beacon))(input)
-        }
-        HeaderType::GeoUnicast => {
-            wrap_in_some(map(GeoUnicast::decode_bitwise, ExtendedHeader::GUC))(input)
-        }
-        HeaderType::GeoAnycast(_) => {
-            wrap_in_some(map(GeoAnycast::decode_bitwise, ExtendedHeader::GAC))(input)
-        }
-        HeaderType::GeoBroadcast(_) => {
-            wrap_in_some(map(GeoAnycast::decode_bitwise, ExtendedHeader::GBC))(input)
-        }
-        HeaderType::TopologicallyScopedBroadcast(BroadcastType::SingleHop) => {
-            wrap_in_some(map(SingleHopBroadcast::decode_bitwise, ExtendedHeader::SHB))(input)
-        }
-        HeaderType::TopologicallyScopedBroadcast(_) => wrap_in_some(map(
-            TopologicallyScopedBroadcast::decode_bitwise,
-            ExtendedHeader::TSB,
+        en302636_4_1::HeaderType::Any => Ok((input, None)),
+        en302636_4_1::HeaderType::Beacon => wrap_in_some(map(
+            en302636_4_1::Beacon::decode_bitwise,
+            en302636_4_1::ExtendedHeader::Beacon,
         ))(input),
-        HeaderType::LocationService(LocationServiceType::Request) => {
-            wrap_in_some(map(LSRequest::decode_bitwise, ExtendedHeader::LSRequest))(input)
+        en302636_4_1::HeaderType::GeoUnicast => wrap_in_some(map(
+            en302636_4_1::GeoUnicast::decode_bitwise,
+            en302636_4_1::ExtendedHeader::GUC,
+        ))(input),
+        en302636_4_1::HeaderType::GeoAnycast(_) => wrap_in_some(map(
+            en302636_4_1::GeoAnycast::decode_bitwise,
+            en302636_4_1::ExtendedHeader::GAC,
+        ))(input),
+        en302636_4_1::HeaderType::GeoBroadcast(_) => wrap_in_some(map(
+            en302636_4_1::GeoAnycast::decode_bitwise,
+            en302636_4_1::ExtendedHeader::GBC,
+        ))(input),
+        en302636_4_1::HeaderType::TopologicallyScopedBroadcast(
+            en302636_4_1::BroadcastType::SingleHop,
+        ) => wrap_in_some(map(
+            en302636_4_1::SingleHopBroadcast::decode_bitwise,
+            en302636_4_1::ExtendedHeader::SHB,
+        ))(input),
+        en302636_4_1::HeaderType::TopologicallyScopedBroadcast(_) => wrap_in_some(map(
+            en302636_4_1::TopologicallyScopedBroadcast::decode_bitwise,
+            en302636_4_1::ExtendedHeader::TSB,
+        ))(input),
+        en302636_4_1::HeaderType::LocationService(en302636_4_1::LocationServiceType::Request) => {
+            wrap_in_some(map(
+                en302636_4_1::LSRequest::decode_bitwise,
+                en302636_4_1::ExtendedHeader::LSRequest,
+            ))(input)
         }
-        HeaderType::LocationService(_) => {
-            wrap_in_some(map(LSReply::decode_bitwise, ExtendedHeader::LSReply))(input)
-        }
+        en302636_4_1::HeaderType::LocationService(_) => wrap_in_some(map(
+            en302636_4_1::LSReply::decode_bitwise,
+            en302636_4_1::ExtendedHeader::LSReply,
+        ))(input),
     }
 }
 
@@ -1185,16 +1286,17 @@ impl<'s> InternalDecode<'s> for Packet<'s> {
     where
         Self: Sized,
     {
-        let (input, basic) = BasicHeader::decode_bytewise(input)?;
-        if basic.next_header == NextAfterBasic::SecuredPacket {
-            let (remaining, secured) = Ieee1609Dot2Data::decode_bytewise(input)?;
+        let (input, basic) = en302636_4_1::BasicHeader::decode_bytewise(input)?;
+        if basic.next_header == en302636_4_1::NextAfterBasic::SecuredPacket {
+            let (remaining, secured) = ieee1609dot2::Ieee1609Dot2Data::decode_bytewise(input)?;
             let data_payload = secured.data_payload().ok_or_else(|| {
                 nom::Err::Error(DecodeError::<&[u8]>::ParserError(
                     "Could not retrieve payload from IEEE1609.2 Data!".into(),
                 ))
             })?;
             let (input, common) =
-                CommonHeader::decode_bitwise(data_payload.bitwise()).map_err(cast_nom_err)?;
+                en302636_4_1::CommonHeader::decode_bitwise(data_payload.bitwise())
+                    .map_err(cast_nom_err)?;
             let (_, extended) =
                 read_extended(common.header_type_and_subtype, input).map_err(cast_nom_err)?;
             Ok((
@@ -1209,7 +1311,7 @@ impl<'s> InternalDecode<'s> for Packet<'s> {
         } else {
             let bitwise = input.bitwise();
             let (remaining, common) =
-                CommonHeader::decode_bitwise(bitwise).map_err(cast_nom_err)?;
+                en302636_4_1::CommonHeader::decode_bitwise(bitwise).map_err(cast_nom_err)?;
             let (remaining, extended) =
                 read_extended(common.header_type_and_subtype, remaining).map_err(cast_nom_err)?;
             if (bitwise.len() - remaining.len()) % 8 != 0 {
@@ -1445,15 +1547,15 @@ macro_rules! uint {
     };
 }
 
-uint!(Uint3, Some(7));
-uint!(Uint8, Some(255));
-uint!(ExtId, Some(255));
-uint!(HeaderInfoContributorId, Some(255));
-uint!(PduFunctionalType, Some(255));
-uint!(Uint16, Some(65535));
-uint!(Uint32, Some(4_294_967_295));
-uint!(Uint64, Some(18_446_744_073_709_551_615));
-uint!(Psid, None);
+uint!(ieee1609dot2::Uint3, Some(7));
+uint!(ieee1609dot2::Uint8, Some(255));
+uint!(ieee1609dot2::ExtId, Some(255));
+uint!(ieee1609dot2::HeaderInfoContributorId, Some(255));
+uint!(ieee1609dot2::PduFunctionalType, Some(255));
+uint!(ieee1609dot2::Uint16, Some(65535));
+uint!(ieee1609dot2::Uint32, Some(4_294_967_295));
+uint!(ieee1609dot2::Uint64, Some(18_446_744_073_709_551_615));
+uint!(ieee1609dot2::Psid, None);
 
 macro_rules! octets {
     ($typ:ty, $min:expr, $max:expr) => {
@@ -1469,17 +1571,17 @@ macro_rules! octets {
     };
 }
 
-octets!(HashedId3<'s>, Some(3), Some(3));
-octets!(HashedId8<'s>, Some(8), Some(8));
-octets!(HashedId10<'s>, Some(10), Some(10));
-octets!(HashedId32<'s>, Some(32), Some(32));
-octets!(HashedId48<'s>, Some(48), Some(48));
-octets!(Opaque<'s>, Some(0), None);
-octets!(BitmapSsp<'s>, Some(0), Some(31));
-octets!(SubjectAssurance<'s>, Some(1), Some(1));
-octets!(LinkageValue<'s>, Some(9), Some(9));
-octets!(LaId<'s>, Some(2), Some(2));
-octets!(LinkageSeed<'s>, Some(16), Some(16));
+octets!(ieee1609dot2::HashedId3<'s>, Some(3), Some(3));
+octets!(ieee1609dot2::HashedId8<'s>, Some(8), Some(8));
+octets!(ieee1609dot2::HashedId10<'s>, Some(10), Some(10));
+octets!(ieee1609dot2::HashedId32<'s>, Some(32), Some(32));
+octets!(ieee1609dot2::HashedId48<'s>, Some(48), Some(48));
+octets!(ieee1609dot2::Opaque<'s>, Some(0), None);
+octets!(ieee1609dot2::BitmapSsp<'s>, Some(0), Some(31));
+octets!(ieee1609dot2::SubjectAssurance<'s>, Some(1), Some(1));
+octets!(ieee1609dot2::LinkageValue<'s>, Some(9), Some(9));
+octets!(ieee1609dot2::LaId<'s>, Some(2), Some(2));
+octets!(ieee1609dot2::LinkageSeed<'s>, Some(16), Some(16));
 
 macro_rules! enumerated {
     ($typ:ty) => {
@@ -1494,9 +1596,9 @@ macro_rules! enumerated {
     };
 }
 
-enumerated!(HashAlgorithm);
-enumerated!(SymmAlgorithm);
-enumerated!(CertificateType);
+enumerated!(ieee1609dot2::HashAlgorithm);
+enumerated!(ieee1609dot2::SymmAlgorithm);
+enumerated!(ieee1609dot2::CertificateType);
 
 macro_rules! sequence_of {
     ($typ:ty, $inner:ty, $min:expr, $max:expr) => {
@@ -1518,56 +1620,116 @@ macro_rules! sequence_of {
     };
 }
 
-sequence_of!(SequenceOfUint8, Uint8, Some(0), None);
-sequence_of!(SequenceOfUint16, Uint16, Some(0), None);
-sequence_of!(SequenceOfHashedId3<'s>, HashedId3, Some(0), None);
 sequence_of!(
-    SequenceOfRectangularRegion,
-    RectangularRegion,
+    ieee1609dot2::SequenceOfUint8,
+    ieee1609dot2::Uint8,
     Some(0),
     None
 );
-sequence_of!(SequenceOfIdentifiedRegion, IdentifiedRegion, Some(0), None);
 sequence_of!(
-    SequenceOfRegionAndSubregions,
-    RegionAndSubregions,
+    ieee1609dot2::SequenceOfUint16,
+    ieee1609dot2::Uint16,
     Some(0),
     None
 );
-sequence_of!(SequenceOfPsidSsp<'s>, PsidSsp, Some(0), None);
-sequence_of!(SequenceOfPsidSspRange<'s>, PsidSspRange, Some(0), None);
-sequence_of!(SequenceOfPsid, Psid, Some(0), None);
-sequence_of!(SequenceOfLinkageSeed<'s>, LinkageSeed, Some(0), None);
-sequence_of!(SequenceOfRecipientInfo<'s>, RecipientInfo, Some(0), None);
-sequence_of!(SequenceOfAppExtensions<'s>, AppExtension, Some(1), None);
 sequence_of!(
-    SequenceOfCertIssueExtensions<'s>,
-    CertIssueExtension,
+    ieee1609dot2::SequenceOfHashedId3<'s>,
+    ieee1609dot2::HashedId3,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfRectangularRegion,
+    ieee1609dot2::RectangularRegion,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfIdentifiedRegion,
+    ieee1609dot2::IdentifiedRegion,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfRegionAndSubregions,
+    ieee1609dot2::RegionAndSubregions,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfPsidSsp<'s>,
+    ieee1609dot2::PsidSsp,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfPsidSspRange<'s>,
+    ieee1609dot2::PsidSspRange,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfPsid,
+    ieee1609dot2::Psid,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfLinkageSeed<'s>,
+    ieee1609dot2::LinkageSeed,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfRecipientInfo<'s>,
+    ieee1609dot2::RecipientInfo,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfAppExtensions<'s>,
+    ieee1609dot2::AppExtension,
     Some(1),
     None
 );
 sequence_of!(
-    SequenceOfCertRequestExtensions<'s>,
-    CertRequestExtension,
+    ieee1609dot2::SequenceOfCertIssueExtensions<'s>,
+    ieee1609dot2::CertIssueExtension,
     Some(1),
     None
 );
-sequence_of!(SequenceOfCertificate<'s>, Certificate, Some(0), None);
 sequence_of!(
-    SequenceOfPsidGroupPermissions<'s>,
-    PsidGroupPermissions,
+    ieee1609dot2::SequenceOfCertRequestExtensions<'s>,
+    ieee1609dot2::CertRequestExtension,
+    Some(1),
+    None
+);
+sequence_of!(
+    ieee1609dot2::SequenceOfCertificate<'s>,
+    ieee1609dot2::Certificate,
     Some(0),
     None
 );
-sequence_of!(PolygonalRegion, TwoDLocation, Some(3), None);
 sequence_of!(
-    ContributedExtensionBlocks<'s>,
-    ContributedExtensionBlock,
+    ieee1609dot2::SequenceOfPsidGroupPermissions<'s>,
+    ieee1609dot2::PsidGroupPermissions,
+    Some(0),
+    None
+);
+sequence_of!(
+    ieee1609dot2::PolygonalRegion,
+    ieee1609dot2::TwoDLocation,
+    Some(3),
+    None
+);
+sequence_of!(
+    ieee1609dot2::ContributedExtensionBlocks<'s>,
+    ieee1609dot2::ContributedExtensionBlock,
     Some(1),
     None
 );
 
-impl<'s> InternalDecode<'s> for SequenceOfOctetString<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::SequenceOfOctetString<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1583,21 +1745,21 @@ impl<'s> InternalDecode<'s> for SequenceOfOctetString<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for Duration {
+impl<'s> InternalDecode<'s> for ieee1609dot2::Duration {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
         let (input, tag) = decode_bytewise_tag(input)?;
-        let (input, inner) = Uint16::decode_bytewise(input)?;
+        let (input, inner) = ieee1609dot2::Uint16::decode_bytewise(input)?;
         match tag {
-            0 => Ok((input, Duration::Microseconds(inner))),
-            1 => Ok((input, Duration::Milliseconds(inner))),
-            2 => Ok((input, Duration::Seconds(inner))),
-            3 => Ok((input, Duration::Minutes(inner))),
-            4 => Ok((input, Duration::Hours(inner))),
-            5 => Ok((input, Duration::SixtyHours(inner))),
-            6 => Ok((input, Duration::Years(inner))),
+            0 => Ok((input, Self::Microseconds(inner))),
+            1 => Ok((input, Self::Milliseconds(inner))),
+            2 => Ok((input, Self::Seconds(inner))),
+            3 => Ok((input, Self::Minutes(inner))),
+            4 => Ok((input, Self::Hours(inner))),
+            5 => Ok((input, Self::SixtyHours(inner))),
+            6 => Ok((input, Self::Years(inner))),
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
             ))),
@@ -1605,18 +1767,18 @@ impl<'s> InternalDecode<'s> for Duration {
     }
 }
 
-impl<'s> InternalDecode<'s> for ValidityPeriod {
+impl<'s> InternalDecode<'s> for ieee1609dot2::ValidityPeriod {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, start) = Time32::decode_bytewise(input)?;
-        let (input, duration) = Duration::decode_bytewise(input)?;
+        let (input, start) = ieee1609dot2::Time32::decode_bytewise(input)?;
+        let (input, duration) = ieee1609dot2::Duration::decode_bytewise(input)?;
         Ok((input, Self { start, duration }))
     }
 }
 
-impl<'s> InternalDecode<'s> for EccP256CurvePointUncompressedP256<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EccP256CurvePointUncompressedP256<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1627,7 +1789,7 @@ impl<'s> InternalDecode<'s> for EccP256CurvePointUncompressedP256<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for EccP256CurvePoint<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EccP256CurvePoint<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1636,20 +1798,21 @@ impl<'s> InternalDecode<'s> for EccP256CurvePoint<'s> {
         match tag {
             0 => {
                 let (input, bytes) = decode_bytewise_octetstring(Some(32), Some(32), false, input)?;
-                Ok((input, EccP256CurvePoint::XOnly(bytes)))
+                Ok((input, Self::XOnly(bytes)))
             }
-            1 => Ok((input, EccP256CurvePoint::Fill(()))),
+            1 => Ok((input, Self::Fill(()))),
             2 => {
                 let (input, bytes) = decode_bytewise_octetstring(Some(32), Some(32), false, input)?;
-                Ok((input, EccP256CurvePoint::CompressedY0(bytes)))
+                Ok((input, Self::CompressedY0(bytes)))
             }
             3 => {
                 let (input, bytes) = decode_bytewise_octetstring(Some(32), Some(32), false, input)?;
-                Ok((input, EccP256CurvePoint::CompressedY1(bytes)))
+                Ok((input, Self::CompressedY1(bytes)))
             }
             4 => {
-                let (input, inner) = EccP256CurvePointUncompressedP256::decode_bytewise(input)?;
-                Ok((input, EccP256CurvePoint::UncompressedP256(inner)))
+                let (input, inner) =
+                    ieee1609dot2::EccP256CurvePointUncompressedP256::decode_bytewise(input)?;
+                Ok((input, Self::UncompressedP256(inner)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -1658,7 +1821,7 @@ impl<'s> InternalDecode<'s> for EccP256CurvePoint<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for EccP384CurvePointUncompressedP384<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EccP384CurvePointUncompressedP384<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1669,7 +1832,7 @@ impl<'s> InternalDecode<'s> for EccP384CurvePointUncompressedP384<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for EccP384CurvePoint<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EccP384CurvePoint<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1678,20 +1841,21 @@ impl<'s> InternalDecode<'s> for EccP384CurvePoint<'s> {
         match tag {
             0 => {
                 let (input, bytes) = decode_bytewise_octetstring(Some(48), Some(48), false, input)?;
-                Ok((input, EccP384CurvePoint::XOnly(bytes)))
+                Ok((input, Self::XOnly(bytes)))
             }
-            1 => Ok((input, EccP384CurvePoint::Fill(()))),
+            1 => Ok((input, Self::Fill(()))),
             2 => {
                 let (input, bytes) = decode_bytewise_octetstring(Some(48), Some(48), false, input)?;
-                Ok((input, EccP384CurvePoint::CompressedY0(bytes)))
+                Ok((input, Self::CompressedY0(bytes)))
             }
             3 => {
                 let (input, bytes) = decode_bytewise_octetstring(Some(48), Some(48), false, input)?;
-                Ok((input, EccP384CurvePoint::CompressedY1(bytes)))
+                Ok((input, Self::CompressedY1(bytes)))
             }
             4 => {
-                let (input, inner) = EccP384CurvePointUncompressedP384::decode_bytewise(input)?;
-                Ok((input, EccP384CurvePoint::UncompressedP384(inner)))
+                let (input, inner) =
+                    ieee1609dot2::EccP384CurvePointUncompressedP384::decode_bytewise(input)?;
+                Ok((input, Self::UncompressedP384(inner)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -1700,31 +1864,31 @@ impl<'s> InternalDecode<'s> for EccP384CurvePoint<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for EcencP256EncryptedKey<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EcencP256EncryptedKey<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, v) = EccP256CurvePoint::decode_bytewise(input)?;
+        let (input, v) = ieee1609dot2::EccP256CurvePoint::decode_bytewise(input)?;
         let (input, c) = decode_bytewise_octetstring(Some(16), Some(16), false, input)?;
         let (input, t) = decode_bytewise_octetstring(Some(32), Some(32), false, input)?;
         Ok((input, Self { v, c, t }))
     }
 }
 
-impl<'s> InternalDecode<'s> for EciesP256EncryptedKey<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EciesP256EncryptedKey<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, v) = EccP256CurvePoint::decode_bytewise(input)?;
+        let (input, v) = ieee1609dot2::EccP256CurvePoint::decode_bytewise(input)?;
         let (input, c) = decode_bytewise_octetstring(Some(16), Some(16), false, input)?;
         let (input, t) = decode_bytewise_octetstring(Some(16), Some(16), false, input)?;
         Ok((input, Self { v, c, t }))
     }
 }
 
-impl<'s> InternalDecode<'s> for BasePublicEncryptionKey<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::BasePublicEncryptionKey<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1732,17 +1896,19 @@ impl<'s> InternalDecode<'s> for BasePublicEncryptionKey<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, pt) = EccP256CurvePoint::decode_bytewise(input)?;
-                Ok((input, BasePublicEncryptionKey::EciesNistP256(pt)))
+                let (input, pt) = ieee1609dot2::EccP256CurvePoint::decode_bytewise(input)?;
+                Ok((input, Self::EciesNistP256(pt)))
             }
             1 => {
-                let (input, pt) = EccP256CurvePoint::decode_bytewise(input)?;
-                Ok((input, BasePublicEncryptionKey::EciesBrainpoolP256r1(pt)))
+                let (input, pt) = ieee1609dot2::EccP256CurvePoint::decode_bytewise(input)?;
+                Ok((input, Self::EciesBrainpoolP256r1(pt)))
             }
             2 => {
-                let (input, pt) =
-                    decode_bytewise_open_type(EccP256CurvePoint::decode_bytewise, input)?;
-                Ok((input, BasePublicEncryptionKey::EcencSm2(pt)))
+                let (input, pt) = decode_bytewise_open_type(
+                    ieee1609dot2::EccP256CurvePoint::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::EcencSm2(pt)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -1751,13 +1917,13 @@ impl<'s> InternalDecode<'s> for BasePublicEncryptionKey<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for PublicEncryptionKey<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::PublicEncryptionKey<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, supported_symm_alg) = SymmAlgorithm::decode_bytewise(input)?;
-        let (input, public_key) = BasePublicEncryptionKey::decode_bytewise(input)?;
+        let (input, supported_symm_alg) = ieee1609dot2::SymmAlgorithm::decode_bytewise(input)?;
+        let (input, public_key) = ieee1609dot2::BasePublicEncryptionKey::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -1768,7 +1934,7 @@ impl<'s> InternalDecode<'s> for PublicEncryptionKey<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for SymmetricEncryptionKey<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::SymmetricEncryptionKey<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1777,14 +1943,14 @@ impl<'s> InternalDecode<'s> for SymmetricEncryptionKey<'s> {
         match tag {
             0 => {
                 let (input, aes) = decode_bytewise_octetstring(Some(16), Some(16), false, input)?;
-                Ok((input, SymmetricEncryptionKey::Aes128Ccm(aes)))
+                Ok((input, Self::Aes128Ccm(aes)))
             }
             1 => {
                 let (input, sm) = decode_bytewise_open_type(
                     |i| decode_bytewise_octetstring(Some(16), Some(16), false, i),
                     input,
                 )?;
-                Ok((input, SymmetricEncryptionKey::Sm4Ccm(sm)))
+                Ok((input, Self::Sm4Ccm(sm)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -1793,7 +1959,7 @@ impl<'s> InternalDecode<'s> for SymmetricEncryptionKey<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for EncryptionKey<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EncryptionKey<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1801,12 +1967,12 @@ impl<'s> InternalDecode<'s> for EncryptionKey<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, public) = PublicEncryptionKey::decode_bytewise(input)?;
-                Ok((input, EncryptionKey::Public(public)))
+                let (input, public) = ieee1609dot2::PublicEncryptionKey::decode_bytewise(input)?;
+                Ok((input, Self::Public(public)))
             }
             1 => {
-                let (input, symm) = SymmetricEncryptionKey::decode_bytewise(input)?;
-                Ok((input, EncryptionKey::Symmetric(symm)))
+                let (input, symm) = ieee1609dot2::SymmetricEncryptionKey::decode_bytewise(input)?;
+                Ok((input, Self::Symmetric(symm)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -1815,7 +1981,7 @@ impl<'s> InternalDecode<'s> for EncryptionKey<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for GeographicRegion {
+impl<'s> InternalDecode<'s> for ieee1609dot2::GeographicRegion {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1823,20 +1989,22 @@ impl<'s> InternalDecode<'s> for GeographicRegion {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, region) = CircularRegion::decode_bytewise(input)?;
-                Ok((input, GeographicRegion::CircularRegion(region)))
+                let (input, region) = ieee1609dot2::CircularRegion::decode_bytewise(input)?;
+                Ok((input, Self::CircularRegion(region)))
             }
             1 => {
-                let (input, region) = SequenceOfRectangularRegion::decode_bytewise(input)?;
-                Ok((input, GeographicRegion::RectangularRegion(region)))
+                let (input, region) =
+                    ieee1609dot2::SequenceOfRectangularRegion::decode_bytewise(input)?;
+                Ok((input, Self::RectangularRegion(region)))
             }
             2 => {
-                let (input, region) = PolygonalRegion::decode_bytewise(input)?;
-                Ok((input, GeographicRegion::PolygonalRegion(region)))
+                let (input, region) = ieee1609dot2::PolygonalRegion::decode_bytewise(input)?;
+                Ok((input, Self::PolygonalRegion(region)))
             }
             3 => {
-                let (input, region) = SequenceOfIdentifiedRegion::decode_bytewise(input)?;
-                Ok((input, GeographicRegion::IdentifiedRegion(region)))
+                let (input, region) =
+                    ieee1609dot2::SequenceOfIdentifiedRegion::decode_bytewise(input)?;
+                Ok((input, Self::IdentifiedRegion(region)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -1845,24 +2013,24 @@ impl<'s> InternalDecode<'s> for GeographicRegion {
     }
 }
 
-impl<'s> InternalDecode<'s> for CircularRegion {
+impl<'s> InternalDecode<'s> for ieee1609dot2::CircularRegion {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, center) = TwoDLocation::decode_bytewise(input)?;
-        let (input, radius) = Uint16::decode_bytewise(input)?;
+        let (input, center) = ieee1609dot2::TwoDLocation::decode_bytewise(input)?;
+        let (input, radius) = ieee1609dot2::Uint16::decode_bytewise(input)?;
         Ok((input, Self { center, radius }))
     }
 }
 
-impl<'s> InternalDecode<'s> for RectangularRegion {
+impl<'s> InternalDecode<'s> for ieee1609dot2::RectangularRegion {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, north_west) = TwoDLocation::decode_bytewise(input)?;
-        let (input, south_east) = TwoDLocation::decode_bytewise(input)?;
+        let (input, north_west) = ieee1609dot2::TwoDLocation::decode_bytewise(input)?;
+        let (input, south_east) = ieee1609dot2::TwoDLocation::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -1873,13 +2041,13 @@ impl<'s> InternalDecode<'s> for RectangularRegion {
     }
 }
 
-impl<'s> InternalDecode<'s> for TwoDLocation {
+impl<'s> InternalDecode<'s> for ieee1609dot2::TwoDLocation {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, latitude) = Latitude::decode_bytewise(input)?;
-        let (input, longitude) = Longitude::decode_bytewise(input)?;
+        let (input, latitude) = ieee1609dot2::Latitude::decode_bytewise(input)?;
+        let (input, longitude) = ieee1609dot2::Longitude::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -1890,7 +2058,7 @@ impl<'s> InternalDecode<'s> for TwoDLocation {
     }
 }
 
-impl<'s> InternalDecode<'s> for IdentifiedRegion {
+impl<'s> InternalDecode<'s> for ieee1609dot2::IdentifiedRegion {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1898,16 +2066,16 @@ impl<'s> InternalDecode<'s> for IdentifiedRegion {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, region) = UnCountryId::decode_bytewise(input)?;
-                Ok((input, IdentifiedRegion::CountryOnly(region)))
+                let (input, region) = ieee1609dot2::UnCountryId::decode_bytewise(input)?;
+                Ok((input, Self::CountryOnly(region)))
             }
             1 => {
-                let (input, region) = CountryAndRegions::decode_bytewise(input)?;
-                Ok((input, IdentifiedRegion::CountryAndRegions(region)))
+                let (input, region) = ieee1609dot2::CountryAndRegions::decode_bytewise(input)?;
+                Ok((input, Self::CountryAndRegions(region)))
             }
             2 => {
-                let (input, region) = CountryAndSubregions::decode_bytewise(input)?;
-                Ok((input, IdentifiedRegion::CountryAndSubregions(region)))
+                let (input, region) = ieee1609dot2::CountryAndSubregions::decode_bytewise(input)?;
+                Ok((input, Self::CountryAndSubregions(region)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -1916,13 +2084,13 @@ impl<'s> InternalDecode<'s> for IdentifiedRegion {
     }
 }
 
-impl<'s> InternalDecode<'s> for CountryAndRegions {
+impl<'s> InternalDecode<'s> for ieee1609dot2::CountryAndRegions {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, country_only) = UnCountryId::decode_bytewise(input)?;
-        let (input, regions) = SequenceOfUint8::decode_bytewise(input)?;
+        let (input, country_only) = ieee1609dot2::UnCountryId::decode_bytewise(input)?;
+        let (input, regions) = ieee1609dot2::SequenceOfUint8::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -1933,13 +2101,14 @@ impl<'s> InternalDecode<'s> for CountryAndRegions {
     }
 }
 
-impl<'s> InternalDecode<'s> for CountryAndSubregions {
+impl<'s> InternalDecode<'s> for ieee1609dot2::CountryAndSubregions {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, country_only) = UnCountryId::decode_bytewise(input)?;
-        let (input, region_and_subregions) = SequenceOfRegionAndSubregions::decode_bytewise(input)?;
+        let (input, country_only) = ieee1609dot2::UnCountryId::decode_bytewise(input)?;
+        let (input, region_and_subregions) =
+            ieee1609dot2::SequenceOfRegionAndSubregions::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -1950,25 +2119,25 @@ impl<'s> InternalDecode<'s> for CountryAndSubregions {
     }
 }
 
-impl<'s> InternalDecode<'s> for RegionAndSubregions {
+impl<'s> InternalDecode<'s> for ieee1609dot2::RegionAndSubregions {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, region) = Uint8::decode_bytewise(input)?;
-        let (input, subregions) = SequenceOfUint16::decode_bytewise(input)?;
+        let (input, region) = ieee1609dot2::Uint8::decode_bytewise(input)?;
+        let (input, subregions) = ieee1609dot2::SequenceOfUint16::decode_bytewise(input)?;
         Ok((input, Self { region, subregions }))
     }
 }
 
-impl<'s> InternalDecode<'s> for ThreeDLocation {
+impl<'s> InternalDecode<'s> for ieee1609dot2::ThreeDLocation {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, latitude) = Latitude::decode_bytewise(input)?;
-        let (input, longitude) = Longitude::decode_bytewise(input)?;
-        let (input, elevation) = Elevation::decode_bytewise(input)?;
+        let (input, latitude) = ieee1609dot2::Latitude::decode_bytewise(input)?;
+        let (input, longitude) = ieee1609dot2::Longitude::decode_bytewise(input)?;
+        let (input, elevation) = ieee1609dot2::Elevation::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -1980,7 +2149,7 @@ impl<'s> InternalDecode<'s> for ThreeDLocation {
     }
 }
 
-impl<'s> InternalDecode<'s> for NinetyDegreeInt {
+impl<'s> InternalDecode<'s> for ieee1609dot2::NinetyDegreeInt {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -1991,7 +2160,7 @@ impl<'s> InternalDecode<'s> for NinetyDegreeInt {
     }
 }
 
-impl<'s> InternalDecode<'s> for OneEightyDegreeInt {
+impl<'s> InternalDecode<'s> for ieee1609dot2::OneEightyDegreeInt {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2002,7 +2171,7 @@ impl<'s> InternalDecode<'s> for OneEightyDegreeInt {
     }
 }
 
-impl<'s> InternalDecode<'s> for GroupLinkageValue<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::GroupLinkageValue<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2013,7 +2182,7 @@ impl<'s> InternalDecode<'s> for GroupLinkageValue<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for Hostname {
+impl<'s> InternalDecode<'s> for ieee1609dot2::Hostname {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2028,17 +2197,18 @@ impl<'s> InternalDecode<'s> for Hostname {
     }
 }
 
-impl<'s> InternalDecode<'s> for PsidSsp<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::PsidSsp<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
         let (input, bitmap) = decode_bytewise_bitstring(Some(1), Some(1), false, input)?;
-        let (input, psid) = Psid::decode_bytewise(input)?;
+        let (input, psid) = ieee1609dot2::Psid::decode_bytewise(input)?;
         let (input, ssp) = if bitmap[0] {
-            map(ServiceSpecificPermissions::decode_bytewise, |inner| {
-                Some(inner)
-            })(input)?
+            map(
+                ieee1609dot2::ServiceSpecificPermissions::decode_bytewise,
+                Some,
+            )(input)?
         } else {
             (input, None)
         };
@@ -2046,7 +2216,7 @@ impl<'s> InternalDecode<'s> for PsidSsp<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for ServiceSpecificPermissions<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::ServiceSpecificPermissions<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2055,12 +2225,12 @@ impl<'s> InternalDecode<'s> for ServiceSpecificPermissions<'s> {
         match tag {
             0 => {
                 let (input, opaque) = decode_bytewise_octetstring(Some(0), None, false, input)?;
-                Ok((input, ServiceSpecificPermissions::Opaque(opaque)))
+                Ok((input, Self::Opaque(opaque)))
             }
             1 => {
                 let (input, bitmap_ssp) =
-                    decode_bytewise_open_type(BitmapSsp::decode_bytewise, input)?;
-                Ok((input, ServiceSpecificPermissions::BitmapSsp(bitmap_ssp)))
+                    decode_bytewise_open_type(ieee1609dot2::BitmapSsp::decode_bytewise, input)?;
+                Ok((input, Self::BitmapSsp(bitmap_ssp)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2069,15 +2239,15 @@ impl<'s> InternalDecode<'s> for ServiceSpecificPermissions<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for PsidSspRange<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::PsidSspRange<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
         let (input, bitmap) = decode_bytewise_bitstring(Some(1), Some(1), false, input)?;
-        let (input, psid) = Psid::decode_bytewise(input)?;
+        let (input, psid) = ieee1609dot2::Psid::decode_bytewise(input)?;
         let (input, ssp_range) = if bitmap[0] {
-            map(SspRange::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::SspRange::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
@@ -2085,7 +2255,7 @@ impl<'s> InternalDecode<'s> for PsidSspRange<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for SspRange<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::SspRange<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2093,14 +2263,16 @@ impl<'s> InternalDecode<'s> for SspRange<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, opaque) = SequenceOfOctetString::decode_bytewise(input)?;
-                Ok((input, SspRange::Opaque(opaque)))
+                let (input, opaque) = ieee1609dot2::SequenceOfOctetString::decode_bytewise(input)?;
+                Ok((input, Self::Opaque(opaque)))
             }
-            1 => Ok((input, SspRange::All(()))),
+            1 => Ok((input, Self::All(()))),
             2 => {
-                let (input, bitmap_ssp) =
-                    decode_bytewise_open_type(BitmapSspRange::decode_bytewise, input)?;
-                Ok((input, SspRange::BitmapSspRange(bitmap_ssp)))
+                let (input, bitmap_ssp) = decode_bytewise_open_type(
+                    ieee1609dot2::BitmapSspRange::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::BitmapSspRange(bitmap_ssp)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2109,7 +2281,7 @@ impl<'s> InternalDecode<'s> for SspRange<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for BitmapSspRange<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::BitmapSspRange<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2126,7 +2298,7 @@ impl<'s> InternalDecode<'s> for BitmapSspRange<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for PublicVerificationKey<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::PublicVerificationKey<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2134,27 +2306,33 @@ impl<'s> InternalDecode<'s> for PublicVerificationKey<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, point) = EccP256CurvePoint::decode_bytewise(input)?;
-                Ok((input, PublicVerificationKey::EcdsaNistP256(point)))
+                let (input, point) = ieee1609dot2::EccP256CurvePoint::decode_bytewise(input)?;
+                Ok((input, Self::EcdsaNistP256(point)))
             }
             1 => {
-                let (input, point) = EccP256CurvePoint::decode_bytewise(input)?;
-                Ok((input, PublicVerificationKey::EcdsaBrainpoolP256r1(point)))
+                let (input, point) = ieee1609dot2::EccP256CurvePoint::decode_bytewise(input)?;
+                Ok((input, Self::EcdsaBrainpoolP256r1(point)))
             }
             2 => {
-                let (input, point) =
-                    decode_bytewise_open_type(EccP384CurvePoint::decode_bytewise, input)?;
-                Ok((input, PublicVerificationKey::EcdsaBrainpoolP384r1(point)))
+                let (input, point) = decode_bytewise_open_type(
+                    ieee1609dot2::EccP384CurvePoint::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::EcdsaBrainpoolP384r1(point)))
             }
             3 => {
-                let (input, point) =
-                    decode_bytewise_open_type(EccP384CurvePoint::decode_bytewise, input)?;
-                Ok((input, PublicVerificationKey::EcdsaNistP384(point)))
+                let (input, point) = decode_bytewise_open_type(
+                    ieee1609dot2::EccP384CurvePoint::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::EcdsaNistP384(point)))
             }
             4 => {
-                let (input, point) =
-                    decode_bytewise_open_type(EccP256CurvePoint::decode_bytewise, input)?;
-                Ok((input, PublicVerificationKey::EcsigSm2(point)))
+                let (input, point) = decode_bytewise_open_type(
+                    ieee1609dot2::EccP256CurvePoint::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::EcsigSm2(point)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2163,7 +2341,7 @@ impl<'s> InternalDecode<'s> for PublicVerificationKey<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for Signature<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::Signature<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2171,27 +2349,33 @@ impl<'s> InternalDecode<'s> for Signature<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, sig) = EcdsaP256Signature::decode_bytewise(input)?;
-                Ok((input, Signature::EcdsaNistP256Signature(sig)))
+                let (input, sig) = ieee1609dot2::EcdsaP256Signature::decode_bytewise(input)?;
+                Ok((input, Self::EcdsaNistP256Signature(sig)))
             }
             1 => {
-                let (input, sig) = EcdsaP256Signature::decode_bytewise(input)?;
-                Ok((input, Signature::EcdsaBrainpoolP256r1Signature(sig)))
+                let (input, sig) = ieee1609dot2::EcdsaP256Signature::decode_bytewise(input)?;
+                Ok((input, Self::EcdsaBrainpoolP256r1Signature(sig)))
             }
             2 => {
-                let (input, sig) =
-                    decode_bytewise_open_type(EcdsaP384Signature::decode_bytewise, input)?;
-                Ok((input, Signature::EcdsaBrainpoolP384r1Signature(sig)))
+                let (input, sig) = decode_bytewise_open_type(
+                    ieee1609dot2::EcdsaP384Signature::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::EcdsaBrainpoolP384r1Signature(sig)))
             }
             3 => {
-                let (input, sig) =
-                    decode_bytewise_open_type(EcdsaP384Signature::decode_bytewise, input)?;
-                Ok((input, Signature::EcdsaNistP384Signature(sig)))
+                let (input, sig) = decode_bytewise_open_type(
+                    ieee1609dot2::EcdsaP384Signature::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::EcdsaNistP384Signature(sig)))
             }
             4 => {
-                let (input, sig) =
-                    decode_bytewise_open_type(EcsigP256Signature::decode_bytewise, input)?;
-                Ok((input, Signature::Sm2Signature(sig)))
+                let (input, sig) = decode_bytewise_open_type(
+                    ieee1609dot2::EcsigP256Signature::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::Sm2Signature(sig)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2200,29 +2384,29 @@ impl<'s> InternalDecode<'s> for Signature<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for EcdsaP256Signature<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EcdsaP256Signature<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, r_sig) = EccP256CurvePoint::decode_bytewise(input)?;
+        let (input, r_sig) = ieee1609dot2::EccP256CurvePoint::decode_bytewise(input)?;
         let (input, s_sig) = decode_bytewise_octetstring(Some(32), Some(32), false, input)?;
         Ok((input, Self { r_sig, s_sig }))
     }
 }
 
-impl<'s> InternalDecode<'s> for EcdsaP384Signature<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EcdsaP384Signature<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, r_sig) = EccP384CurvePoint::decode_bytewise(input)?;
+        let (input, r_sig) = ieee1609dot2::EccP384CurvePoint::decode_bytewise(input)?;
         let (input, s_sig) = decode_bytewise_octetstring(Some(48), Some(48), false, input)?;
         Ok((input, Self { r_sig, s_sig }))
     }
 }
 
-impl<'s> InternalDecode<'s> for EcsigP256Signature<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EcsigP256Signature<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2233,7 +2417,7 @@ impl<'s> InternalDecode<'s> for EcsigP256Signature<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for HashedData<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::HashedData<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2241,16 +2425,18 @@ impl<'s> InternalDecode<'s> for HashedData<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, hash) = HashedId32::decode_bytewise(input)?;
-                Ok((input, HashedData::Sha256HashedData(hash)))
+                let (input, hash) = ieee1609dot2::HashedId32::decode_bytewise(input)?;
+                Ok((input, Self::Sha256HashedData(hash)))
             }
             1 => {
-                let (input, hash) = decode_bytewise_open_type(HashedId48::decode_bytewise, input)?;
-                Ok((input, HashedData::Sha384HashedData(hash)))
+                let (input, hash) =
+                    decode_bytewise_open_type(ieee1609dot2::HashedId48::decode_bytewise, input)?;
+                Ok((input, Self::Sha384HashedData(hash)))
             }
             2 => {
-                let (input, hash) = decode_bytewise_open_type(HashedId32::decode_bytewise, input)?;
-                Ok((input, HashedData::Sm3HashedData(hash)))
+                let (input, hash) =
+                    decode_bytewise_open_type(ieee1609dot2::HashedId32::decode_bytewise, input)?;
+                Ok((input, Self::Sm3HashedData(hash)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2259,13 +2445,13 @@ impl<'s> InternalDecode<'s> for HashedData<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for Ieee1609Dot2Data<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::Ieee1609Dot2Data<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, protocol_version) = Uint8::decode_bytewise(input)?;
-        let (input, content) = Ieee1609Dot2Content::decode_bytewise(input)?;
+        let (input, protocol_version) = ieee1609dot2::Uint8::decode_bytewise(input)?;
+        let (input, content) = ieee1609dot2::Ieee1609Dot2Content::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -2276,7 +2462,7 @@ impl<'s> InternalDecode<'s> for Ieee1609Dot2Data<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for Ieee1609Dot2Content<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::Ieee1609Dot2Content<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2284,33 +2470,25 @@ impl<'s> InternalDecode<'s> for Ieee1609Dot2Content<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, content) = Opaque::decode_bytewise(input)?;
-                Ok((input, Ieee1609Dot2Content::UnsecuredData(content)))
+                let (input, content) = ieee1609dot2::Opaque::decode_bytewise(input)?;
+                Ok((input, Self::UnsecuredData(content)))
             }
             1 => {
-                let (input, content) = SignedData::decode_bytewise(input)?;
-                Ok((
-                    input,
-                    Ieee1609Dot2Content::SignedData(alloc::boxed::Box::new(content)),
-                ))
+                let (input, content) = ieee1609dot2::SignedData::decode_bytewise(input)?;
+                Ok((input, Self::SignedData(alloc::boxed::Box::new(content))))
             }
             2 => {
-                let (input, content) = EncryptedData::decode_bytewise(input)?;
-                Ok((input, Ieee1609Dot2Content::EncryptedData(content)))
+                let (input, content) = ieee1609dot2::EncryptedData::decode_bytewise(input)?;
+                Ok((input, Self::EncryptedData(content)))
             }
             3 => {
-                let (input, content) = Opaque::decode_bytewise(input)?;
-                Ok((
-                    input,
-                    Ieee1609Dot2Content::SignedCertificateRequest(content),
-                ))
+                let (input, content) = ieee1609dot2::Opaque::decode_bytewise(input)?;
+                Ok((input, Self::SignedCertificateRequest(content)))
             }
             4 => {
-                let (input, content) = decode_bytewise_open_type(Opaque::decode_bytewise, input)?;
-                Ok((
-                    input,
-                    Ieee1609Dot2Content::SignedX509CertificateRequest(content),
-                ))
+                let (input, content) =
+                    decode_bytewise_open_type(ieee1609dot2::Opaque::decode_bytewise, input)?;
+                Ok((input, Self::SignedX509CertificateRequest(content)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2319,15 +2497,15 @@ impl<'s> InternalDecode<'s> for Ieee1609Dot2Content<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for SignedData<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::SignedData<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, hash_id) = HashAlgorithm::decode_bytewise(input)?;
-        let (input, tbs_data) = ToBeSignedData::decode_bytewise(input)?;
-        let (input, signer) = SignerIdentifier::decode_bytewise(input)?;
-        let (input, signature) = Signature::decode_bytewise(input)?;
+        let (input, hash_id) = ieee1609dot2::HashAlgorithm::decode_bytewise(input)?;
+        let (input, tbs_data) = ieee1609dot2::ToBeSignedData::decode_bytewise(input)?;
+        let (input, signer) = ieee1609dot2::SignerIdentifier::decode_bytewise(input)?;
+        let (input, signature) = ieee1609dot2::Signature::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -2340,15 +2518,15 @@ impl<'s> InternalDecode<'s> for SignedData<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for ToBeSignedData<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::ToBeSignedData<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
         #[cfg(feature = "validate")]
         let (input_before, length_before) = (input, input.len());
-        let (input, payload) = SignedDataPayload::decode_bytewise(input)?;
-        let (input, header_info) = HeaderInfo::decode_bytewise(input)?;
+        let (input, payload) = ieee1609dot2::SignedDataPayload::decode_bytewise(input)?;
+        let (input, header_info) = ieee1609dot2::HeaderInfo::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -2361,7 +2539,7 @@ impl<'s> InternalDecode<'s> for ToBeSignedData<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for SignedDataPayload<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::SignedDataPayload<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2369,12 +2547,12 @@ impl<'s> InternalDecode<'s> for SignedDataPayload<'s> {
         let (input, extended) = decode_bytewise_is_extended(input)?;
         let (input, bitmap) = decode_bytewise_bitstring(Some(3), Some(3), false, input)?;
         let (input, data) = if bitmap[1] {
-            map(Ieee1609Dot2Data::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::Ieee1609Dot2Data::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
         let (input, ext_data_hash) = if bitmap[2] {
-            map(HashedData::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::HashedData::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
@@ -2405,7 +2583,7 @@ impl<'s> InternalDecode<'s> for SignedDataPayload<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for RecipientInfo<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::RecipientInfo<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2413,24 +2591,25 @@ impl<'s> InternalDecode<'s> for RecipientInfo<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, info) = PreSharedKeyRecipientInfo::decode_bytewise(input)?;
-                Ok((input, RecipientInfo::PskRecipInfo(info)))
+                let (input, info) =
+                    ieee1609dot2::PreSharedKeyRecipientInfo::decode_bytewise(input)?;
+                Ok((input, Self::PskRecipInfo(info)))
             }
             1 => {
-                let (input, info) = SymmRecipientInfo::decode_bytewise(input)?;
-                Ok((input, RecipientInfo::SymmRecipInfo(info)))
+                let (input, info) = ieee1609dot2::SymmRecipientInfo::decode_bytewise(input)?;
+                Ok((input, Self::SymmRecipInfo(info)))
             }
             2 => {
-                let (input, info) = PKRecipientInfo::decode_bytewise(input)?;
-                Ok((input, RecipientInfo::CertRecipInfo(info)))
+                let (input, info) = ieee1609dot2::PKRecipientInfo::decode_bytewise(input)?;
+                Ok((input, Self::CertRecipInfo(info)))
             }
             3 => {
-                let (input, info) = PKRecipientInfo::decode_bytewise(input)?;
-                Ok((input, RecipientInfo::SignedDataRecipInfo(info)))
+                let (input, info) = ieee1609dot2::PKRecipientInfo::decode_bytewise(input)?;
+                Ok((input, Self::SignedDataRecipInfo(info)))
             }
             4 => {
-                let (input, info) = PKRecipientInfo::decode_bytewise(input)?;
-                Ok((input, RecipientInfo::RekRecipInfo(info)))
+                let (input, info) = ieee1609dot2::PKRecipientInfo::decode_bytewise(input)?;
+                Ok((input, Self::RekRecipInfo(info)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2439,7 +2618,7 @@ impl<'s> InternalDecode<'s> for RecipientInfo<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for SignerIdentifier<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::SignerIdentifier<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2447,14 +2626,14 @@ impl<'s> InternalDecode<'s> for SignerIdentifier<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, id) = HashedId8::decode_bytewise(input)?;
-                Ok((input, SignerIdentifier::Digest(id)))
+                let (input, id) = ieee1609dot2::HashedId8::decode_bytewise(input)?;
+                Ok((input, Self::Digest(id)))
             }
             1 => {
-                let (input, id) = SequenceOfCertificate::decode_bytewise(input)?;
-                Ok((input, SignerIdentifier::Certificate(id)))
+                let (input, id) = ieee1609dot2::SequenceOfCertificate::decode_bytewise(input)?;
+                Ok((input, Self::Certificate(id)))
             }
-            2 => Ok((input, SignerIdentifier::RsSelf(()))),
+            2 => Ok((input, Self::RsSelf(()))),
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
             ))),
@@ -2462,14 +2641,14 @@ impl<'s> InternalDecode<'s> for SignerIdentifier<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for MissingCrlIdentifier<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::MissingCrlIdentifier<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
         let (input, extended) = decode_bytewise_is_extended(input)?;
-        let (input, craca_id) = HashedId3::decode_bytewise(input)?;
-        let (mut input, crl_series) = CrlSeries::decode_bytewise(input)?;
+        let (input, craca_id) = ieee1609dot2::HashedId3::decode_bytewise(input)?;
+        let (mut input, crl_series) = ieee1609dot2::CrlSeries::decode_bytewise(input)?;
         if extended {
             let (i, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
             input = i;
@@ -2489,41 +2668,41 @@ impl<'s> InternalDecode<'s> for MissingCrlIdentifier<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for HeaderInfo<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::HeaderInfo<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
         let (input, extended) = decode_bytewise_is_extended(input)?;
         let (input, bitmap) = decode_bytewise_bitstring(Some(7), Some(7), false, input)?;
-        let (input, psid) = Psid::decode_bytewise(input)?;
+        let (input, psid) = ieee1609dot2::Psid::decode_bytewise(input)?;
         let (input, generation_time) = if bitmap[1] {
-            map(Time64::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::Time64::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
         let (input, expiry_time) = if bitmap[2] {
-            map(Time64::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::Time64::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
         let (input, generation_location) = if bitmap[3] {
-            map(ThreeDLocation::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::ThreeDLocation::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
         let (input, p2pcd_learning_request) = if bitmap[4] {
-            map(HashedId3::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::HashedId3::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
         let (input, missing_crl_identifier) = if bitmap[5] {
-            map(MissingCrlIdentifier::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::MissingCrlIdentifier::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
         let (input, encryption_key) = if bitmap[6] {
-            map(EncryptionKey::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::EncryptionKey::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
@@ -2536,26 +2715,29 @@ impl<'s> InternalDecode<'s> for HeaderInfo<'s> {
         ) = if extended {
             let (input, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
             let (input, inline_p2pcd_request) = if bitmap.get(0).is_some_and(|bit| *bit) {
-                decode_bytewise_open_type(SequenceOfHashedId3::decode_bytewise, input)
+                decode_bytewise_open_type(ieee1609dot2::SequenceOfHashedId3::decode_bytewise, input)
                     .map(|(rem, req)| (rem, Some(req)))?
             } else {
                 (input, None)
             };
             let (input, requested_certificate) = if bitmap.get(1).is_some_and(|bit| *bit) {
-                decode_bytewise_open_type(Certificate::decode_bytewise, input)
+                decode_bytewise_open_type(ieee1609dot2::Certificate::decode_bytewise, input)
                     .map(|(rem, cert)| (rem, Some(cert)))?
             } else {
                 (input, None)
             };
             let (input, pdu_functional_type) = if bitmap.get(2).is_some_and(|bit| *bit) {
-                decode_bytewise_open_type(PduFunctionalType::decode_bytewise, input)
+                decode_bytewise_open_type(ieee1609dot2::PduFunctionalType::decode_bytewise, input)
                     .map(|(rem, ty)| (rem, Some(ty)))?
             } else {
                 (input, None)
             };
             let (mut input, contributed_extensions) = if bitmap.get(3).is_some_and(|bit| *bit) {
-                decode_bytewise_open_type(ContributedExtensionBlocks::decode_bytewise, input)
-                    .map(|(rem, extensions)| (rem, Some(extensions)))?
+                decode_bytewise_open_type(
+                    ieee1609dot2::ContributedExtensionBlocks::decode_bytewise,
+                    input,
+                )
+                .map(|(rem, extensions)| (rem, Some(extensions)))?
             } else {
                 (input, None)
             };
@@ -2593,13 +2775,13 @@ impl<'s> InternalDecode<'s> for HeaderInfo<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for EncryptedData<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EncryptedData<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, recipients) = SequenceOfRecipientInfo::decode_bytewise(input)?;
-        let (input, ciphertext) = SymmetricCiphertext::decode_bytewise(input)?;
+        let (input, recipients) = ieee1609dot2::SequenceOfRecipientInfo::decode_bytewise(input)?;
+        let (input, ciphertext) = ieee1609dot2::SymmetricCiphertext::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -2610,13 +2792,13 @@ impl<'s> InternalDecode<'s> for EncryptedData<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for SymmRecipientInfo<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::SymmRecipientInfo<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, recipient_id) = HashedId8::decode_bytewise(input)?;
-        let (input, enc_key) = SymmetricCiphertext::decode_bytewise(input)?;
+        let (input, recipient_id) = ieee1609dot2::HashedId8::decode_bytewise(input)?;
+        let (input, enc_key) = ieee1609dot2::SymmetricCiphertext::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -2627,13 +2809,13 @@ impl<'s> InternalDecode<'s> for SymmRecipientInfo<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for PKRecipientInfo<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::PKRecipientInfo<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, recipient_id) = HashedId8::decode_bytewise(input)?;
-        let (input, enc_key) = EncryptedDataEncryptionKey::decode_bytewise(input)?;
+        let (input, recipient_id) = ieee1609dot2::HashedId8::decode_bytewise(input)?;
+        let (input, enc_key) = ieee1609dot2::EncryptedDataEncryptionKey::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -2644,13 +2826,13 @@ impl<'s> InternalDecode<'s> for PKRecipientInfo<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for One28BitCcmCiphertext<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::One28BitCcmCiphertext<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
         let (input, nonce) = decode_bytewise_octetstring(Some(12), Some(12), false, input)?;
-        let (input, ccm_ciphertext) = Opaque::decode_bytewise(input)?;
+        let (input, ccm_ciphertext) = ieee1609dot2::Opaque::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -2661,7 +2843,7 @@ impl<'s> InternalDecode<'s> for One28BitCcmCiphertext<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for EncryptedDataEncryptionKey<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EncryptedDataEncryptionKey<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2669,17 +2851,19 @@ impl<'s> InternalDecode<'s> for EncryptedDataEncryptionKey<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, key) = EciesP256EncryptedKey::decode_bytewise(input)?;
-                Ok((input, EncryptedDataEncryptionKey::EciesNistP256(key)))
+                let (input, key) = ieee1609dot2::EciesP256EncryptedKey::decode_bytewise(input)?;
+                Ok((input, Self::EciesNistP256(key)))
             }
             1 => {
-                let (input, key) = EciesP256EncryptedKey::decode_bytewise(input)?;
-                Ok((input, EncryptedDataEncryptionKey::EciesBrainpoolP256r1(key)))
+                let (input, key) = ieee1609dot2::EciesP256EncryptedKey::decode_bytewise(input)?;
+                Ok((input, Self::EciesBrainpoolP256r1(key)))
             }
             2 => {
-                let (input, key) =
-                    decode_bytewise_open_type(EcencP256EncryptedKey::decode_bytewise, input)?;
-                Ok((input, EncryptedDataEncryptionKey::EcencSm2256(key)))
+                let (input, key) = decode_bytewise_open_type(
+                    ieee1609dot2::EcencP256EncryptedKey::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::EcencSm2256(key)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2688,7 +2872,7 @@ impl<'s> InternalDecode<'s> for EncryptedDataEncryptionKey<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for SymmetricCiphertext<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::SymmetricCiphertext<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2696,13 +2880,15 @@ impl<'s> InternalDecode<'s> for SymmetricCiphertext<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, cipher) = One28BitCcmCiphertext::decode_bytewise(input)?;
-                Ok((input, SymmetricCiphertext::Aes128ccm(cipher)))
+                let (input, cipher) = ieee1609dot2::One28BitCcmCiphertext::decode_bytewise(input)?;
+                Ok((input, Self::Aes128ccm(cipher)))
             }
             1 => {
-                let (input, cipher) =
-                    decode_bytewise_open_type(One28BitCcmCiphertext::decode_bytewise, input)?;
-                Ok((input, SymmetricCiphertext::Sm4Ccm(cipher)))
+                let (input, cipher) = decode_bytewise_open_type(
+                    ieee1609dot2::One28BitCcmCiphertext::decode_bytewise,
+                    input,
+                )?;
+                Ok((input, Self::Sm4Ccm(cipher)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2711,7 +2897,7 @@ impl<'s> InternalDecode<'s> for SymmetricCiphertext<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for IssuerIdentifier<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::IssuerIdentifier<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2719,20 +2905,22 @@ impl<'s> InternalDecode<'s> for IssuerIdentifier<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, id) = HashedId8::decode_bytewise(input)?;
-                Ok((input, IssuerIdentifier::Sha256AndDigest(id)))
+                let (input, id) = ieee1609dot2::HashedId8::decode_bytewise(input)?;
+                Ok((input, Self::Sha256AndDigest(id)))
             }
             1 => {
-                let (input, id) = HashAlgorithm::decode_bytewise(input)?;
-                Ok((input, IssuerIdentifier::RsSelf(id)))
+                let (input, id) = ieee1609dot2::HashAlgorithm::decode_bytewise(input)?;
+                Ok((input, Self::RsSelf(id)))
             }
             2 => {
-                let (input, id) = decode_bytewise_open_type(HashedId8::decode_bytewise, input)?;
-                Ok((input, IssuerIdentifier::Sha384AndDigest(id)))
+                let (input, id) =
+                    decode_bytewise_open_type(ieee1609dot2::HashedId8::decode_bytewise, input)?;
+                Ok((input, Self::Sha384AndDigest(id)))
             }
             3 => {
-                let (input, id) = decode_bytewise_open_type(HashedId8::decode_bytewise, input)?;
-                Ok((input, IssuerIdentifier::Sm3AndDigest(id)))
+                let (input, id) =
+                    decode_bytewise_open_type(ieee1609dot2::HashedId8::decode_bytewise, input)?;
+                Ok((input, Self::Sm3AndDigest(id)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -2741,7 +2929,7 @@ impl<'s> InternalDecode<'s> for IssuerIdentifier<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for CertificateBase<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::CertificateBase<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2749,12 +2937,12 @@ impl<'s> InternalDecode<'s> for CertificateBase<'s> {
         #[cfg(feature = "validate")]
         let (input_before, length_before) = (input, input.len());
         let (input, bitmap) = decode_bytewise_bitstring(Some(1), Some(1), false, input)?;
-        let (input, version) = Uint8::decode_bytewise(input)?;
-        let (input, r_type) = CertificateType::decode_bytewise(input)?;
-        let (input, issuer) = IssuerIdentifier::decode_bytewise(input)?;
-        let (input, to_be_signed) = ToBeSignedCertificate::decode_bytewise(input)?;
+        let (input, version) = ieee1609dot2::Uint8::decode_bytewise(input)?;
+        let (input, r_type) = ieee1609dot2::CertificateType::decode_bytewise(input)?;
+        let (input, issuer) = ieee1609dot2::IssuerIdentifier::decode_bytewise(input)?;
+        let (input, to_be_signed) = ieee1609dot2::ToBeSignedCertificate::decode_bytewise(input)?;
         let (input, signature) = if bitmap[0] {
-            map(Signature::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::Signature::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
@@ -2773,7 +2961,7 @@ impl<'s> InternalDecode<'s> for CertificateBase<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::ToBeSignedCertificate<'s> {
     #[allow(clippy::too_many_lines)]
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
@@ -2781,46 +2969,49 @@ impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
     {
         let (input, extended) = decode_bytewise_is_extended(input)?;
         let (input, bitmap) = decode_bytewise_bitstring(Some(8), Some(8), false, input)?;
-        let (input, id) = CertificateId::decode_bytewise(input)?;
-        let (input, craca_id) = HashedId3::decode_bytewise(input)?;
-        let (input, crl_series) = CrlSeries::decode_bytewise(input)?;
-        let (input, validity_period) = ValidityPeriod::decode_bytewise(input)?;
+        let (input, id) = ieee1609dot2::CertificateId::decode_bytewise(input)?;
+        let (input, craca_id) = ieee1609dot2::HashedId3::decode_bytewise(input)?;
+        let (input, crl_series) = ieee1609dot2::CrlSeries::decode_bytewise(input)?;
+        let (input, validity_period) = ieee1609dot2::ValidityPeriod::decode_bytewise(input)?;
         let (input, region) = if bitmap[1] {
-            map(GeographicRegion::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::GeographicRegion::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
         let (input, assurance_level) = if bitmap[2] {
-            map(SubjectAssurance::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::SubjectAssurance::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
         let (input, app_permissions) = if bitmap[3] {
-            map(SequenceOfPsidSsp::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::SequenceOfPsidSsp::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
         let (input, cert_issue_permissions) = if bitmap[4] {
-            map(SequenceOfPsidGroupPermissions::decode_bytewise, |inner| {
-                Some(inner)
-            })(input)?
+            map(
+                ieee1609dot2::SequenceOfPsidGroupPermissions::decode_bytewise,
+                Some,
+            )(input)?
         } else {
             (input, None)
         };
         let (input, cert_request_permissions) = if bitmap[5] {
-            map(SequenceOfPsidGroupPermissions::decode_bytewise, |inner| {
-                Some(inner)
-            })(input)?
+            map(
+                ieee1609dot2::SequenceOfPsidGroupPermissions::decode_bytewise,
+                Some,
+            )(input)?
         } else {
             (input, None)
         };
         let (input, can_request_rollover) = (input, bitmap[6].then_some(()));
         let (input, encryption_key) = if bitmap[7] {
-            map(PublicEncryptionKey::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::PublicEncryptionKey::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
-        let (input, verify_key_indicator) = VerificationKeyIndicator::decode_bytewise(input)?;
+        let (input, verify_key_indicator) =
+            ieee1609dot2::VerificationKeyIndicator::decode_bytewise(input)?;
         let (input, flags, app_extensions, cert_issue_extensions, cert_request_extension) =
             if extended {
                 let (input, bitmap) = decode_bytewise_bitstring(Some(0), None, false, input)?;
@@ -2834,21 +3025,27 @@ impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
                     (input, None)
                 };
                 let (input, app_extensions) = if bitmap.get(1).is_some_and(|bit| *bit) {
-                    decode_bytewise_open_type(SequenceOfAppExtensions::decode_bytewise, input)
-                        .map(|(rem, extensions)| (rem, Some(extensions)))?
+                    decode_bytewise_open_type(
+                        ieee1609dot2::SequenceOfAppExtensions::decode_bytewise,
+                        input,
+                    )
+                    .map(|(rem, extensions)| (rem, Some(extensions)))?
                 } else {
                     (input, None)
                 };
                 let (input, cert_issue_extensions) = if bitmap.get(2).is_some_and(|bit| *bit) {
-                    decode_bytewise_open_type(SequenceOfCertIssueExtensions::decode_bytewise, input)
-                        .map(|(rem, extensions)| (rem, Some(extensions)))?
+                    decode_bytewise_open_type(
+                        ieee1609dot2::SequenceOfCertIssueExtensions::decode_bytewise,
+                        input,
+                    )
+                    .map(|(rem, extensions)| (rem, Some(extensions)))?
                 } else {
                     (input, None)
                 };
                 let (mut input, cert_request_extensions) = if bitmap.get(3).is_some_and(|bit| *bit)
                 {
                     decode_bytewise_open_type(
-                        SequenceOfCertRequestExtensions::decode_bytewise,
+                        ieee1609dot2::SequenceOfCertRequestExtensions::decode_bytewise,
                         input,
                     )
                     .map(|(rem, extensions)| (rem, Some(extensions)))?
@@ -2894,18 +3091,18 @@ impl<'s> InternalDecode<'s> for ToBeSignedCertificate<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for AppExtension<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::AppExtension<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, id) = ExtId::decode_bytewise(input)?;
+        let (input, id) = ieee1609dot2::ExtId::decode_bytewise(input)?;
         let (input, content) = decode_bytewise_octetstring(Some(0), None, false, input)?;
         Ok((input, Self { id, content }))
     }
 }
 
-impl<'s> InternalDecode<'s> for ContributedExtensionBlockExtns<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::ContributedExtensionBlockExtns<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2915,19 +3112,20 @@ impl<'s> InternalDecode<'s> for ContributedExtensionBlockExtns<'s> {
         for _ in 0..count {
             let (rem, item) = decode_bytewise_octetstring(Some(0), None, false, input)?;
             input = rem;
-            sequence_of.push(AnonymousContributedExtensionBlockExtns(item));
+            sequence_of.push(ieee1609dot2::AnonymousContributedExtensionBlockExtns(item));
         }
         Ok((input, Self(sequence_of)))
     }
 }
 
-impl<'s> InternalDecode<'s> for ContributedExtensionBlock<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::ContributedExtensionBlock<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, contributor_id) = HeaderInfoContributorId::decode_bytewise(input)?;
-        let (input, extns) = ContributedExtensionBlockExtns::decode_bytewise(input)?;
+        let (input, contributor_id) =
+            ieee1609dot2::HeaderInfoContributorId::decode_bytewise(input)?;
+        let (input, extns) = ieee1609dot2::ContributedExtensionBlockExtns::decode_bytewise(input)?;
         Ok((
             input,
             Self {
@@ -2938,18 +3136,19 @@ impl<'s> InternalDecode<'s> for ContributedExtensionBlock<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for CertIssueExtension<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::CertIssueExtension<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, id) = ExtId::decode_bytewise(input)?;
-        let (input, permissions) = CertIssueExtensionPermissions::decode_bytewise(input)?;
+        let (input, id) = ieee1609dot2::ExtId::decode_bytewise(input)?;
+        let (input, permissions) =
+            ieee1609dot2::CertIssueExtensionPermissions::decode_bytewise(input)?;
         Ok((input, Self { id, permissions }))
     }
 }
 
-impl<'s> InternalDecode<'s> for CertIssueExtensionPermissions<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::CertIssueExtensionPermissions<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2958,9 +3157,9 @@ impl<'s> InternalDecode<'s> for CertIssueExtensionPermissions<'s> {
         match tag {
             0 => {
                 let (input, data) = decode_bytewise_octetstring(Some(0), None, false, input)?;
-                Ok((input, CertIssueExtensionPermissions::Specific(data)))
+                Ok((input, Self::Specific(data)))
             }
-            1 => Ok((input, CertIssueExtensionPermissions::All(()))),
+            1 => Ok((input, Self::All(()))),
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
             ))),
@@ -2968,18 +3167,19 @@ impl<'s> InternalDecode<'s> for CertIssueExtensionPermissions<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for CertRequestExtension<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::CertRequestExtension<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
-        let (input, id) = ExtId::decode_bytewise(input)?;
-        let (input, permissions) = CertRequestExtensionPermissions::decode_bytewise(input)?;
+        let (input, id) = ieee1609dot2::ExtId::decode_bytewise(input)?;
+        let (input, permissions) =
+            ieee1609dot2::CertRequestExtensionPermissions::decode_bytewise(input)?;
         Ok((input, Self { id, permissions }))
     }
 }
 
-impl<'s> InternalDecode<'s> for CertRequestExtensionPermissions<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::CertRequestExtensionPermissions<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -2988,9 +3188,9 @@ impl<'s> InternalDecode<'s> for CertRequestExtensionPermissions<'s> {
         match tag {
             0 => {
                 let (input, data) = decode_bytewise_octetstring(Some(0), None, false, input)?;
-                Ok((input, CertRequestExtensionPermissions::Content(data)))
+                Ok((input, Self::Content(data)))
             }
-            1 => Ok((input, CertRequestExtensionPermissions::All(()))),
+            1 => Ok((input, Self::All(()))),
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
             ))),
@@ -2998,7 +3198,7 @@ impl<'s> InternalDecode<'s> for CertRequestExtensionPermissions<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for CertificateId<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::CertificateId<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -3006,18 +3206,18 @@ impl<'s> InternalDecode<'s> for CertificateId<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, id) = LinkageData::decode_bytewise(input)?;
-                Ok((input, CertificateId::LinkageData(id)))
+                let (input, id) = ieee1609dot2::LinkageData::decode_bytewise(input)?;
+                Ok((input, Self::LinkageData(id)))
             }
             1 => {
-                let (input, id) = Hostname::decode_bytewise(input)?;
-                Ok((input, CertificateId::Name(id)))
+                let (input, id) = ieee1609dot2::Hostname::decode_bytewise(input)?;
+                Ok((input, Self::Name(id)))
             }
             2 => {
                 let (input, id) = decode_bytewise_octetstring(Some(1), Some(64), false, input)?;
-                Ok((input, CertificateId::BinaryId(id)))
+                Ok((input, Self::BinaryId(id)))
             }
-            3 => Ok((input, CertificateId::None(()))),
+            3 => Ok((input, Self::None(()))),
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
             ))),
@@ -3025,16 +3225,16 @@ impl<'s> InternalDecode<'s> for CertificateId<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for LinkageData<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::LinkageData<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
         let (input, bitmap) = decode_bytewise_bitstring(Some(1), Some(1), false, input)?;
-        let (input, i_cert) = IValue::decode_bytewise(input)?;
-        let (input, linkage_value) = LinkageValue::decode_bytewise(input)?;
+        let (input, i_cert) = ieee1609dot2::IValue::decode_bytewise(input)?;
+        let (input, linkage_value) = ieee1609dot2::LinkageValue::decode_bytewise(input)?;
         let (input, group_linkage_value) = if bitmap[0] {
-            map(GroupLinkageValue::decode_bytewise, Some)(input)?
+            map(ieee1609dot2::GroupLinkageValue::decode_bytewise, Some)(input)?
         } else {
             (input, None)
         };
@@ -3049,13 +3249,14 @@ impl<'s> InternalDecode<'s> for LinkageData<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for PsidGroupPermissions<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::PsidGroupPermissions<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
     {
         let (input, bitmap) = decode_bytewise_bitstring(Some(3), Some(3), false, input)?;
-        let (input, subject_permissions) = SubjectPermissions::decode_bytewise(input)?;
+        let (input, subject_permissions) =
+            ieee1609dot2::SubjectPermissions::decode_bytewise(input)?;
         let (input, min_chain_length) = if bitmap[0] {
             decode_bytewise_integer(None, None, false, input)?
         } else {
@@ -3067,9 +3268,12 @@ impl<'s> InternalDecode<'s> for PsidGroupPermissions<'s> {
             (input, 0)
         };
         let (input, ee_type) = if bitmap[2] {
-            EndEntityType::decode_bytewise(input)?
+            ieee1609dot2::EndEntityType::decode_bytewise(input)?
         } else {
-            (input, EndEntityType(crate::bits![1, 0, 0, 0, 0, 0, 0, 0]))
+            (
+                input,
+                ieee1609dot2::EndEntityType(crate::bits![1, 0, 0, 0, 0, 0, 0, 0]),
+            )
         };
         Ok((
             input,
@@ -3083,7 +3287,7 @@ impl<'s> InternalDecode<'s> for PsidGroupPermissions<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for EndEntityType {
+impl<'s> InternalDecode<'s> for ieee1609dot2::EndEntityType {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -3093,7 +3297,7 @@ impl<'s> InternalDecode<'s> for EndEntityType {
     }
 }
 
-impl<'s> InternalDecode<'s> for SubjectPermissions<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::SubjectPermissions<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -3101,10 +3305,10 @@ impl<'s> InternalDecode<'s> for SubjectPermissions<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, exp) = SequenceOfPsidSspRange::decode_bytewise(input)?;
-                Ok((input, SubjectPermissions::Explicit(exp)))
+                let (input, exp) = ieee1609dot2::SequenceOfPsidSspRange::decode_bytewise(input)?;
+                Ok((input, Self::Explicit(exp)))
             }
-            1 => Ok((input, SubjectPermissions::All(()))),
+            1 => Ok((input, Self::All(()))),
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
             ))),
@@ -3112,7 +3316,7 @@ impl<'s> InternalDecode<'s> for SubjectPermissions<'s> {
     }
 }
 
-impl<'s> InternalDecode<'s> for VerificationKeyIndicator<'s> {
+impl<'s> InternalDecode<'s> for ieee1609dot2::VerificationKeyIndicator<'s> {
     fn decode_bytewise<'input: 's>(input: &'input [u8]) -> IResult<&'input [u8], Self>
     where
         Self: Sized,
@@ -3120,12 +3324,12 @@ impl<'s> InternalDecode<'s> for VerificationKeyIndicator<'s> {
         let (input, tag) = decode_bytewise_tag(input)?;
         match tag {
             0 => {
-                let (input, key) = PublicVerificationKey::decode_bytewise(input)?;
-                Ok((input, VerificationKeyIndicator::VerificationKey(key)))
+                let (input, key) = ieee1609dot2::PublicVerificationKey::decode_bytewise(input)?;
+                Ok((input, Self::VerificationKey(key)))
             }
             1 => {
-                let (input, val) = EccP256CurvePoint::decode_bytewise(input)?;
-                Ok((input, VerificationKeyIndicator::ReconstructionValue(val)))
+                let (input, val) = ieee1609dot2::EccP256CurvePoint::decode_bytewise(input)?;
+                Ok((input, Self::ReconstructionValue(val)))
             }
             _ => Err(nom::Err::Error(DecodeError::EnumError(
                 "Invalid choice index!".into(),
@@ -3182,16 +3386,16 @@ mod tests {
             0xe5, 0x48, 0x10, 0xc7, 0x2e, 0x71, 0x25, 0xab, 0x00, 0x1f, 0xeb, 0xef, 0x74, 0x05,
             0xf2, 0xaf, 0x27, 0x80, 0x00, 0x00, 0x00,
         ];
-        let result = BasicHeader::decode(data).unwrap();
+        let result = en302636_4_1::BasicHeader::decode(data).unwrap();
         assert_eq!(
             result,
             Decoded {
                 bytes_consumed: 4,
-                decoded: BasicHeader {
+                decoded: en302636_4_1::BasicHeader {
                     version: 1,
-                    next_header: NextAfterBasic::SecuredPacket,
+                    next_header: en302636_4_1::NextAfterBasic::SecuredPacket,
                     reserved: crate::bits!(0;8),
-                    lifetime: Lifetime(21),
+                    lifetime: en302636_4_1::Lifetime(21),
                     remaining_hop_limit: 1
                 }
             }
@@ -3202,7 +3406,7 @@ mod tests {
     #[allow(clippy::too_many_lines)]
     fn decodes_secure_header() {
         assert_eq!(
-            Ieee1609Dot2Data::decode_bytewise(&[
+            ieee1609dot2::Ieee1609Dot2Data::decode_bytewise(&[
                 0x03, 0x81, 0x00, 0x40, 0x03, 0x80, 0x78, 0x20, 0x50, 0x02, 0x80, 0x00, 0x54, 0x01,
                 0x00, 0x14, 0x00, 0xca, 0x83, 0x1a, 0x3f, 0x3d, 0x39, 0x70, 0xfc, 0x82, 0x80, 0x1f,
                 0xeb, 0x32, 0x0c, 0x05, 0xec, 0x3a, 0xfd, 0x80, 0x04, 0x0b, 0x90, 0x00, 0x00, 0x00,
@@ -3234,172 +3438,187 @@ mod tests {
             ])
             .unwrap()
             .1,
-            Ieee1609Dot2Data {
-                protocol_version: Uint8(3),
-                content: Ieee1609Dot2Content::SignedData(Box::new(SignedData {
-                    hash_id: HashAlgorithm::Sha256,
-                    tbs_data: ToBeSignedData {
-                        #[cfg(feature = "validate")]
-                        raw: &[
-                            64, 3, 128, 120, 32, 80, 2, 128, 0, 84, 1, 0, 20, 0, 202, 131, 26, 63,
-                            61, 57, 112, 252, 130, 128, 31, 235, 50, 12, 5, 236, 58, 253, 128, 4,
-                            11, 144, 0, 0, 0, 0, 7, 209, 0, 0, 2, 2, 26, 63, 61, 57, 130, 128, 64,
-                            90, 178, 3, 97, 142, 38, 193, 159, 160, 180, 11, 64, 0, 52, 140, 142,
-                            72, 185, 31, 160, 0, 145, 130, 232, 146, 127, 51, 255, 1, 255, 250, 0,
-                            40, 51, 0, 0, 75, 255, 106, 255, 21, 46, 64, 12, 137, 223, 164, 72, 36,
-                            126, 35, 211, 200, 31, 2, 74, 190, 165, 232, 207, 9, 105, 248, 13, 237,
-                            244, 36, 76, 144, 51, 63, 64, 1, 36, 0, 2, 48, 81, 90, 96, 237, 250
-                        ],
-                        payload: SignedDataPayload {
-                            data: Some(Ieee1609Dot2Data {
-                                protocol_version: Uint8(3),
-                                content: Ieee1609Dot2Content::UnsecuredData(Opaque(&[
-                                    32, 80, 2, 128, 0, 84, 1, 0, 20, 0, 202, 131, 26, 63, 61, 57,
-                                    112, 252, 130, 128, 31, 235, 50, 12, 5, 236, 58, 253, 128, 4,
-                                    11, 144, 0, 0, 0, 0, 7, 209, 0, 0, 2, 2, 26, 63, 61, 57, 130,
-                                    128, 64, 90, 178, 3, 97, 142, 38, 193, 159, 160, 180, 11, 64,
-                                    0, 52, 140, 142, 72, 185, 31, 160, 0, 145, 130, 232, 146, 127,
-                                    51, 255, 1, 255, 250, 0, 40, 51, 0, 0, 75, 255, 106, 255, 21,
-                                    46, 64, 12, 137, 223, 164, 72, 36, 126, 35, 211, 200, 31, 2,
-                                    74, 190, 165, 232, 207, 9, 105, 248, 13, 237, 244, 36, 76, 144,
-                                    51, 63
-                                ]))
-                            }),
-                            ext_data_hash: None,
-                            omitted: None
-                        },
-                        header_info: HeaderInfo {
-                            psid: Psid(36),
-                            generation_time: Some(Uint64(616_075_920_207_354)),
-                            expiry_time: None,
-                            generation_location: None,
-                            p2pcd_learning_request: None,
-                            missing_crl_identifier: None,
-                            encryption_key: None,
-                            inline_p2pcd_request: None,
-                            requested_certificate: None,
-                            pdu_functional_type: None,
-                            contributed_extensions: None
-                        }
-                    },
-                    signer: SignerIdentifier::Certificate(SequenceOfCertificate(vec![
-                        CertificateBase {
-                            version: Uint8(3),
-                            r_type: CertificateType::Explicit,
-                            issuer: IssuerIdentifier::Sha256AndDigest(HashedId8(&[
-                                93, 93, 203, 238, 251, 231, 210, 45
-                            ])),
-                            to_be_signed: ToBeSignedCertificate {
-                                id: CertificateId::None(()),
-                                craca_id: HashedId3(&[0, 0, 0]),
-                                crl_series: Uint16(0),
-                                validity_period: ValidityPeriod {
-                                    start: Uint32(612_489_605),
-                                    duration: Duration::Years(Uint16(1))
-                                },
-                                region: None,
-                                assurance_level: Some(SubjectAssurance(&[224])),
-                                app_permissions: Some(SequenceOfPsidSsp(vec![
-                                    PsidSsp {
-                                        psid: Psid(36),
-                                        ssp: Some(ServiceSpecificPermissions::BitmapSsp(
-                                            BitmapSsp(&[1, 255, 252])
-                                        ))
-                                    },
-                                    PsidSsp {
-                                        psid: Psid(37),
-                                        ssp: Some(ServiceSpecificPermissions::BitmapSsp(
-                                            BitmapSsp(&[1, 255, 255, 255])
-                                        ))
-                                    },
-                                    PsidSsp {
-                                        psid: Psid(140),
-                                        ssp: Some(ServiceSpecificPermissions::BitmapSsp(
-                                            BitmapSsp(&[2, 255, 255, 224])
-                                        ))
-                                    },
-                                    PsidSsp {
-                                        psid: Psid(141),
-                                        ssp: None
-                                    },
-                                    PsidSsp {
-                                        psid: Psid(638),
-                                        ssp: Some(ServiceSpecificPermissions::BitmapSsp(
-                                            BitmapSsp(&[1])
-                                        ))
-                                    },
-                                    PsidSsp {
-                                        psid: Psid(639),
-                                        ssp: Some(ServiceSpecificPermissions::BitmapSsp(
-                                            BitmapSsp(&[1])
-                                        ))
-                                    },
-                                    PsidSsp {
-                                        psid: Psid(1023),
-                                        ssp: None
-                                    }
-                                ])),
-                                cert_issue_permissions: None,
-                                cert_request_permissions: None,
-                                can_request_rollover: None,
-                                encryption_key: None,
-                                verify_key_indicator: VerificationKeyIndicator::VerificationKey(
-                                    PublicVerificationKey::EcdsaNistP256(
-                                        EccP256CurvePoint::CompressedY0(&[
-                                            19, 67, 8, 196, 50, 77, 95, 71, 252, 190, 102, 95, 181,
-                                            91, 64, 152, 179, 139, 156, 170, 72, 75, 212, 71, 76,
-                                            108, 82, 22, 0, 167, 80, 140
-                                        ])
-                                    )
-                                ),
-                                flags: None,
-                                app_extensions: None,
-                                cert_issue_extensions: None,
-                                cert_request_extension: None
-                            },
-                            signature: Some(Signature::EcdsaBrainpoolP256r1Signature(
-                                EcdsaP256Signature {
-                                    r_sig: EccP256CurvePoint::XOnly(&[
-                                        61, 154, 150, 138, 193, 25, 110, 70, 234, 152, 34, 108, 85,
-                                        32, 129, 167, 124, 223, 190, 213, 140, 118, 154, 242, 140,
-                                        159, 249, 6, 233, 38, 217, 34
-                                    ]),
-                                    s_sig: &[
-                                        64, 95, 24, 154, 28, 106, 3, 25, 137, 104, 150, 10, 147,
-                                        50, 80, 6, 175, 251, 132, 64, 76, 147, 22, 128, 105, 143,
-                                        255, 39, 200, 243, 18, 126
-                                    ]
-                                }
-                            )),
+            ieee1609dot2::Ieee1609Dot2Data {
+                protocol_version: ieee1609dot2::Uint8(3),
+                content: ieee1609dot2::Ieee1609Dot2Content::SignedData(Box::new(
+                    ieee1609dot2::SignedData {
+                        hash_id: ieee1609dot2::HashAlgorithm::Sha256,
+                        tbs_data: ieee1609dot2::ToBeSignedData {
                             #[cfg(feature = "validate")]
                             raw: &[
-                                128, 3, 0, 128, 93, 93, 203, 238, 251, 231, 210, 45, 48, 131, 0, 0,
-                                0, 0, 0, 36, 129, 217, 133, 134, 0, 1, 224, 1, 7, 128, 1, 36, 129,
-                                4, 3, 1, 255, 252, 128, 1, 37, 129, 5, 4, 1, 255, 255, 255, 128, 1,
-                                140, 129, 5, 4, 2, 255, 255, 224, 0, 1, 141, 128, 2, 2, 126, 129,
-                                2, 1, 1, 128, 2, 2, 127, 129, 2, 1, 1, 0, 2, 3, 255, 128, 128, 130,
-                                19, 67, 8, 196, 50, 77, 95, 71, 252, 190, 102, 95, 181, 91, 64,
-                                152, 179, 139, 156, 170, 72, 75, 212, 71, 76, 108, 82, 22, 0, 167,
-                                80, 140, 129, 128, 61, 154, 150, 138, 193, 25, 110, 70, 234, 152,
-                                34, 108, 85, 32, 129, 167, 124, 223, 190, 213, 140, 118, 154, 242,
-                                140, 159, 249, 6, 233, 38, 217, 34, 64, 95, 24, 154, 28, 106, 3,
-                                25, 137, 104, 150, 10, 147, 50, 80, 6, 175, 251, 132, 64, 76, 147,
-                                22, 128, 105, 143, 255, 39, 200, 243, 18, 126
+                                64, 3, 128, 120, 32, 80, 2, 128, 0, 84, 1, 0, 20, 0, 202, 131, 26,
+                                63, 61, 57, 112, 252, 130, 128, 31, 235, 50, 12, 5, 236, 58, 253,
+                                128, 4, 11, 144, 0, 0, 0, 0, 7, 209, 0, 0, 2, 2, 26, 63, 61, 57,
+                                130, 128, 64, 90, 178, 3, 97, 142, 38, 193, 159, 160, 180, 11, 64,
+                                0, 52, 140, 142, 72, 185, 31, 160, 0, 145, 130, 232, 146, 127, 51,
+                                255, 1, 255, 250, 0, 40, 51, 0, 0, 75, 255, 106, 255, 21, 46, 64,
+                                12, 137, 223, 164, 72, 36, 126, 35, 211, 200, 31, 2, 74, 190, 165,
+                                232, 207, 9, 105, 248, 13, 237, 244, 36, 76, 144, 51, 63, 64, 1,
+                                36, 0, 2, 48, 81, 90, 96, 237, 250
+                            ],
+                            payload: ieee1609dot2::SignedDataPayload {
+                                data: Some(ieee1609dot2::Ieee1609Dot2Data {
+                                    protocol_version: ieee1609dot2::Uint8(3),
+                                    content: ieee1609dot2::Ieee1609Dot2Content::UnsecuredData(
+                                        ieee1609dot2::Opaque(&[
+                                            32, 80, 2, 128, 0, 84, 1, 0, 20, 0, 202, 131, 26, 63,
+                                            61, 57, 112, 252, 130, 128, 31, 235, 50, 12, 5, 236,
+                                            58, 253, 128, 4, 11, 144, 0, 0, 0, 0, 7, 209, 0, 0, 2,
+                                            2, 26, 63, 61, 57, 130, 128, 64, 90, 178, 3, 97, 142,
+                                            38, 193, 159, 160, 180, 11, 64, 0, 52, 140, 142, 72,
+                                            185, 31, 160, 0, 145, 130, 232, 146, 127, 51, 255, 1,
+                                            255, 250, 0, 40, 51, 0, 0, 75, 255, 106, 255, 21, 46,
+                                            64, 12, 137, 223, 164, 72, 36, 126, 35, 211, 200, 31,
+                                            2, 74, 190, 165, 232, 207, 9, 105, 248, 13, 237, 244,
+                                            36, 76, 144, 51, 63
+                                        ])
+                                    )
+                                }),
+                                ext_data_hash: None,
+                                omitted: None
+                            },
+                            header_info: ieee1609dot2::HeaderInfo {
+                                psid: ieee1609dot2::Psid(36),
+                                generation_time: Some(ieee1609dot2::Uint64(616_075_920_207_354)),
+                                expiry_time: None,
+                                generation_location: None,
+                                p2pcd_learning_request: None,
+                                missing_crl_identifier: None,
+                                encryption_key: None,
+                                inline_p2pcd_request: None,
+                                requested_certificate: None,
+                                pdu_functional_type: None,
+                                contributed_extensions: None
+                            }
+                        },
+                        signer: ieee1609dot2::SignerIdentifier::Certificate(
+                            ieee1609dot2::SequenceOfCertificate(vec![
+                                ieee1609dot2::CertificateBase {
+                                    version: ieee1609dot2::Uint8(3),
+                                    r_type: ieee1609dot2::CertificateType::Explicit,
+                                    issuer: ieee1609dot2::IssuerIdentifier::Sha256AndDigest(
+                                        ieee1609dot2::HashedId8(&[
+                                            93, 93, 203, 238, 251, 231, 210, 45
+                                        ])
+                                    ),
+                                    to_be_signed: ieee1609dot2::ToBeSignedCertificate {
+                                        id: ieee1609dot2::CertificateId::None(()),
+                                        craca_id: ieee1609dot2::HashedId3(&[0, 0, 0]),
+                                        crl_series: ieee1609dot2::Uint16(0),
+                                        validity_period: ieee1609dot2::ValidityPeriod {
+                                            start: ieee1609dot2::Uint32(612_489_605),
+                                            duration: ieee1609dot2::Duration::Years(ieee1609dot2::Uint16(1))
+                                        },
+                                        region: None,
+                                        assurance_level: Some(ieee1609dot2::SubjectAssurance(&[224])),
+                                        app_permissions: Some(ieee1609dot2::SequenceOfPsidSsp(vec![
+                                            ieee1609dot2::PsidSsp {
+                                                psid: ieee1609dot2::Psid(36),
+                                                ssp: Some(ieee1609dot2::ServiceSpecificPermissions::BitmapSsp(
+                                                    ieee1609dot2::BitmapSsp(&[1, 255, 252])
+                                                ))
+                                            },
+                                            ieee1609dot2::PsidSsp {
+                                                psid: ieee1609dot2::Psid(37),
+                                                ssp: Some(ieee1609dot2::ServiceSpecificPermissions::BitmapSsp(
+                                                    ieee1609dot2::BitmapSsp(&[1, 255, 255, 255])
+                                                ))
+                                            },
+                                            ieee1609dot2::PsidSsp {
+                                                psid: ieee1609dot2::Psid(140),
+                                                ssp: Some(ieee1609dot2::ServiceSpecificPermissions::BitmapSsp(
+                                                    ieee1609dot2::BitmapSsp(&[2, 255, 255, 224])
+                                                ))
+                                            },
+                                            ieee1609dot2::PsidSsp {
+                                                psid: ieee1609dot2::Psid(141),
+                                                ssp: None
+                                            },
+                                            ieee1609dot2::PsidSsp {
+                                                psid: ieee1609dot2::Psid(638),
+                                                ssp: Some(ieee1609dot2::ServiceSpecificPermissions::BitmapSsp(
+                                                    ieee1609dot2::BitmapSsp(&[1])
+                                                ))
+                                            },
+                                            ieee1609dot2::PsidSsp {
+                                                psid: ieee1609dot2::Psid(639),
+                                                ssp: Some(ieee1609dot2::ServiceSpecificPermissions::BitmapSsp(
+                                                    ieee1609dot2::BitmapSsp(&[1])
+                                                ))
+                                            },
+                                            ieee1609dot2::PsidSsp {
+                                                psid: ieee1609dot2::Psid(1023),
+                                                ssp: None
+                                            }
+                                        ])),
+                                        cert_issue_permissions: None,
+                                        cert_request_permissions: None,
+                                        can_request_rollover: None,
+                                        encryption_key: None,
+                                        verify_key_indicator:
+                                            ieee1609dot2::VerificationKeyIndicator::VerificationKey(
+                                                ieee1609dot2::PublicVerificationKey::EcdsaNistP256(
+                                                    ieee1609dot2::EccP256CurvePoint::CompressedY0(&[
+                                                        19, 67, 8, 196, 50, 77, 95, 71, 252, 190,
+                                                        102, 95, 181, 91, 64, 152, 179, 139, 156,
+                                                        170, 72, 75, 212, 71, 76, 108, 82, 22, 0,
+                                                        167, 80, 140
+                                                    ])
+                                                )
+                                            ),
+                                        flags: None,
+                                        app_extensions: None,
+                                        cert_issue_extensions: None,
+                                        cert_request_extension: None
+                                    },
+                                    signature: Some(ieee1609dot2::Signature::EcdsaBrainpoolP256r1Signature(
+                                        ieee1609dot2::EcdsaP256Signature {
+                                            r_sig: ieee1609dot2::EccP256CurvePoint::XOnly(&[
+                                                61, 154, 150, 138, 193, 25, 110, 70, 234, 152, 34,
+                                                108, 85, 32, 129, 167, 124, 223, 190, 213, 140,
+                                                118, 154, 242, 140, 159, 249, 6, 233, 38, 217, 34
+                                            ]),
+                                            s_sig: &[
+                                                64, 95, 24, 154, 28, 106, 3, 25, 137, 104, 150, 10,
+                                                147, 50, 80, 6, 175, 251, 132, 64, 76, 147, 22,
+                                                128, 105, 143, 255, 39, 200, 243, 18, 126
+                                            ]
+                                        }
+                                    )),
+                                    #[cfg(feature = "validate")]
+                                    raw: &[
+                                        128, 3, 0, 128, 93, 93, 203, 238, 251, 231, 210, 45, 48,
+                                        131, 0, 0, 0, 0, 0, 36, 129, 217, 133, 134, 0, 1, 224, 1,
+                                        7, 128, 1, 36, 129, 4, 3, 1, 255, 252, 128, 1, 37, 129, 5,
+                                        4, 1, 255, 255, 255, 128, 1, 140, 129, 5, 4, 2, 255, 255,
+                                        224, 0, 1, 141, 128, 2, 2, 126, 129, 2, 1, 1, 128, 2, 2,
+                                        127, 129, 2, 1, 1, 0, 2, 3, 255, 128, 128, 130, 19, 67, 8,
+                                        196, 50, 77, 95, 71, 252, 190, 102, 95, 181, 91, 64, 152,
+                                        179, 139, 156, 170, 72, 75, 212, 71, 76, 108, 82, 22, 0,
+                                        167, 80, 140, 129, 128, 61, 154, 150, 138, 193, 25, 110,
+                                        70, 234, 152, 34, 108, 85, 32, 129, 167, 124, 223, 190,
+                                        213, 140, 118, 154, 242, 140, 159, 249, 6, 233, 38, 217,
+                                        34, 64, 95, 24, 154, 28, 106, 3, 25, 137, 104, 150, 10,
+                                        147, 50, 80, 6, 175, 251, 132, 64, 76, 147, 22, 128, 105,
+                                        143, 255, 39, 200, 243, 18, 126
+                                    ]
+                                }
+                            ])
+                        ),
+                        signature: ieee1609dot2::Signature::EcdsaNistP256Signature(ieee1609dot2::EcdsaP256Signature {
+                            r_sig: ieee1609dot2::EccP256CurvePoint::CompressedY1(&[
+                                252, 191, 58, 91, 249, 140, 20, 6, 63, 195, 113, 255, 224, 167, 89,
+                                193, 88, 146, 19, 93, 106, 187, 71, 27, 162, 78, 206, 111, 0, 211,
+                                146, 251
+                            ]),
+                            s_sig: &[
+                                217, 67, 197, 101, 93, 174, 70, 151, 27, 59, 9, 57, 89, 113, 21,
+                                132, 16, 91, 34, 48, 120, 61, 145, 114, 0, 251, 62, 157, 219, 68,
+                                11, 28
                             ]
-                        }
-                    ])),
-                    signature: Signature::EcdsaNistP256Signature(EcdsaP256Signature {
-                        r_sig: EccP256CurvePoint::CompressedY1(&[
-                            252, 191, 58, 91, 249, 140, 20, 6, 63, 195, 113, 255, 224, 167, 89,
-                            193, 88, 146, 19, 93, 106, 187, 71, 27, 162, 78, 206, 111, 0, 211, 146,
-                            251
-                        ]),
-                        s_sig: &[
-                            217, 67, 197, 101, 93, 174, 70, 151, 27, 59, 9, 57, 89, 113, 21, 132,
-                            16, 91, 34, 48, 120, 61, 145, 114, 0, 251, 62, 157, 219, 68, 11, 28
-                        ]
-                    })
-                }))
+                        })
+                    }
+                ))
             }
         );
     }

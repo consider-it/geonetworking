@@ -13,18 +13,18 @@ fn decode_beacon() {
         Decoded {
             bytes_consumed: 36,
             decoded: Packet::Unsecured {
-                basic: BasicHeader {
+                basic: en302636_4_1::BasicHeader {
                     version: 1,
-                    next_header: NextAfterBasic::CommonHeader,
+                    next_header: en302636_4_1::NextAfterBasic::CommonHeader,
                     reserved: bits![0, 0, 0, 0, 0, 0, 0, 0],
-                    lifetime: Lifetime(26),
+                    lifetime: en302636_4_1::Lifetime(26),
                     remaining_hop_limit: 1
                 },
-                common: CommonHeader {
-                    next_header: NextAfterCommon::Any,
+                common: en302636_4_1::CommonHeader {
+                    next_header: en302636_4_1::NextAfterCommon::Any,
                     reserved_1: bits![0, 0, 0, 0],
-                    header_type_and_subtype: HeaderType::Beacon,
-                    traffic_class: TrafficClass {
+                    header_type_and_subtype: en302636_4_1::HeaderType::Beacon,
+                    traffic_class: en302636_4_1::TrafficClass {
                         store_carry_forward: false,
                         channel_offload: false,
                         traffic_class_id: 3
@@ -34,15 +34,15 @@ fn decode_beacon() {
                     maximum_hop_limit: 1,
                     reserved_2: bits![0, 0, 0, 0, 0, 0, 0, 0]
                 },
-                extended: Some(ExtendedHeader::Beacon(Beacon {
-                    source_position_vector: LongPositionVector {
-                        gn_address: Address {
+                extended: Some(en302636_4_1::ExtendedHeader::Beacon(en302636_4_1::Beacon {
+                    source_position_vector: en302636_4_1::LongPositionVector {
+                        gn_address: en302636_4_1::Address {
                             manually_configured: false,
-                            station_type: StationType::RoadSideUnit,
+                            station_type: en302636_4_1::StationType::RoadSideUnit,
                             reserved: bits![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                             address: [0, 13, 65, 18, 54, 112]
                         },
-                        timestamp: Timestamp(1_897_856_500),
+                        timestamp: en302636_4_1::Timestamp(1_897_856_500),
                         latitude: 535_637_062,
                         longitude: 99_895_661,
                         position_accuracy: true,
@@ -76,20 +76,20 @@ fn unsecured_round_trip() {
         0x4d, 0x90, 0x02, 0xa8, 0x08, 0x4a, 0x7f, 0x00, 0xb8, 0x00, 0x00,
     ];
     let packet = Packet::Unsecured {
-        basic: BasicHeader {
+        basic: en302636_4_1::BasicHeader {
             version: 1,
-            next_header: NextAfterBasic::CommonHeader,
+            next_header: en302636_4_1::NextAfterBasic::CommonHeader,
             reserved: bits![0, 0, 0, 0, 0, 0, 0, 0],
-            lifetime: Lifetime(80),
+            lifetime: en302636_4_1::Lifetime(80),
             remaining_hop_limit: 1,
         },
-        common: CommonHeader {
-            next_header: NextAfterCommon::BTPB,
+        common: en302636_4_1::CommonHeader {
+            next_header: en302636_4_1::NextAfterCommon::BTPB,
             reserved_1: bits![0, 0, 0, 0],
-            header_type_and_subtype: HeaderType::TopologicallyScopedBroadcast(
-                BroadcastType::SingleHop,
+            header_type_and_subtype: en302636_4_1::HeaderType::TopologicallyScopedBroadcast(
+                en302636_4_1::BroadcastType::SingleHop,
             ),
-            traffic_class: TrafficClass {
+            traffic_class: en302636_4_1::TrafficClass {
                 store_carry_forward: false,
                 channel_offload: false,
                 traffic_class_id: 2,
@@ -99,23 +99,25 @@ fn unsecured_round_trip() {
             maximum_hop_limit: 1,
             reserved_2: bits![0, 0, 0, 0, 0, 0, 0, 0],
         },
-        extended: Some(ExtendedHeader::SHB(SingleHopBroadcast {
-            source_position_vector: LongPositionVector {
-                gn_address: Address {
-                    manually_configured: false,
-                    station_type: StationType::Unknown,
-                    reserved: bits![0, 1, 0, 0, 0, 0, 0, 1, 1, 0],
-                    address: [0, 96, 224, 105, 87, 141],
+        extended: Some(en302636_4_1::ExtendedHeader::SHB(
+            en302636_4_1::SingleHopBroadcast {
+                source_position_vector: en302636_4_1::LongPositionVector {
+                    gn_address: en302636_4_1::Address {
+                        manually_configured: false,
+                        station_type: en302636_4_1::StationType::Unknown,
+                        reserved: bits![0, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+                        address: [0, 96, 224, 105, 87, 141],
+                    },
+                    timestamp: en302636_4_1::Timestamp(542_947_520),
+                    latitude: 535_574_568,
+                    longitude: 99_765_648,
+                    position_accuracy: false,
+                    speed: 680,
+                    heading: 2122,
                 },
-                timestamp: Timestamp(542_947_520),
-                latitude: 535_574_568,
-                longitude: 99_765_648,
-                position_accuracy: false,
-                speed: 680,
-                heading: 2122,
+                media_dependent_data: [127, 0, 184, 0],
             },
-            media_dependent_data: [127, 0, 184, 0],
-        })),
+        )),
         payload: &[0],
     };
     let encoded = packet.encode_to_vec().unwrap();
@@ -156,7 +158,7 @@ macro_rules! round_trip {
 #[allow(clippy::too_many_lines)]
 fn certificate_round_trip() {
     round_trip!(
-        Certificate,
+        ieee1609dot2::Certificate,
         &[
             0x80, 0x03, 0x00, 0x80, 0xfb, 0x9f, 0xe6, 0x57, 0x1f, 0x7c, 0xe7, 0xf9, 0x10, 0x83,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x25, 0x69, 0x43, 0x01, 0x84, 0x00, 0x30, 0x01, 0x07,
@@ -175,7 +177,7 @@ fn certificate_round_trip() {
         ]
     );
     round_trip!(
-        Certificate,
+        ieee1609dot2::Certificate,
         &[
             0x80, 0x03, 0x00, 0x80, 0x5d, 0x5d, 0xcb, 0xee, 0xfb, 0xe7, 0xd2, 0x2d, 0x30, 0x83,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x81, 0xd9, 0x85, 0x86, 0x00, 0x01, 0xe0, 0x01,
@@ -193,7 +195,7 @@ fn certificate_round_trip() {
         ]
     );
     round_trip!(
-        Certificate,
+        ieee1609dot2::Certificate,
         &[
             0x80, 0x03, 0x00, 0x80, 0x0a, 0xf6, 0x09, 0xda, 0x7c, 0xc5, 0xaa, 0x91, 0x30, 0x83,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x6f, 0x64, 0x85, 0x86, 0x00, 0x01, 0xe0, 0x01,
@@ -216,7 +218,7 @@ fn certificate_round_trip() {
         ]
     );
     round_trip!(
-        Certificate,
+        ieee1609dot2::Certificate,
         &[
             0x80, 0x03, 0x00, 0x80, 0xf2, 0x9b, 0xd6, 0x64, 0xa9, 0x9a, 0xba, 0xd2, 0x10, 0x83,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0xb7, 0x00, 0x03, 0x84, 0x00, 0x30, 0x01, 0x06,
@@ -235,7 +237,7 @@ fn certificate_round_trip() {
         ]
     );
     round_trip!(
-        Certificate,
+        ieee1609dot2::Certificate,
         &[
             0x80, 0x03, 0x00, 0x80, 0xcd, 0xd7, 0xf4, 0x64, 0xc6, 0x3a, 0x43, 0x9b, 0x10, 0x83,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0xb3, 0x36, 0xa8, 0x84, 0x00, 0xa8, 0x01, 0x05,
@@ -253,7 +255,7 @@ fn certificate_round_trip() {
         ]
     );
     round_trip!(
-        Certificate,
+        ieee1609dot2::Certificate,
         &[
             0x80, 0x03, 0x00, 0x80, 0x4a, 0x66, 0xdc, 0x14, 0xf6, 0xaf, 0x48, 0xb3, 0x10, 0x83,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x25, 0x6a, 0xec, 0xda, 0x84, 0x00, 0x24, 0x01, 0x02,
