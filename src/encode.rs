@@ -63,9 +63,38 @@ impl From<Encoder> for BitVec<u8, Msb0> {
     }
 }
 
+/// Encoder for individual fields of the GeoNetworking header to binary data
+///
+/// Data encoding can be done using an [`Encoder`] or directly ([`encode`](`Self::encode`)) to a binary vector ([`encode_to_vec`](`Self::encode_to_vec`)).
+///
+/// # Examples
+/// Encode using an encoder:
+/// ```ignore
+/// let mut encoder = geonetworking::Encoder::new();
+/// packet.encode(&mut encoder).unwrap();
+///
+/// let output: Vec<u8> = encoder.into();
+/// ```
+///
+/// Encode and return bytes:
+/// ```ignore
+/// let bytes = packet.encode_to_vec().unwrap();
+/// ```
 pub trait Encode {
+    /// Encodes itself as binary data to the `output` [`Encoder`]
+    ///
+    /// Using an [`Encoder`] allows for concatenating multiple items in one encoding
+    ///
+    /// # Errors
+    /// Returns an [`EncodeError`] when encoding failed
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError>;
 
+    /// Encodes itself as binary data
+    ///
+    /// Compared to [`Self::encode`] this provides a shorthand that immediately returns the bytes of the encoding
+    ///
+    /// # Errors
+    /// Returns an [`EncodeError`] when encoding failed
     fn encode_to_vec(&self) -> Result<Vec<u8>, EncodeError> {
         let mut encoder = Encoder::new();
         self.encode(&mut encoder)?;
@@ -73,6 +102,10 @@ pub trait Encode {
     }
 
     #[cfg(feature = "json")]
+    /// Encodes itself to a JSON representation
+    ///
+    /// # Errors
+    /// Returns an [`EncodeError`] when encoding failed
     fn encode_to_json(&self) -> Result<alloc::string::String, EncodeError>
     where
         Self: Sized + Serialize,
