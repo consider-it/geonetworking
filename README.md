@@ -11,4 +11,4 @@ The default features include data validation functionalities and JSON serializat
 If you do not wish to include validation and JSON functionalities in your build, declare the dependency as follows: `geonetworking = { version = "$version", default-features = false }`.
 
 ### API and Examples
-See [docs.rs](docs.rs/crate/geonetworking).
+See [docs.rs](https://docs.rs/crate/geonetworking).
