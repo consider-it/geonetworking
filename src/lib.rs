@@ -278,6 +278,75 @@ impl<'p> Packet<'p> {
             Packet::Unsecured { common, .. } | Packet::Secured { common, .. } => common,
         }
     }
+
+    /// Returns a reference to the Basic header regardless of Packet type
+    #[must_use]
+    pub fn basic(&self) -> &BasicHeader {
+        match self {
+            Packet::Unsecured {
+                common: _,
+                basic,
+                extended: _,
+                payload: _,
+            }
+            | Packet::Secured {
+                basic,
+                secured: _,
+                common: _,
+                extended: _,
+            } => basic,
+        }
+    }
+
+    /// Returns a reference to the Extended header regardless of Packet type
+    #[must_use]
+    pub fn extended(&self) -> &Option<ExtendedHeader> {
+        match self {
+            Packet::Unsecured {
+                common: _,
+                basic: _,
+                extended,
+                payload: _,
+            }
+            | Packet::Secured {
+                basic: _,
+                secured: _,
+                common: _,
+                extended,
+            } => extended,
+        }
+    }
+
+    /// Determines if the packet was hopped
+    #[must_use]
+    pub fn is_hopped(&self) -> bool {
+        // A packet was hopped when the remaining hop limit is lower than the maximum hop limit.
+        // Directly received data has both parameters at the same value (SHB has both set to 1).
+        self.common().maximum_hop_limit > self.basic().remaining_hop_limit
+    }
+
+    /// Gets the source position vector from the extended header (if header is present)
+    #[must_use]
+    pub fn source_position_vector(&self) -> Option<LongPositionVector> {
+        self.extended().as_ref().map(|eh| {
+            match eh {
+                ExtendedHeader::Beacon(beacon) => &beacon.source_position_vector,
+                ExtendedHeader::GUC(geo_unicast) => &geo_unicast.source_position_vector,
+                ExtendedHeader::TSB(topologically_scoped_broadcast) => {
+                    &topologically_scoped_broadcast.source_position_vector
+                }
+                ExtendedHeader::SHB(single_hop_broadcast) => {
+                    &single_hop_broadcast.source_position_vector
+                }
+                ExtendedHeader::GBC(geo_anycast) | ExtendedHeader::GAC(geo_anycast) => {
+                    &geo_anycast.source_position_vector
+                }
+                ExtendedHeader::LSRequest(lsrequest) => &lsrequest.source_position_vector,
+                ExtendedHeader::LSReply(lsreply) => &lsreply.source_position_vector,
+            }
+            .clone()
+        })
+    }
 }
 
 #[cfg(test)]
