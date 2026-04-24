@@ -1,3 +1,16 @@
+## [0.3.0-rc.4] - 2026-04-24
+
+### 🚀 Features
+
+- *(Packet)* Add more getters
+
+### 🐛 Bug Fixes
+
+- *(docs)* Use correct link syntax in readme.md
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Update dependencies
 ## [0.3.0-rc.3] - 2026-04-20
 
 ### 🚀 Features
