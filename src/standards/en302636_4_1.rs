@@ -1,9 +1,81 @@
 //! Message types from EN 302 636-4-1
 
-use crate::Bits;
+extern crate alloc;
+use crate::{bits, Bits};
+use alloc::string::ToString;
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
+
+const LATLON_TO_INT_FACTOR: f32 = 1e7; // unit: 1/10 micro degree
+const ANGLE_TO_INT_FACTOR: f32 = 10f32; // unit: 0.1 degree
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Error {
+    /// (integer) value does not fit the target type
+    ValueOutOfBounds(OutOfBoundsError),
+    /// value does not fit the plausible value range
+    ValueOutOfRange(alloc::string::String),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct OutOfBoundsError {
+    pub value_name: alloc::string::String,
+    pub bounds_name: alloc::string::String,
+}
+
+impl core::fmt::Display for OutOfBoundsError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Value out of bounds: given '{}' does not fit inside an {}",
+            self.value_name, self.bounds_name
+        )
+    }
+}
+
+impl OutOfBoundsError {
+    fn new(value_name: &str, bounds_name: &str) -> Self {
+        Self {
+            value_name: value_name.to_string(),
+            bounds_name: bounds_name.to_string(),
+        }
+    }
+}
+
+fn make_latitude(deg: f32) -> Result<i32, Error> {
+    #[allow(clippy::cast_possible_truncation)]
+    let raw = (deg * LATLON_TO_INT_FACTOR) as i32;
+    if (-900_000_000..=900_000_000).contains(&raw) {
+        Ok(raw)
+    } else {
+        Err(Error::ValueOutOfRange("latitude".to_string()))
+    }
+}
+
+fn make_longitude(deg: f32) -> Result<i32, Error> {
+    #[allow(clippy::cast_possible_truncation)]
+    let raw = (deg * LATLON_TO_INT_FACTOR) as i32;
+    if (-1_800_000_000..=1_800_000_000).contains(&raw) {
+        Ok(raw)
+    } else {
+        Err(Error::ValueOutOfRange("longitude".to_string()))
+    }
+}
+
+fn make_heading(deg: f32) -> Result<u16, Error> {
+    if deg < 0. {
+        return Err(Error::ValueOutOfRange("heading".to_string()));
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let raw = (deg * ANGLE_TO_INT_FACTOR) as u16;
+    if raw > 3600 {
+        Err(Error::ValueOutOfRange("heading".to_string()))
+    } else {
+        Ok(raw)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
@@ -19,9 +91,22 @@ pub struct Address {
     pub address: [u8; 6],
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+impl Address {
+    #[must_use]
+    pub fn new(manually_configured: bool, station_type: StationType, address: [u8; 6]) -> Self {
+        Self {
+            manually_configured,
+            station_type,
+            reserved: bits![0;10],
+            address,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum StationType {
+    #[default]
     Unknown = 0,
     Pedestrian = 1,
     Cyclist = 2,
@@ -41,7 +126,7 @@ pub enum StationType {
 /// of the ITS-S were acquired by the GeoAdhoc router. The time is encoded as:
 /// TST = TST(TAI) % 2^32
 /// where TST(TAI) is the number of elapsed TAI milliseconds since 2004-01-01 00:00:00.000 UTC
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Timestamp(pub u32);
 
@@ -49,6 +134,14 @@ impl Timestamp {
     #[must_use]
     pub fn as_unix_timestamp(&self) -> u64 {
         u64::from(self.0) + 1_072_915_200_000
+    }
+
+    /// Creates a Geonetworking Timestamp from an `TimestampITS` value
+    #[must_use]
+    pub fn from_its_timestamp(timestamp_its: u64) -> Self {
+        #[allow(clippy::cast_possible_truncation)]
+        let ts_mod = (timestamp_its % 4_294_967_296) as u32;
+        Self(ts_mod)
     }
 }
 
@@ -76,6 +169,114 @@ pub struct LongPositionVector {
     pub heading: u16,
 }
 
+impl LongPositionVector {
+    const MPS_TO_INT_FACTOR: f32 = 100f32; // unit: 0.01 metre per second
+    const SPEED_MIN: i16 = -16_384;
+    const SPEED_MAX: i16 = 16_383;
+
+    /// Creates new instance from floating point values
+    ///
+    /// Provide:
+    /// - a timestamp as `TimestampIts` value
+    /// - latitude and longitude in degrees north/ east
+    /// - speed in meters per second
+    /// - heading in degrees from north
+    ///
+    /// # Errors
+    /// Returns [`Error::ValueOutOfRange`] when some input value is outside the plausible value range.
+    /// Returns [`Error::ValueOutOfBounds`] when some input value does not fit the target value range.
+    pub fn try_from_values(
+        gn_address: Address,
+        timestamp_its: u64,
+        latitude_deg: f32,
+        longitude_deg: f32,
+        position_accuracy: bool,
+        speed_mps: f32,
+        heading_deg: f32,
+    ) -> Result<Self, Error> {
+        let latitude = make_latitude(latitude_deg)?;
+        let longitude = make_longitude(longitude_deg)?;
+
+        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        let speed = (speed_mps * Self::MPS_TO_INT_FACTOR) as i16; // integer value range will be checked by Self::try_new
+
+        let heading = make_heading(heading_deg)?;
+
+        let timestamp = Timestamp::from_its_timestamp(timestamp_its);
+
+        Self::try_new(
+            gn_address,
+            timestamp,
+            latitude,
+            longitude,
+            position_accuracy,
+            speed,
+            heading,
+        )
+    }
+
+    /// Creates new instance from parts
+    ///
+    /// # Errors
+    /// Returns [`Error::ValueOutOfBounds`] when some input value does not fit the target value range.
+    /// The values will only be checked for integer range, not plausibility.
+    pub fn try_new(
+        gn_address: Address,
+        timestamp: Timestamp,
+        latitude: i32,
+        longitude: i32,
+        position_accuracy: bool,
+        speed: i16,
+        heading: u16,
+    ) -> Result<Self, Error> {
+        // speed value is 15 bit signed integer
+        if !(Self::SPEED_MIN..=Self::SPEED_MAX).contains(&speed) {
+            return Err(Error::ValueOutOfBounds(OutOfBoundsError::new(
+                "speed", "i15",
+            )));
+        }
+
+        Ok(Self {
+            gn_address,
+            timestamp,
+            latitude,
+            longitude,
+            position_accuracy,
+            speed,
+            heading,
+        })
+    }
+
+    #[must_use]
+    /// Returns latitude and longitude in degrees
+    pub fn get_position_deg(&self) -> (f32, f32) {
+        #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+        let lat = (self.latitude as f32) / LATLON_TO_INT_FACTOR;
+        #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+        let lon = (self.longitude as f32) / LATLON_TO_INT_FACTOR;
+        (lat, lon)
+    }
+
+    #[must_use]
+    pub fn get_speed_mps(&self) -> f32 {
+        f32::from(self.speed) / Self::MPS_TO_INT_FACTOR
+    }
+
+    #[must_use]
+    pub fn get_heading_deg(&self) -> f32 {
+        f32::from(self.heading) / ANGLE_TO_INT_FACTOR
+    }
+
+    /// Clamps a speed value in meters per second to the allowed value range in the LPV
+    #[must_use]
+    pub fn clamp_speed_mps(speed_mps: f32) -> f32 {
+        let min_mps = f32::from(Self::SPEED_MIN) / Self::MPS_TO_INT_FACTOR;
+        let max_mps = f32::from(Self::SPEED_MAX) / Self::MPS_TO_INT_FACTOR;
+
+        speed_mps.clamp(min_mps, max_mps)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct ShortPositionVector {
@@ -89,6 +290,35 @@ pub struct ShortPositionVector {
     pub latitude: i32,
     /// WGS 84 [i.6] longitude of the GeoAdhoc router reference position expressed in 1/10 micro degree
     pub longitude: i32,
+}
+
+impl ShortPositionVector {
+    /// Creates new instance from floating point values
+    ///
+    /// Provide:
+    /// - a timestamp as `TimestampIts` value
+    /// - latitude and longitude in degrees north/ east
+    ///
+    /// # Errors
+    /// Returns [`Error::ValueOutOfRange`] when some input value is outside the plausible value range.
+    pub fn try_from_values(
+        gn_address: Address,
+        timestamp_its: u64,
+        latitude_deg: f32,
+        longitude_deg: f32,
+    ) -> Result<Self, Error> {
+        let latitude = make_latitude(latitude_deg)?;
+        let longitude = make_longitude(longitude_deg)?;
+
+        let timestamp = Timestamp::from_its_timestamp(timestamp_its);
+
+        Ok(Self {
+            gn_address,
+            timestamp,
+            latitude,
+            longitude,
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -107,6 +337,35 @@ pub struct BasicHeader {
     /// Decremented by 1 by each GeoAdhoc router that forwards the packet
     /// The packet shall not be forwarded if RHL is decremented to zero
     pub remaining_hop_limit: u8,
+}
+
+impl BasicHeader {
+    /// Creates new instance from parts
+    ///
+    /// # Errors
+    /// Returns [`Error::ValueOutOfBounds`] when some input value does not fit the target value range.
+    /// The values will only be checked for integer range, not plausibility.
+    pub fn try_new(
+        version: u8,
+        next_header: NextAfterBasic,
+        lifetime: Lifetime,
+        remaining_hop_limit: u8,
+    ) -> Result<Self, Error> {
+        // version is 4 bit unsigned
+        if version > 15 {
+            return Err(Error::ValueOutOfBounds(OutOfBoundsError::new(
+                "version", "u4",
+            )));
+        }
+
+        Ok(Self {
+            version,
+            next_header,
+            reserved: bits![0; 8],
+            lifetime,
+            remaining_hop_limit,
+        })
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -219,6 +478,31 @@ pub struct CommonHeader {
     pub reserved_2: Bits<8>,
 }
 
+impl CommonHeader {
+    #[must_use]
+    pub fn new(
+        next_header: NextAfterCommon,
+        header_type_and_subtype: HeaderType,
+        traffic_class: TrafficClass,
+        flags: [bool; 8],
+        payload_length: u16,
+        maximum_hop_limit: u8,
+    ) -> Self {
+        let flags = Bits(flags.iter().collect::<_>());
+
+        Self {
+            next_header,
+            reserved_1: bits![0; 4],
+            header_type_and_subtype,
+            traffic_class,
+            flags,
+            payload_length,
+            maximum_hop_limit,
+            reserved_2: bits![0; 8],
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 /// Traffic class that represents Facility-layer requirements on packet transport
@@ -230,6 +514,33 @@ pub struct TrafficClass {
     /// Traffic class ID as specified in the media-dependent part of GeoNetworking corresponding to the interface
     /// over which the packet will be transmitted, e.g. in ETSI TS 102 636-4-2 [i.11] for ITS-G5 and ETSI TS 103 613 [i.10] for LTE-V2X
     pub traffic_class_id: u8,
+}
+
+impl TrafficClass {
+    /// Creates new instance from parts
+    ///
+    /// # Errors
+    /// Returns [`Error::ValueOutOfBounds`] when some input value does not fit the target value range.
+    /// The values will only be checked for integer range, not plausibility.
+    pub fn try_new(
+        store_carry_forward: bool,
+        channel_offload: bool,
+        traffic_class_id: u8,
+    ) -> Result<Self, Error> {
+        // traffic_class_id is 6 bit unsigned
+        if traffic_class_id > 63 {
+            return Err(Error::ValueOutOfBounds(OutOfBoundsError::new(
+                "traffic_class_id",
+                "u6",
+            )));
+        }
+
+        Ok(Self {
+            store_carry_forward,
+            channel_offload,
+            traffic_class_id,
+        })
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -311,6 +622,22 @@ pub struct GeoUnicast {
     pub destination_position_vector: ShortPositionVector,
 }
 
+impl GeoUnicast {
+    #[must_use]
+    pub fn new(
+        sequence_number: u16,
+        source_position_vector: LongPositionVector,
+        destination_position_vector: ShortPositionVector,
+    ) -> Self {
+        Self {
+            sequence_number,
+            reserved: bits![0; 16],
+            source_position_vector,
+            destination_position_vector,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct TopologicallyScopedBroadcast {
@@ -320,6 +647,17 @@ pub struct TopologicallyScopedBroadcast {
     pub reserved: Bits<16>,
     /// Long Position Vector containing the reference position of the source
     pub source_position_vector: LongPositionVector,
+}
+
+impl TopologicallyScopedBroadcast {
+    #[must_use]
+    pub fn new(sequence_number: u16, source_position_vector: LongPositionVector) -> Self {
+        Self {
+            sequence_number,
+            reserved: bits![0; 16],
+            source_position_vector,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -360,6 +698,67 @@ pub struct GeoAnycast {
     pub reserved_2: Bits<16>,
 }
 
+impl GeoAnycast {
+    /// Creates new instance from floating point values
+    ///
+    /// Provide:
+    /// - latitude and longitude in degrees north/ east
+    /// - distances in meters
+    /// - angle in degrees from north
+    ///
+    /// # Errors
+    /// Returns [`Error::ValueOutOfRange`] when some input value is outside the plausible value range.
+    pub fn try_from_values(
+        sequence_number: u16,
+        source_position_vector: LongPositionVector,
+        latitude_deg: f32,
+        longitude_deg: f32,
+        distance_a: u16,
+        distance_b: u16,
+        angle: u16,
+    ) -> Result<Self, Error> {
+        let latitude = make_latitude(latitude_deg)?;
+        let longitude = make_longitude(longitude_deg)?;
+
+        if angle > 360 {
+            return Err(Error::ValueOutOfRange("angle".to_string()));
+        }
+
+        Ok(Self::new(
+            sequence_number,
+            source_position_vector,
+            latitude,
+            longitude,
+            distance_a,
+            distance_b,
+            angle,
+        ))
+    }
+
+    #[must_use]
+    pub fn new(
+        sequence_number: u16,
+        source_position_vector: LongPositionVector,
+        geo_area_position_latitude: i32,
+        geo_area_position_longitude: i32,
+        distance_a: u16,
+        distance_b: u16,
+        angle: u16,
+    ) -> Self {
+        Self {
+            sequence_number,
+            reserved_1: bits![0; 16],
+            source_position_vector,
+            geo_area_position_latitude,
+            geo_area_position_longitude,
+            distance_a,
+            distance_b,
+            angle,
+            reserved_2: bits![0; 16],
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Beacon {
@@ -380,6 +779,22 @@ pub struct LSRequest {
     pub request_gn_address: Address,
 }
 
+impl LSRequest {
+    #[must_use]
+    pub fn new(
+        sequence_number: u16,
+        source_position_vector: LongPositionVector,
+        request_gn_address: Address,
+    ) -> Self {
+        Self {
+            sequence_number,
+            reserved: bits![0; 16],
+            source_position_vector,
+            request_gn_address,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct LSReply {
@@ -391,4 +806,51 @@ pub struct LSReply {
     pub source_position_vector: LongPositionVector,
     /// Short Position Vector containing the position of the destination
     pub destination_position_vector: ShortPositionVector,
+}
+
+impl LSReply {
+    #[must_use]
+    pub fn new(
+        sequence_number: u16,
+        source_position_vector: LongPositionVector,
+        destination_position_vector: ShortPositionVector,
+    ) -> Self {
+        Self {
+            sequence_number,
+            reserved: bits![0; 16],
+            source_position_vector,
+            destination_position_vector,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn convert_latitude() {
+        assert_eq!(Ok(0), make_latitude(0.));
+        assert_eq!(Ok(900_000_000), make_latitude(90.));
+        assert_eq!(Ok(-900_000_000), make_latitude(-90.));
+        assert!(make_latitude(90.1).is_err());
+        assert!(make_latitude(-90.1).is_err());
+    }
+
+    #[test]
+    fn convert_longitude() {
+        assert_eq!(Ok(0), make_longitude(0.));
+        assert_eq!(Ok(1_800_000_000), make_longitude(180.));
+        assert_eq!(Ok(-1_800_000_000), make_longitude(-180.));
+        assert!(make_longitude(180.1).is_err());
+        assert!(make_longitude(-180.1).is_err());
+    }
+
+    #[test]
+    fn convert_heading() {
+        assert_eq!(Ok(0), make_heading(0.));
+        assert_eq!(Ok(3600), make_heading(360.));
+        assert!(make_heading(360.1).is_err());
+        assert!(make_heading(-1.).is_err());
+    }
 }
