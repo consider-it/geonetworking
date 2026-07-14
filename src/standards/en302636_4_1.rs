@@ -126,6 +126,52 @@ pub enum NextAfterBasic {
 pub struct Lifetime(pub u8);
 
 impl Lifetime {
+    #[must_use]
+    pub fn from_raw(value: u8) -> Self {
+        Self(value)
+    }
+
+    #[must_use]
+    pub fn from_milliseconds(millis: u32) -> Self {
+        // lifetime bases:
+        // - 0:  50 ms
+        // - 1:   1 s
+        // - 2:  10 s
+        // - 3: 100 s
+        // lifetime multiplier: 6 bit -> 0..63
+        const ITS_GN_MAX_PACKET_LIFETIME: u32 = 600_000; // itsGnMaxPacketLifetime according to ETSI EN 302 636-4-1 V1.4.1
+
+        // use base with highest resolution for as long as possible, but without creating "jumps".
+        // e.g. 3150 ms is not represented as 63*50 ms because next higher value (3200 ms) can only be represented as 3*1 second.
+        let (multiplier, base) = if millis < 3000 {
+            // max. value which can be represented: 63 * 50 ms = 3150 ms
+            let multiplier = millis / 50;
+
+            (multiplier, 0) // multiplier 50ms
+        } else if millis < 60_000 {
+            // max. value which can be represented: 63 * 1 s = 63 s
+            let multiplier = millis / 1000;
+
+            (multiplier, 1) // multiplier 1s/ 1000ms
+        } else if millis < 600_000 {
+            // max. value which can be represented: 63 * 10 s = 630 s
+            let multiplier = millis / 10_000;
+
+            (multiplier, 2) // multiplier 10s/ 10000ms
+        } else if millis < ITS_GN_MAX_PACKET_LIFETIME {
+            let multiplier = millis / 100_000;
+
+            (multiplier, 3) // multiplier 100s
+        } else {
+            (ITS_GN_MAX_PACKET_LIFETIME / 100_000, 3) // multiplier 100s/ 100000ms
+        };
+
+        #[allow(clippy::cast_possible_truncation)]
+        let lifetime_data = (multiplier << 2) as u8 | (base & 0x03);
+
+        Self(lifetime_data)
+    }
+
     /// returns the lifetime base (bit 6 and 7)
     #[must_use]
     pub fn base(&self) -> u8 {
