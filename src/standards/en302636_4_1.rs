@@ -481,7 +481,7 @@ pub struct CommonHeader {
     /// Traffic class that represents Facility-layer requirements on packet transport
     pub traffic_class: TrafficClass,
     /// Bit 0: Indicates whether the ITS-S is mobile or stationary (GN protocol constant itsGnIsMobile)
-    /// Bit 1 to Bit 7: Reserve, set to 0
+    /// Bit 1 to Bit 7: Reserved, set to 0
     pub flags: Bits<8>,
     /// Length of the GeoNetworking payload, i.e. the rest of the packet following the whole GeoNetworking header in octets, for example BTP + CAM
     pub payload_length: u16,
@@ -502,6 +502,31 @@ impl CommonHeader {
         maximum_hop_limit: u8,
     ) -> Self {
         let flags = Bits(flags.iter().collect::<_>());
+
+        Self {
+            next_header,
+            reserved_1: bits![0; 4],
+            header_type_and_subtype,
+            traffic_class,
+            flags,
+            payload_length,
+            maximum_hop_limit,
+            reserved_2: bits![0; 8],
+        }
+    }
+
+    /// Creates new instance from individual values
+    #[must_use]
+    pub fn from_values(
+        next_header: NextAfterCommon,
+        header_type_and_subtype: HeaderType,
+        traffic_class: TrafficClass,
+        is_mobile: bool,
+        payload_length: u16,
+        maximum_hop_limit: u8,
+    ) -> Self {
+        let mobile_flag = u8::from(is_mobile);
+        let flags = bits![mobile_flag, 0, 0, 0, 0, 0, 0, 0];
 
         Self {
             next_header,
