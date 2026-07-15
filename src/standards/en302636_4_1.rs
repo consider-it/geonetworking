@@ -18,6 +18,19 @@ pub enum Error {
     ValueOutOfRange(alloc::string::String),
 }
 
+impl core::fmt::Display for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Error::ValueOutOfBounds(out_of_bounds_error) => write!(f, "{out_of_bounds_error}"),
+            Error::ValueOutOfRange(value_name) => {
+                write!(f, "Value out of range: '{value_name}' is not a sane value")
+            }
+        }
+    }
+}
+
+impl core::error::Error for Error {}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct OutOfBoundsError {
     pub value_name: alloc::string::String,
