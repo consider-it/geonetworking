@@ -109,8 +109,9 @@
 //! ```
 
 #![cfg_attr(all(not(test), not(feature = "validate")), no_std)]
-#[cfg(not(feature = "validate"))]
+
 extern crate alloc;
+use alloc::string::ToString;
 #[cfg(all(feature = "json", not(feature = "validate")))]
 use alloc::vec;
 #[cfg(feature = "validate")]
@@ -314,6 +315,37 @@ impl<'p> Packet<'p> {
                 common: _,
                 extended,
             } => extended,
+        }
+    }
+
+    /// Returns a reference to the payload of a signed or unsigned packet (or None if secured packet has not payload)
+    ///
+    /// The payload buffer will contain a header (usually BTP) as specified in the `next_header` field of the common header.
+    #[must_use]
+    pub fn payload(&self) -> Option<&[u8]> {
+        match &self {
+            Self::Unsecured { payload, .. } => Some(*payload),
+            s @ Self::Secured { .. } => s.secured_payload_after_gn(),
+        }
+    }
+
+    /// Extracts the BTP payload
+    ///
+    /// # Errors
+    /// Returns a human-readable string if
+    /// - a secured packet has no payload
+    /// - or the next header is not a BTP header
+    pub fn btp_paylaod(&self) -> Result<&[u8], alloc::string::String> {
+        let Some(payload) = self.payload() else {
+            return Err("No data in secured packet".to_string());
+        };
+
+        match self.common().next_header {
+            NextAfterCommon::BTPA | NextAfterCommon::BTPB => {
+                let (_, payload) = payload.split_at(4);
+                Ok(payload)
+            }
+            _ => Err("Unsupported BTP header type".to_string()),
         }
     }
 
