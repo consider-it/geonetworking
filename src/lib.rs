@@ -335,7 +335,7 @@ impl<'p> Packet<'p> {
     /// Returns a human-readable string if
     /// - a secured packet has no payload
     /// - or the next header is not a BTP header
-    pub fn btp_paylaod(&self) -> Result<&'p [u8], alloc::string::String> {
+    pub fn btp_payload(&self) -> Result<&'p [u8], alloc::string::String> {
         let Some(payload) = self.payload() else {
             return Err("No data in secured packet".to_string());
         };
