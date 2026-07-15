@@ -322,8 +322,8 @@ impl<'p> Packet<'p> {
     ///
     /// The payload buffer will contain a header (usually BTP) as specified in the `next_header` field of the common header.
     #[must_use]
-    pub fn payload(&self) -> Option<&[u8]> {
-        match &self {
+    pub fn payload(&self) -> Option<&'p [u8]> {
+        match self {
             Self::Unsecured { payload, .. } => Some(*payload),
             s @ Self::Secured { .. } => s.secured_payload_after_gn(),
         }
@@ -335,7 +335,7 @@ impl<'p> Packet<'p> {
     /// Returns a human-readable string if
     /// - a secured packet has no payload
     /// - or the next header is not a BTP header
-    pub fn btp_paylaod(&self) -> Result<&[u8], alloc::string::String> {
+    pub fn btp_paylaod(&self) -> Result<&'p [u8], alloc::string::String> {
         let Some(payload) = self.payload() else {
             return Err("No data in secured packet".to_string());
         };
