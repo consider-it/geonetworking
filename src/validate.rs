@@ -60,7 +60,7 @@ impl Validate for Ieee1609Dot2Data<'_> {
             return Ok(ValidationResult::Failure {
                 reason: format!(
                     "Protocol version of IEEE 1609.2 data must be 3. Found {}",
-                    &self.protocol_version.0
+                    self.protocol_version.0
                 ),
             });
         }
