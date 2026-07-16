@@ -1,3 +1,22 @@
+## [0.3.0-rc.6] - 2026-07-16
+
+### 🚀 Features
+
+- *(en302636_4_1)* Build Lifetime from milliseconds
+- *(en302636_4_1)* Add convenience constructors
+- *(Packet)* Add getter for the payload
+- *(en302636_4_1)* Implement `Display` trait for Error type
+- *(CommonHeader)* Reduce flags to used value
+- *(prepare-release.sh)* Always stage Cargo.toml
+
+### 🐛 Bug Fixes
+
+- *(Packet)* Add lifetime specifier to payload getters
+- *(Packet)* Typo in `btp_payload` function name
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix clippy recommendation
 ## [0.3.0-rc.4] - 2026-04-24
 
 ### 🚀 Features
