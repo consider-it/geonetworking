@@ -14,9 +14,10 @@ fi
 git add Cargo.toml
 
 echo "updating changelog for upcoming $version..."
-git-cliff -o CHANGELOG.md --tag $version --ignore-tags ".*-rc\.\d+"
+git-cliff -o CHANGELOG.md --tag $version
 git add CHANGELOG.md
 
-echo "adding commit and tag..."
-git commit -m "chore(release): Bump version number, update changelog"
-git tag v${version}
+## Changelog needs to be manipulated manually to only include the latest "-rc.X" tags, but not ones which were superseded by a stable release!
+# echo "adding commit and tag..."
+# git commit -m "chore(release): Bump to pre-release, update changelog"
+# git tag v${version}
