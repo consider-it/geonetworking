@@ -1,44 +1,24 @@
-## [0.3.0-rc.6] - 2026-07-16
+## [0.3.0] - 2026-07-21
 
 ### 🚀 Features
 
+- *(ci)* Add publishing workflow
+- *(Packet)* Add more getters
 - *(en302636_4_1)* Build Lifetime from milliseconds
 - *(en302636_4_1)* Add convenience constructors
 - *(Packet)* Add getter for the payload
 - *(en302636_4_1)* Implement `Display` trait for Error type
 - *(CommonHeader)* Reduce flags to used value
 - *(prepare-release.sh)* Always stage Cargo.toml
+- *(tools)* Ignore release candidates in changelog
 
 ### 🐛 Bug Fixes
 
+- *(validate)* Move brainpool validation away from openSSL
+- *(ci)* Remove irrelevant step from job
+- *(docs)* Use correct link syntax in readme.md
 - *(Packet)* Add lifetime specifier to payload getters
 - *(Packet)* Typo in `btp_payload` function name
-
-### ⚙️ Miscellaneous Tasks
-
-- Fix clippy recommendation
-## [0.3.0-rc.4] - 2026-04-24
-
-### 🚀 Features
-
-- *(Packet)* Add more getters
-
-### 🐛 Bug Fixes
-
-- *(docs)* Use correct link syntax in readme.md
-
-### ⚙️ Miscellaneous Tasks
-
-- *(ci)* Update dependencies
-## [0.3.0-rc.3] - 2026-04-20
-
-### 🚀 Features
-
-- *(ci)* Add publishing workflow
-
-### 🐛 Bug Fixes
-
-- *(ci)* Remove irrelevant step from job
 
 ### 🚜 Refactor
 
@@ -51,17 +31,10 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- Generate first changelog
-## [0.3.0-rc.2] - 2026-02-03
-
-### ⚙️ Miscellaneous Tasks
-
 - Remove openssl dependency checks
-## [0.3.0-rc.1] - 2026-01-30
-
-### 🐛 Bug Fixes
-
-- *(validate)* Move brainpool validation away from openSSL
+- Generate first changelog
+- *(ci)* Update dependencies
+- Fix clippy recommendation
 ## [0.2.1] - 2026-01-30
 
 ### 🚀 Features
