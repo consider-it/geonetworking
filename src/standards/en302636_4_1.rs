@@ -609,6 +609,50 @@ pub enum HeaderType {
     LocationService(LocationServiceType),
 }
 
+impl HeaderType {
+    /// Creates an instance from an [`ExtendedHeader`] type and some [`AreaType`] for GAC and GBC
+    ///
+    /// We can't infer the area type just from the `GeoAnycast` information,
+    /// so in case of GAC or GBC the `area_type` parameter needs to be set.
+    ///
+    /// # Errors
+    /// human-readable string when GAC/ GBC area type is not obvious (circular) and isn't provided.
+    #[allow(unused)]
+    pub fn new_from(
+        value: &ExtendedHeader,
+        area_type: Option<AreaType>,
+    ) -> Result<Self, alloc::string::String> {
+        Ok(match &value {
+            ExtendedHeader::Beacon(_) => Self::Beacon,
+            ExtendedHeader::GAC(gac) => {
+                let atype = if gac.distance_b == 0 && gac.angle == 0 {
+                    AreaType::Circular
+                } else if let Some(area) = area_type {
+                    area
+                } else {
+                    return Err("GAC area type can't be inferred and isn't provided".into());
+                };
+                Self::GeoAnycast(atype)
+            }
+            ExtendedHeader::GBC(gac) => {
+                let atype = if gac.distance_b == 0 && gac.angle == 0 {
+                    AreaType::Circular
+                } else if let Some(area) = area_type {
+                    area
+                } else {
+                    return Err("GBC area type can't be inferred and isn't provided".into());
+                };
+                Self::GeoBroadcast(atype)
+            }
+            ExtendedHeader::GUC(_) => Self::GeoUnicast,
+            ExtendedHeader::TSB(_) => Self::TopologicallyScopedBroadcast(BroadcastType::MultiHop),
+            ExtendedHeader::SHB(_) => Self::TopologicallyScopedBroadcast(BroadcastType::SingleHop),
+            ExtendedHeader::LSRequest(_) => Self::LocationService(LocationServiceType::Request),
+            ExtendedHeader::LSReply(_) => Self::LocationService(LocationServiceType::Reply),
+        })
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 /// Area type used in header subtypes
