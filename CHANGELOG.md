@@ -1,3 +1,17 @@
+## [0.4.0] - 2026-07-24
+
+### 🚀 Features
+
+- [**breaking**] Remove wildcard imports for ETSI/ IEEE standards
+- *(en302636_4_1)* Add method to create `HeaderType` from `ExtendedHeader`
+- *(OER)* Encode BIT STRINGs as plain bool vectors
+
+### 🚜 Refactor
+
+- *(standard)* Move tests to definitions
+- Use arbitrary ints for reserved values
+- *(decode)* Replace BitVec with plain bool vectors
+- *(encode)* Replace BitVec with plain bool vectors
 ## [0.3.0] - 2026-07-21
 
 ### 🚀 Features
