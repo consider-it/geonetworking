@@ -283,6 +283,12 @@ impl<'p> Packet<'p> {
         self.common().maximum_hop_limit > self.basic().remaining_hop_limit
     }
 
+    /// Determines if the packet is a secured packet
+    #[must_use]
+    pub fn is_secured(&self) -> bool {
+        matches!(self, Self::Secured { .. })
+    }
+
     /// Gets the source position vector from the extended header (if header is present)
     #[must_use]
     pub fn source_position_vector(&self) -> Option<en302636_4_1::LongPositionVector> {
