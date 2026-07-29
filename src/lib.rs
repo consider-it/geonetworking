@@ -319,4 +319,166 @@ impl<'p> Packet<'p> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+
+    #[test]
+    #[cfg(feature = "validate")]
+    fn test_is_secured() {
+        use crate::{ieee1609dot2::Uint8, *};
+
+        let secured_packet = Packet::Secured {
+            basic: en302636_4_1::BasicHeader::try_new(
+                1,
+                en302636_4_1::NextAfterBasic::SecuredPacket,
+                en302636_4_1::Lifetime(5),
+                1,
+            )
+            .unwrap(),
+            secured: ieee1609dot2::Ieee1609Dot2Data {
+                protocol_version: ieee1609dot2::Uint8(3),
+                content: ieee1609dot2::Ieee1609Dot2Content::SignedData(Box::new(
+                    ieee1609dot2::SignedData {
+                        hash_id: ieee1609dot2::HashAlgorithm::Sha256,
+                        tbs_data: ieee1609dot2::ToBeSignedData {
+                            payload: ieee1609dot2::SignedDataPayload {
+                                data: Some(ieee1609dot2::Ieee1609Dot2Data {
+                                    protocol_version: Uint8(3),
+                                    content: ieee1609dot2::Ieee1609Dot2Content::UnsecuredData(
+                                        ieee1609dot2::Opaque(&[
+                                            32, 80, 2, 128, 0, 48, 1, 0, 20, 0, 6, 66, 126, 117,
+                                            69, 35, 48, 62, 190, 208, 31, 243, 73, 104, 5, 250,
+                                            153, 73, 128, 12, 2, 32, 0, 0, 0, 0, 7, 209, 0, 0, 2,
+                                            2, 126, 117, 69, 35, 190, 208, 0, 90, 179, 6, 77, 14,
+                                            40, 141, 105, 38, 174, 106, 224, 0, 52, 45, 146, 72,
+                                            34, 15, 160, 0, 152, 191, 233, 234, 111, 51, 255, 1,
+                                            255, 250, 0, 40, 51, 0,
+                                        ]),
+                                    ),
+                                }),
+                                ext_data_hash: None,
+                                omitted: None,
+                            },
+                            header_info: ieee1609dot2::HeaderInfo {
+                                psid: ieee1609dot2::Psid(36),
+                                generation_time: Some(ieee1609dot2::Uint64(696594120508870)),
+                                expiry_time: None,
+                                generation_location: None,
+                                p2pcd_learning_request: None,
+                                missing_crl_identifier: None,
+                                encryption_key: None,
+                                inline_p2pcd_request: None,
+                                requested_certificate: None,
+                                pdu_functional_type: None,
+                                contributed_extensions: None,
+                            },
+                            raw: &[
+                                64, 3, 128, 84, 32, 80, 2, 128, 0, 48, 1, 0, 20, 0, 6, 66, 126,
+                                117, 69, 35, 48, 62, 190, 208, 31, 243, 73, 104, 5, 250, 153, 73,
+                                128, 12, 2, 32, 0, 0, 0, 0, 7, 209, 0, 0, 2, 2, 126, 117, 69, 35,
+                                190, 208, 0, 90, 179, 6, 77, 14, 40, 141, 105, 38, 174, 106, 224,
+                                0, 52, 45, 146, 72, 34, 15, 160, 0, 152, 191, 233, 234, 111, 51,
+                                255, 1, 255, 250, 0, 40, 51, 0, 64, 1, 36, 0, 2, 121, 140, 117, 27,
+                                5, 198,
+                            ],
+                        },
+                        signer: ieee1609dot2::SignerIdentifier::Digest(ieee1609dot2::HashedId8(&[
+                            231, 63, 7, 66, 126, 117, 69, 35,
+                        ])),
+                        signature: ieee1609dot2::Signature::EcdsaNistP256Signature(
+                            ieee1609dot2::EcdsaP256Signature {
+                                r_sig: ieee1609dot2::EccP256CurvePoint::CompressedY1(&[
+                                    111, 196, 169, 79, 176, 224, 29, 215, 102, 195, 40, 29, 253,
+                                    56, 6, 85, 168, 76, 196, 70, 200, 123, 51, 117, 109, 86, 252,
+                                    38, 8, 107, 85, 21,
+                                ]),
+                                s_sig: &[
+                                    172, 35, 139, 254, 209, 112, 33, 113, 110, 108, 149, 124, 110,
+                                    247, 181, 161, 95, 110, 137, 36, 252, 33, 110, 212, 143, 194,
+                                    154, 81, 148, 186, 208, 127,
+                                ],
+                            },
+                        ),
+                    },
+                )),
+            },
+            common: en302636_4_1::CommonHeader {
+                next_header: en302636_4_1::NextAfterCommon::BTPB,
+                reserved_1: arbitrary_int::u4::from_u8(0),
+                header_type_and_subtype: en302636_4_1::HeaderType::TopologicallyScopedBroadcast(
+                    en302636_4_1::BroadcastType::SingleHop,
+                ),
+                traffic_class: en302636_4_1::TrafficClass::try_new(false, false, 2).unwrap(),
+                flags: [true, false, false, false, false, false, false, false],
+                payload_length: 48,
+                maximum_hop_limit: 1,
+                reserved_2: 0,
+            },
+            extended: Some(en302636_4_1::ExtendedHeader::SHB(
+                en302636_4_1::SingleHopBroadcast {
+                    source_position_vector: en302636_4_1::LongPositionVector::try_new(
+                        en302636_4_1::Address {
+                            manually_configured: false,
+                            station_type: en302636_4_1::StationType::PassengerCar,
+                            reserved: arbitrary_int::u10::from_u16(0),
+                            address: [6, 66, 126, 117, 69, 35],
+                        },
+                        en302636_4_1::Timestamp(809418448),
+                        536037736,
+                        100309321,
+                        true,
+                        12,
+                        544,
+                    )
+                    .unwrap(),
+                    media_dependent_data: [0, 0, 0, 0],
+                },
+            )),
+        };
+        assert!(secured_packet.is_secured());
+
+        let unsecured_packet = Packet::Unsecured {
+            basic: en302636_4_1::BasicHeader::try_new(
+                1,
+                en302636_4_1::NextAfterBasic::SecuredPacket,
+                en302636_4_1::Lifetime(5),
+                1,
+            )
+            .unwrap(),
+            common: en302636_4_1::CommonHeader {
+                next_header: en302636_4_1::NextAfterCommon::BTPB,
+                reserved_1: arbitrary_int::u4::from_u8(0),
+                header_type_and_subtype: en302636_4_1::HeaderType::TopologicallyScopedBroadcast(
+                    en302636_4_1::BroadcastType::SingleHop,
+                ),
+                traffic_class: en302636_4_1::TrafficClass::try_new(false, false, 2).unwrap(),
+                flags: [true, false, false, false, false, false, false, false],
+                payload_length: 48,
+                maximum_hop_limit: 1,
+                reserved_2: 0,
+            },
+            extended: Some(en302636_4_1::ExtendedHeader::SHB(
+                en302636_4_1::SingleHopBroadcast {
+                    source_position_vector: en302636_4_1::LongPositionVector::try_new(
+                        en302636_4_1::Address {
+                            manually_configured: false,
+                            station_type: en302636_4_1::StationType::PassengerCar,
+                            reserved: arbitrary_int::u10::from_u16(0),
+                            address: [6, 66, 126, 117, 69, 35],
+                        },
+                        en302636_4_1::Timestamp(809418448),
+                        536037736,
+                        100309321,
+                        true,
+                        12,
+                        544,
+                    )
+                    .unwrap(),
+                    media_dependent_data: [0, 0, 0, 0],
+                },
+            )),
+            payload: &[0x01, 0x02],
+        };
+
+        assert!(!unsecured_packet.is_secured());
+    }
+}
