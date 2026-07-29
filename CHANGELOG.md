@@ -1,3 +1,8 @@
+## [0.4.1] - 2026-07-29
+
+### 🚀 Features
+
+- *(Packet)* Add "is_secured" getter
 ## [0.4.0] - 2026-07-24
 
 ### 🚀 Features
