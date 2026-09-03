@@ -24,6 +24,7 @@ nom = { version = "7.1", default-features = false, features = ["alloc"] }
 arbitrary-int = { version = "2.0.0" }
 num = { version = "0.4", default-features = false }
 num-traits = { version = "0.2", default-features = false }
+rasn-its = { version = "0.28.12" }
 
 # "json" feature dependencies
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
