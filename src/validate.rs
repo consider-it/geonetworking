@@ -50,13 +50,13 @@ impl From<EncodeError> for ValidationError {
     }
 }
 
-impl Validate for ieee1609dot2::Ieee1609Dot2Data<'_> {
+impl Validate for ieee1609dot2::Ieee1609Dot2Data {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
-        if self.protocol_version != ieee1609dot2::Uint8(3) {
+        if self.protocol_version != 3 {
             return Ok(ValidationResult::Failure {
                 reason: format!(
                     "Protocol version of IEEE 1609.2 data must be 3. Found {}",
-                    self.protocol_version.0
+                    self.protocol_version
                 ),
             });
         }
@@ -64,7 +64,7 @@ impl Validate for ieee1609dot2::Ieee1609Dot2Data<'_> {
     }
 }
 
-impl Validate for ieee1609dot2::Ieee1609Dot2Content<'_> {
+impl Validate for ieee1609dot2::Ieee1609Dot2Content {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         match self {
             Self::UnsecuredData(_) => todo!(),
@@ -97,9 +97,11 @@ impl Validate for Packet<'_> {
     }
 }
 
-impl Validate for ieee1609dot2::SignedData<'_> {
+impl Validate for ieee1609dot2::SignedData {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
-        let data = self.tbs_data.raw;
+        use rasn::enc::Encode as _;
+
+        let data = self.tbs_data.payload;
 
         validate_and_continue!(&self.tbs_data.header_info);
         validate_and_continue!(&self.signer);
@@ -109,22 +111,27 @@ impl Validate for ieee1609dot2::SignedData<'_> {
                 let certificate = c.0.first().ok_or(ValidationError::InvalidInput(
                     "Certificate list is empty!".into(),
                 ))?;
-                (&certificate.to_be_signed.verify_key_indicator, certificate.raw)
+                (&certificate.to_be_signed.verify_key_indicator, certificate.encode(rasn::coer::Encoder()))
             }
             ieee1609dot2::SignerIdentifier::Digest(_) => {
                 // TODO: Support digest lookup
                 return Err(ValidationError::Unsupported("Certificate retrieval by digest is unsupported!".into()))
             },
-            ieee1609dot2::SignerIdentifier::RsSelf(()) => {
+            ieee1609dot2::SignerIdentifier::SelfSigned(()) => {
                 return Ok(ValidationResult::Failure {
                     reason: "Violates ETSI TS 103 097: Signer Identifier must be of type Digest or Certificate!".into(),
+                })
+            }
+            _ => {
+                return Ok(ValidationResult::Failure {
+                    reason: "Unknown signer identifier".into(),
                 })
             }
         };
 
         match (&self.signature, verifying_key) {
             (
-                ieee1609dot2::Signature::EcdsaNistP256Signature(ieee1609dot2::EcdsaP256Signature {
+                ieee1609dot2::Signature::EcdsaNistP256(ieee1609dot2::EcdsaP256Signature {
                     r_sig,
                     s_sig,
                 }),
@@ -133,23 +140,25 @@ impl Validate for ieee1609dot2::SignedData<'_> {
                 ),
             ) => ecdsa_nist_p256(r_sig, s_sig, key, data, Some(encoded_certificate)),
             (
-                ieee1609dot2::Signature::EcdsaBrainpoolP256r1Signature(
-                    ieee1609dot2::EcdsaP256Signature { r_sig, s_sig },
-                ),
+                ieee1609dot2::Signature::EcdsaBrainpoolP256r1(ieee1609dot2::EcdsaP256Signature {
+                    r_sig,
+                    s_sig,
+                }),
                 ieee1609dot2::VerificationKeyIndicator::VerificationKey(
                     ieee1609dot2::PublicVerificationKey::EcdsaBrainpoolP256r1(key),
                 ),
             ) => ecdsa_brainpool_p256_r1(r_sig, s_sig, key, data, Some(encoded_certificate)),
             (
-                ieee1609dot2::Signature::EcdsaBrainpoolP384r1Signature(
-                    ieee1609dot2::EcdsaP384Signature { r_sig, s_sig },
-                ),
+                ieee1609dot2::Signature::EcdsaBrainpoolP384r1(ieee1609dot2::EcdsaP384Signature {
+                    r_sig,
+                    s_sig,
+                }),
                 ieee1609dot2::VerificationKeyIndicator::VerificationKey(
                     ieee1609dot2::PublicVerificationKey::EcdsaBrainpoolP384r1(key),
                 ),
             ) => ecdsa_brainpool_p384_r1(r_sig, s_sig, key, data, Some(encoded_certificate)),
             (
-                ieee1609dot2::Signature::EcdsaNistP384Signature(ieee1609dot2::EcdsaP384Signature {
+                ieee1609dot2::Signature::EcdsaNistP384(ieee1609dot2::EcdsaP384Signature {
                     r_sig,
                     s_sig,
                 }),
@@ -158,10 +167,7 @@ impl Validate for ieee1609dot2::SignedData<'_> {
                 ),
             ) => ecdsa_nist_p384(r_sig, s_sig, key, data, Some(encoded_certificate)),
             (
-                ieee1609dot2::Signature::Sm2Signature(ieee1609dot2::EcsigP256Signature {
-                    r_sig,
-                    s_sig,
-                }),
+                ieee1609dot2::Signature::Sm2(ieee1609dot2::EcsigP256Signature { r_sig, s_sig }),
                 ieee1609dot2::VerificationKeyIndicator::VerificationKey(
                     ieee1609dot2::PublicVerificationKey::EcsigSm2(key),
                 ),
@@ -176,7 +182,7 @@ impl Validate for ieee1609dot2::SignedData<'_> {
     }
 }
 
-impl Validate for ieee1609dot2::SignerIdentifier<'_> {
+impl Validate for ieee1609dot2::SignerIdentifier {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         match self {
             Self::Digest(_) => Ok(ValidationResult::Success),
@@ -184,20 +190,23 @@ impl Validate for ieee1609dot2::SignerIdentifier<'_> {
             Self::Certificate(_) => Ok(ValidationResult::Failure {
                 reason: "Exactly one certificate must be included!".into(),
             }),
-            Self::RsSelf(()) => Ok(ValidationResult::Failure {
+            Self::SelfSigned(()) => Ok(ValidationResult::Failure {
                 reason: "Violates ETSI TS 103 097: Signer Identifier must be of type Digest or Certificate!".into(),
+            }),
+            _ => Ok(ValidationResult::Failure {
+                reason: "Unknown signer identifier".into(),
             }),
         }
     }
 }
 
-impl Validate for ieee1609dot2::Certificate<'_> {
+impl Validate for ieee1609dot2::Certificate {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         Ok(ValidationResult::Success)
     }
 }
 
-impl Validate for ieee1609dot2::HeaderInfo<'_> {
+impl Validate for ieee1609dot2::HeaderInfo {
     fn validate(&self) -> Result<ValidationResult, ValidationError> {
         match (self.expiry_time.as_ref(), self.generation_time.as_ref()) {
             (Some(exp), Some(gen)) if gen <= exp => {
