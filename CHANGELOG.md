@@ -1,3 +1,8 @@
+## [0.4.2] - 2026-10-19
+
+### ⚙️ Miscellaneous Tasks
+
+- Add unit test for is_secured
 ## [0.4.1] - 2026-07-29
 
 ### 🚀 Features
