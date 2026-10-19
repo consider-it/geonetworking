@@ -465,21 +465,29 @@ impl Encode for Option<en302636_4_1::ExtendedHeader> {
 
 impl Encode for Packet<'_> {
     fn encode(&self, output: &mut Encoder) -> Result<(), EncodeError> {
-        if let Self::Unsecured {
-            basic,
-            common,
-            extended,
-            payload,
-        } = self
-        {
-            basic.encode(output)?;
-            common.encode(output)?;
-            extended.encode(output)?;
-            payload.encode(output)
-        } else {
-            Err(EncodeError::Unsupported(
-                "Encoding secured headers is currently unsupported!".into(),
-            ))
+        match self {
+            Packet::Unsecured {
+                basic,
+                common,
+                extended,
+                payload,
+            } => {
+                basic.encode(output)?;
+                common.encode(output)?;
+                extended.encode(output)?;
+                payload.encode(output)
+            }
+            Packet::Secured {
+                basic,
+                secured,
+                common,
+                extended,
+            } => {
+                basic.encode(output)?;
+                secured.encode(output)?;
+                common.encode(output)?;
+                extended.encode(output)
+            }
         }
     }
 }

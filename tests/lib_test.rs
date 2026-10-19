@@ -123,6 +123,62 @@ fn unsecured_round_trip() {
 }
 
 #[test]
+fn secured_round_trip() {
+    // let expected = vec![
+    //     0x11, 0x00, 0x50, 0x01, 0x20, 0x50, 0x02, 0x00, 0x00, 0x01, 0x01, 0x00, 0x01, 0x06, 0x00,
+    //     0x60, 0xe0, 0x69, 0x57, 0x8d, 0x20, 0x5c, 0xb8, 0xc0, 0x1f, 0xec, 0x38, 0x28, 0x05, 0xf2,
+    //     0x4d, 0x90, 0x02, 0xa8, 0x08, 0x4a, 0x7f, 0x00, 0xb8, 0x00, 0x00,
+    // ];
+    // let packet = Packet::Secured {
+    //     basic: en302636_4_1::BasicHeader::try_new(
+    //         1,
+    //         en302636_4_1::NextAfterBasic::CommonHeader,
+    //         en302636_4_1::Lifetime(80),
+    //         1,
+    //     )
+    //     .unwrap(),
+    //     common: en302636_4_1::CommonHeader {
+    //         next_header: en302636_4_1::NextAfterCommon::BTPB,
+    //         reserved_1: u4::from_u8(0x00),
+    //         header_type_and_subtype: en302636_4_1::HeaderType::TopologicallyScopedBroadcast(
+    //             en302636_4_1::BroadcastType::SingleHop,
+    //         ),
+    //         traffic_class: en302636_4_1::TrafficClass::try_new(false, false, 2).unwrap(),
+    //         flags: [false; 8],
+    //         payload_length: 1,
+    //         maximum_hop_limit: 1,
+    //         reserved_2: 0x00,
+    //     },
+    //     extended: Some(en302636_4_1::ExtendedHeader::SHB(
+    //         en302636_4_1::SingleHopBroadcast {
+    //             source_position_vector: en302636_4_1::LongPositionVector::try_new(
+    //                 en302636_4_1::Address {
+    //                     manually_configured: false,
+    //                     station_type: en302636_4_1::StationType::Unknown,
+    //                     reserved: u10::new(0x0106),
+    //                     address: [0, 96, 224, 105, 87, 141],
+    //                 },
+    //                 en302636_4_1::Timestamp(542_947_520),
+    //                 535_574_568,
+    //                 99_765_648,
+    //                 false,
+    //                 680,
+    //                 2122,
+    //             )
+    //             .unwrap(),
+    //             media_dependent_data: [127, 0, 184, 0],
+    //         },
+    //     )),
+    //     payload: &[0],
+    // };
+    // let encoded = packet.encode_to_vec().unwrap();
+    // let decoded = Packet::decode(encoded.as_slice()).unwrap();
+    // assert!(decoded.bytes_consumed == encoded.len());
+    // assert_eq!(expected, encoded);
+    // pretty_assertions::assert_eq!(decoded.decoded, packet);
+}
+
+#[test]
 #[cfg(feature = "json")]
 fn packet_to_json() {
     let data: Vec<u8> = vec![
