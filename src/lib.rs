@@ -151,7 +151,7 @@ pub enum Packet<'input> {
     },
     Secured {
         basic: en302636_4_1::BasicHeader,
-        secured: ieee1609dot2::Ieee1609Dot2Data<'input>,
+        secured: ieee1609dot2::Ieee1609Dot2Data,
         common: en302636_4_1::CommonHeader,
         extended: Option<en302636_4_1::ExtendedHeader>,
     },
@@ -175,26 +175,45 @@ impl<'p> Packet<'p> {
             Packet::Secured {
                 secured, common, ..
             } => match common.header_type_and_subtype {
-                en302636_4_1::HeaderType::Any => secured.data_payload().map(|p| &p[8..]),
-                en302636_4_1::HeaderType::Beacon => secured.data_payload().map(|p| &p[8 + 24..]),
+                en302636_4_1::HeaderType::Any => {
+                    Self::get_ieee1609_dot2_data_payload(&secured).map(|p| &p[8..])
+                }
+                en302636_4_1::HeaderType::Beacon => {
+                    Self::get_ieee1609_dot2_data_payload(&secured).map(|p| &p[8 + 24..])
+                }
                 en302636_4_1::HeaderType::GeoUnicast => {
-                    secured.data_payload().map(|p| &p[8 + 36..])
+                    Self::get_ieee1609_dot2_data_payload(&secured).map(|p| &p[8 + 36..])
                 }
                 en302636_4_1::HeaderType::GeoAnycast(_)
                 | en302636_4_1::HeaderType::GeoBroadcast(_) => {
-                    secured.data_payload().map(|p| &p[8 + 44..])
+                    Self::get_ieee1609_dot2_data_payload(&secured).map(|p| &p[8 + 44..])
                 }
                 en302636_4_1::HeaderType::TopologicallyScopedBroadcast(_) => {
-                    secured.data_payload().map(|p| &p[8 + 28..])
+                    Self::get_ieee1609_dot2_data_payload(&secured).map(|p| &p[8 + 28..])
                 }
                 en302636_4_1::HeaderType::LocationService(
                     en302636_4_1::LocationServiceType::Request,
-                ) => secured.data_payload().map(|p| &p[8 + 36..]),
+                ) => Self::get_ieee1609_dot2_data_payload(&secured).map(|p| &p[8 + 36..]),
                 en302636_4_1::HeaderType::LocationService(
                     en302636_4_1::LocationServiceType::Reply,
-                ) => secured.data_payload().map(|p| &p[8 + 48..]),
+                ) => Self::get_ieee1609_dot2_data_payload(&secured).map(|p| &p[8 + 48..]),
             },
             Packet::Unsecured { .. } => None,
+        }
+    }
+
+    fn get_ieee1609_dot2_data_payload(
+        value: &'p rasn_its::ieee1609dot2::Ieee1609Dot2Data,
+    ) -> Option<&'p [u8]> {
+        match &value.content {
+            rasn_its::ieee1609dot2::Ieee1609Dot2Content::UnsecuredData(p) => Some(p),
+            rasn_its::ieee1609dot2::Ieee1609Dot2Content::SignedData(s) => s
+                .tbs_data
+                .payload
+                .data
+                .as_ref()
+                .and_then(|v| Self::get_ieee1609_dot2_data_payload(v)),
+            _ => None,
         }
     }
 
