@@ -386,10 +386,9 @@ impl<'s> InternalDecode<'s> for en302636_4_1::LongPositionVector {
         let (input, latitude) = i32::decode_bytewise(input)?;
         let (input, longitude) = i32::decode_bytewise(input)?;
 
-        let (input, bytes) = take(2usize)(input)?;
-        let position_accuracy = (bytes[0] & 0x80) > 0;
-        let speed_i16 = (i16::from(bytes[0]) << 8) | i16::from(bytes[1]);
-        let speed = i15::from_i16(speed_i16 & 0x7FFF);
+        let (input, word) = u16::decode_bytewise(input)?;
+        let position_accuracy = word & 0x8000 != 0;
+        let speed = i15::from_bits(word & 0x7FFF);
 
         let (input, heading) = u16::decode_bytewise(input)?;
 
@@ -1220,7 +1219,9 @@ fn decode_bytewise_tag(input: &[u8]) -> IResult<&[u8], u64> {
     let (input, byte) = take(1usize)(input)?;
     match byte[0] & 0b0011_1111 {
         len if len < 63 => Ok((input, len.into())),
-        _ => unimplemented!(),
+        _ => Err(nom::Err::Error(DecodeError::ParserError(
+            "Long-form COER tags are not supported".into(),
+        ))),
     }
 }
 
@@ -3146,6 +3147,37 @@ mod tests {
         let oer_input = &[3, 6, 0x80, 0x40];
         let (_, decoded) = decode_bytewise_bitstring(None, None, true, oer_input).unwrap();
         assert_eq!(ref_val, decoded);
+    }
+
+    #[test]
+    fn rejects_long_form_tag_without_panicking() {
+        let input = [0x12, 0, 1, 1, 3, 0xbf];
+        assert!(matches!(
+            Packet::decode(input.as_slice()),
+            Err(DecodeError::ParserError(_))
+        ));
+    }
+
+    #[test]
+    fn decodes_signed_speed() {
+        for (bits, speed) in [
+            (0x0000u16, 0),
+            (0x0001, 1),
+            (0x3fff, 16383),
+            (0x4000, -16384),
+            (0x7fff, -1),
+        ] {
+            for accurate in [false, true] {
+                let mut input = [0; 24];
+                let word = bits | if accurate { 0x8000 } else { 0 };
+                input[20..22].copy_from_slice(&word.to_be_bytes());
+                let (remaining, position) =
+                    en302636_4_1::LongPositionVector::decode_bytewise(&input).unwrap();
+                assert!(remaining.is_empty());
+                assert_eq!(position.position_accuracy, accurate);
+                assert_eq!(position.speed.value(), speed);
+            }
+        }
     }
 
     #[test]
